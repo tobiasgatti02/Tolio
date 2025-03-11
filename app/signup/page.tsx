@@ -30,17 +30,17 @@ export default function SignupPage() {
     <div className="max-w-md mx-auto px-4 py-12">
       <Link href="/" className="flex items-center text-emerald-600 mb-8 hover:underline">
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Home
+        Back to home
       </Link>
 
       <div className="bg-white rounded-xl shadow-md p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">Crea tu cuenta</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">Create an Account</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre
+                First Name
               </label>
               <input
                 type="text"
@@ -54,7 +54,7 @@ export default function SignupPage() {
             </div>
             <div>
               <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                Apellido
+                Last Name
               </label>
               <input
                 type="text"
@@ -85,7 +85,7 @@ export default function SignupPage() {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Contraseña
+              Password
             </label>
             <input
               type="password"
@@ -100,7 +100,7 @@ export default function SignupPage() {
 
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-              Confirmar la contraseña
+              Confirm Password
             </label>
             <input
               type="password"
@@ -117,15 +117,15 @@ export default function SignupPage() {
             type="submit"
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium"
           >
-            Registrarse
+            Sign Up
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            Ya tenés una cuenta?{" "}
+            Already have an account?{" "}
             <Link href="/login" className="text-emerald-600 hover:underline">
-              Ingresar
+              Log in
             </Link>
           </p>
         </div>

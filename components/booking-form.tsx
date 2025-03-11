@@ -36,7 +36,7 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="start-date" className="block text-sm font-medium text-gray-700 mb-1">
-            Comienzo del alquiler
+            Start Date
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -57,7 +57,7 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
         </div>
         <div>
           <label htmlFor="end-date" className="block text-sm font-medium text-gray-700 mb-1">
-            Fin del alquiler
+            End Date
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -81,12 +81,12 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
       <div className="bg-gray-50 p-4 rounded-lg">
         <div className="flex justify-between mb-2">
           <span>
-            ${price} × {totalDays} días
+            ${price} × {totalDays} days
           </span>
           <span>${price * totalDays}</span>
         </div>
         <div className="flex justify-between mb-2">
-          <span>Comisión</span>
+          <span>Service fee</span>
           <span>${Math.round(price * totalDays * 0.1)}</span>
         </div>
         <div className="border-t pt-2 mt-2 font-bold flex justify-between">
@@ -99,7 +99,7 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
         type="submit"
         className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium"
       >
-        Pedir prestado
+        Request to Book
       </button>
     </form>
   )

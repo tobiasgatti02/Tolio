@@ -20,7 +20,7 @@ export default function HeroSearch() {
       <div className="relative flex-grow">
         <input
           type="text"
-          placeholder="¿Que necesitás?"
+          placeholder="What do you need to borrow?"
           className="w-full px-4 py-3 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -29,7 +29,7 @@ export default function HeroSearch() {
       <div className="relative md:w-1/3">
         <input
           type="text"
-          placeholder="Ubicación"
+          placeholder="Your location"
           className="w-full px-4 py-3 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
@@ -40,7 +40,7 @@ export default function HeroSearch() {
         className="bg-emerald-700 hover:bg-emerald-800 text-white px-6 py-3 rounded-lg flex items-center justify-center"
       >
         <Search className="h-5 w-5 mr-2" />
-        Buscar
+        Search
       </button>
     </form>
   )

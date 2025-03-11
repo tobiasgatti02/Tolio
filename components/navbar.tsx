@@ -17,13 +17,13 @@ export default function Navbar() {
             </Link>
             <nav className="hidden md:ml-10 md:flex md:space-x-8">
               <Link href="/items" className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium">
-                Explorá artículos
+                Browse Items
               </Link>
               <Link href="/how-it-works" className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium">
-                Cómo funciona
+                How It Works
               </Link>
               <Link href="/lend" className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium">
-                Presta tus artículos
+                Lend Your Items
               </Link>
             </nav>
           </div>
@@ -32,13 +32,13 @@ export default function Navbar() {
               <Bell className="h-6 w-6" />
             </Link>
             <Link href="/login" className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium">
-              Ingresá
+              Log in
             </Link>
             <Link
               href="/signup"
               className="bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm font-medium"
             >
-              Registráte
+              Sign up
             </Link>
           </div>
           <div className="flex items-center md:hidden">
@@ -58,35 +58,35 @@ export default function Navbar() {
               className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
-              Busca artículos
+              Browse Items
             </Link>
             <Link
               href="/how-it-works"
               className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
-              Como funciona
+              How It Works
             </Link>
             <Link
               href="/lend"
               className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
-              Presta tus artículos
+              Lend Your Items
             </Link>
             <Link
               href="/login"
               className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
-              Ingresá
+              Log in
             </Link>
             <Link
               href="/signup"
               className="block bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2 rounded-lg text-base font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
-              Registráte
+              Sign up
             </Link>
           </div>
         </div>

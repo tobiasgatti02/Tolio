@@ -8,7 +8,8 @@ export default function Footer() {
           <div>
             <h3 className="text-xl font-bold mb-4">Prestar</h3>
             <p className="text-gray-400 mb-4">
-            Pedí prestado lo que necesites, prestá lo que no uses. Sumate hoy a nuestra comunidad de intercambio.            </p>
+              Borrow what you need, lend what you don't. Join our community of sharers today.
+            </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-white">
                 <span className="sr-only">Facebook</span>
@@ -43,10 +44,24 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link href="/about" className="text-gray-400 hover:text-white">
-                  Sobre nosotros
+                  About Us
                 </Link>
               </li>
-
+              <li>
+                <Link href="/careers" className="text-gray-400 hover:text-white">
+                  Careers
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog" className="text-gray-400 hover:text-white">
+                  Blog
+                </Link>
+              </li>
+              <li>
+                <Link href="/press" className="text-gray-400 hover:text-white">
+                  Press
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
@@ -55,6 +70,16 @@ export default function Footer() {
               <li>
                 <Link href="/help" className="text-gray-400 hover:text-white">
                   Help Center
+                </Link>
+              </li>
+              <li>
+                <Link href="/safety" className="text-gray-400 hover:text-white">
+                  Safety Center
+                </Link>
+              </li>
+              <li>
+                <Link href="/community" className="text-gray-400 hover:text-white">
+                  Community Guidelines
                 </Link>
               </li>
               <li>
@@ -77,12 +102,22 @@ export default function Footer() {
                   Privacy Policy
                 </Link>
               </li>
+              <li>
+                <Link href="/cookies" className="text-gray-400 hover:text-white">
+                  Cookie Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/accessibility" className="text-gray-400 hover:text-white">
+                  Accessibility
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
         <div className="mt-8 pt-8 border-t border-gray-700">
           <p className="text-gray-400 text-sm text-center">
-            &copy; {new Date().getFullYear()} Prestar. Todos los derechos reservados.
+            &copy; {new Date().getFullYear()} Prestar. All rights reserved.
           </p>
         </div>
       </div>
