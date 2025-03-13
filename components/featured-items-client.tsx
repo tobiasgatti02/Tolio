@@ -52,7 +52,7 @@ export default function FeaturedItemsClient({ items }: FeaturedItemsClientProps)
               <div className="flex justify-between items-center">
                 <div className="text-gray-900 font-bold">
                   ${item.price}
-                  <span className="text-gray-500 font-normal text-sm">/day</span>
+                  <span className="text-gray-500 font-normal text-sm">/día</span>
                 </div>
                 <div className="text-xs text-gray-500">{item.location}</div>
               </div>

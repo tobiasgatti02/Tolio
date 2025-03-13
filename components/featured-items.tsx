@@ -16,10 +16,15 @@ export default async function FeaturedItems() {
     select: {
       id: true,
       title: true,
-      category: true,
       price: true,
       location: true,
       images: true,
+      // Select category as a relation
+      category: {
+        select: {
+          name: true
+        }
+      },
       owner: {
         select: {
           firstName: true,
@@ -44,7 +49,8 @@ export default async function FeaturedItems() {
     return {
       id: item.id,
       title: item.title,
-      category: item.category,
+      // Extract the category name from the category object (or use a default if null)
+      category: item.category?.name || "Sin categoría",
       price: item.price,
       rating: rating,
       reviewCount: reviews.length > 0 ? reviews.length : undefined,
