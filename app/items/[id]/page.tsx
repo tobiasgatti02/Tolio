@@ -4,41 +4,17 @@ import ItemGallery from "@/components/item-gallery"
 import OwnerProfile from "@/components/owner-profile"
 import BookingForm from "@/components/booking-form"
 import ReviewList from "@/components/review-list"
+import { getItemById } from "@/app/api/items/[itemId]/items/route"
 
-// In a real app, this would fetch data from an API
-function getItemDetails(id: string) {
-  return {
-    id: 1,
-    title: "Professional Drill Set",
-    description:
-      "Complete professional drill set with various drill bits and accessories. Perfect for home improvement projects, furniture assembly, and general repairs. Includes carrying case for easy transport and storage.",
-    category: "Tools",
-    price: 15,
-    deposit: 50,
-    rating: 4.8,
-    reviews: 24,
-    images: [
-      "/placeholder.svg?height=600&width=800",
-      "/placeholder.svg?height=600&width=800",
-      "/placeholder.svg?height=600&width=800",
-    ],
-    owner: {
-      id: "user123",
-      name: "Michael S.",
-      rating: 4.9,
-      reviews: 42,
-      memberSince: "2022",
-      responseRate: 98,
-      image: "/placeholder.svg?height=200&width=200",
-    },
-    location: "Brooklyn, NY",
-    features: ["Cordless", "20V Battery", "Variable Speed", "LED Light", "Carrying Case"],
-    availability: true,
+
+
+export default async function ItemPage({ params }: { params: { id: string } }) {
+  const items = await getItemById(params.id)
+  const item = Array.isArray(items) && items.length > 0 ? items[0] : null
+  
+  if (!item) {
+    return <div className="max-w-7xl mx-auto px-4 py-8">Item not found</div>
   }
-}
-
-export default function ItemPage({ params }: { params: { id: string } }) {
-  const item = getItemDetails(params.id)
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -56,8 +32,12 @@ export default function ItemPage({ params }: { params: { id: string } }) {
             <div className="flex items-center mb-4">
               <div className="flex items-center mr-4">
                 <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                <span className="ml-1 font-medium">{item.rating}</span>
-                <span className="ml-1 text-gray-500">({item.reviews} reviews)</span>
+                <span className="ml-1 font-medium">
+                  {item.reviews.length > 0 
+                    ? (item.reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / item.reviews.length).toFixed(1)
+                    : "N/A"}
+                </span>
+                <span className="ml-1 text-gray-500">({item.reviews.length} reviews)</span>
               </div>
               <div className="flex items-center text-gray-500">
                 <MapPin className="h-5 w-5 mr-1" />
@@ -102,7 +82,17 @@ export default function ItemPage({ params }: { params: { id: string } }) {
             <BookingForm itemId={params.id} price={item.price} />
 
             <div className="border-t mt-6 pt-6">
-              <OwnerProfile owner={item.owner} />
+              <OwnerProfile owner={{
+                id: item.owner.id,
+                name: `${item.owner.firstName} ${item.owner.lastName}`,
+                image: item.owner.profileImage || '',
+                rating: item.owner.reviews && item.owner.reviews.length > 0
+                  ? item.owner.reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / item.owner.reviews.length
+                  : 0,
+                reviews: item.owner.reviews ? item.owner.reviews.length : 0,
+                memberSince: item.owner.createdAt,
+                responseRate: 0
+              }} />
             </div>
           </div>
         </div>

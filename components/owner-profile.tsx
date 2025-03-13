@@ -8,7 +8,7 @@ interface OwnerProfileProps {
     name: string
     rating: number
     reviews: number
-    memberSince: string
+    memberSince: Date
     responseRate: number
     image: string
   }
@@ -34,7 +34,7 @@ export default function OwnerProfile({ owner }: OwnerProfileProps) {
       </div>
 
       <div className="text-sm text-gray-700 space-y-2 mb-4">
-        <div>Member since {owner.memberSince}</div>
+        <div>Member since {owner.memberSince.toLocaleDateString()}</div>
         <div>{owner.responseRate}% response rate</div>
       </div>
 
