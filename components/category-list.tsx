@@ -2,14 +2,14 @@ import { PenToolIcon as Tool, Car, Laptop, Camera, Music, Book, Tent, Utensils }
 import Link from "next/link"
 
 const categories = [
-  { name: "Tools", icon: Tool, slug: "tools" },
-  { name: "Vehicles", icon: Car, slug: "vehicles" },
-  { name: "Electronics", icon: Laptop, slug: "electronics" },
-  { name: "Photography", icon: Camera, slug: "photography" },
-  { name: "Musical Instruments", icon: Music, slug: "musical-instruments" },
-  { name: "Books", icon: Book, slug: "books" },
-  { name: "Camping Gear", icon: Tent, slug: "camping-gear" },
-  { name: "Kitchen Appliances", icon: Utensils, slug: "kitchen-appliances" },
+  { name: "Herramientas", icon: Tool, slug: "tools" },
+  { name: "Vehículos", icon: Car, slug: "vehicles" },
+  { name: "Electrónica", icon: Laptop, slug: "electronics" },
+  { name: "Fotografía", icon: Camera, slug: "photography" },
+  { name: "Instrumentos Musicales", icon: Music, slug: "musical-instruments" },
+  { name: "Libros", icon: Book, slug: "books" },
+  { name: "Equipo de Camping", icon: Tent, slug: "camping-gear" },
+  { name: "Electrodomésticos de Cocina", icon: Utensils, slug: "kitchen-appliances" },
 ]
 
 export default function CategoryList() {

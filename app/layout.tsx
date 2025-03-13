@@ -8,8 +8,8 @@ import Footer from "@/components/footer"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Prestar - Borrow What You Need, Lend What You Don't",
-  description: "A platform for lending and borrowing tools and items in your community",
+  title: "Prestar",
+  description: "La plataforma de alquiler de productos más grande de Latinoamérica",
     generator: 'v0.dev'
 }
 

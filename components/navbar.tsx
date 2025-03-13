@@ -17,13 +17,13 @@ export default function Navbar() {
             </Link>
             <nav className="hidden md:ml-10 md:flex md:space-x-8">
               <Link href="/items" className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium">
-                Browse Items
+                Buscar Objetos
               </Link>
               <Link href="/how-it-works" className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium">
-                How It Works
+                ¿Cómo funciona?
               </Link>
               <Link href="/lend" className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium">
-                Lend Your Items
+                Presta tus cosas
               </Link>
             </nav>
           </div>
@@ -32,13 +32,13 @@ export default function Navbar() {
               <Bell className="h-6 w-6" />
             </Link>
             <Link href="/login" className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium">
-              Log in
+              Ingresar
             </Link>
             <Link
               href="/signup"
               className="bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm font-medium"
             >
-              Sign up
+              Registrarse
             </Link>
           </div>
           <div className="flex items-center md:hidden">

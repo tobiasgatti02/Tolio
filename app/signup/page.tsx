@@ -30,7 +30,7 @@ export default function SignupPage() {
     <div className="max-w-md mx-auto px-4 py-12">
       <Link href="/" className="flex items-center text-emerald-600 mb-8 hover:underline">
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to home
+        Home
       </Link>
 
       <div className="bg-white rounded-xl shadow-md p-8">

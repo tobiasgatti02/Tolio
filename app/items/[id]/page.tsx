@@ -18,9 +18,9 @@ export default async function ItemPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <Link href="/items" className="flex items-center text-emerald-600 mb-6 hover:underline">
+      <Link href="/" className="flex items-center text-emerald-600 mb-6 hover:underline">
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to search results
+        Home
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -46,12 +46,12 @@ export default async function ItemPage({ params }: { params: { id: string } }) {
             </div>
 
             <div className="border-t border-b py-4 my-4">
-              <h2 className="text-xl font-bold mb-4">Description</h2>
+              <h2 className="text-xl font-bold mb-4">Descripción</h2>
               <p className="text-gray-700">{item.description}</p>
             </div>
 
             <div className="py-4 my-4">
-              <h2 className="text-xl font-bold mb-4">Features</h2>
+              <h2 className="text-xl font-bold mb-4">Características</h2>
               <ul className="grid grid-cols-2 gap-2">
                 {item.features.map((feature, index) => (
                   <li key={index} className="flex items-center">
@@ -74,9 +74,9 @@ export default async function ItemPage({ params }: { params: { id: string } }) {
             <div className="mb-4">
               <div className="text-2xl font-bold text-gray-900">
                 ${item.price}
-                <span className="text-gray-500 font-normal text-base">/day</span>
+                <span className="text-gray-500 font-normal text-base">/día</span>
               </div>
-              <div className="text-sm text-gray-500">${item.deposit} security deposit</div>
+              <div className="text-sm text-gray-500">${item.deposit} depósito de seguridad</div>
             </div>
 
             <BookingForm itemId={params.id} price={item.price} />

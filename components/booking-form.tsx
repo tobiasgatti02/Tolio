@@ -36,7 +36,7 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="start-date" className="block text-sm font-medium text-gray-700 mb-1">
-            Start Date
+            Comienzo de alquiler
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -57,7 +57,7 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
         </div>
         <div>
           <label htmlFor="end-date" className="block text-sm font-medium text-gray-700 mb-1">
-            End Date
+            Fin del alquiler
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -81,12 +81,12 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
       <div className="bg-gray-50 p-4 rounded-lg">
         <div className="flex justify-between mb-2">
           <span>
-            ${price} × {totalDays} days
+            ${price} × {totalDays} días
           </span>
           <span>${price * totalDays}</span>
         </div>
         <div className="flex justify-between mb-2">
-          <span>Service fee</span>
+          <span>Comisión</span>
           <span>${Math.round(price * totalDays * 0.1)}</span>
         </div>
         <div className="border-t pt-2 mt-2 font-bold flex justify-between">

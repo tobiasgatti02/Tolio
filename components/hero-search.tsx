@@ -11,7 +11,6 @@ export default function HeroSearch() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    // In a real app, this would redirect to search results
     console.log("Searching for:", searchTerm, "in", location)
   }
 
@@ -20,7 +19,7 @@ export default function HeroSearch() {
       <div className="relative flex-grow">
         <input
           type="text"
-          placeholder="What do you need to borrow?"
+          placeholder="Que necesitas?"
           className="w-full px-4 py-3 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -29,7 +28,7 @@ export default function HeroSearch() {
       <div className="relative md:w-1/3">
         <input
           type="text"
-          placeholder="Your location"
+          placeholder="Ubicación"
           className="w-full px-4 py-3 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
@@ -40,7 +39,7 @@ export default function HeroSearch() {
         className="bg-emerald-700 hover:bg-emerald-800 text-white px-6 py-3 rounded-lg flex items-center justify-center"
       >
         <Search className="h-5 w-5 mr-2" />
-        Search
+        Búsqueda
       </button>
     </form>
   )

@@ -3,13 +3,11 @@ import Link from "next/link"
 export default function Footer() {
   return (
     <footer className="bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h3 className="text-xl font-bold mb-4">Prestar</h3>
-            <p className="text-gray-400 mb-4">
-              Borrow what you need, lend what you don't. Join our community of sharers today.
-            </p>
+            
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-white">
                 <span className="sr-only">Facebook</span>
@@ -40,51 +38,26 @@ export default function Footer() {
             </div>
           </div>
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">Company</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">Compañia</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/about" className="text-gray-400 hover:text-white">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/careers" className="text-gray-400 hover:text-white">
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="text-gray-400 hover:text-white">
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link href="/press" className="text-gray-400 hover:text-white">
-                  Press
+                  Sobre Nosotros
                 </Link>
               </li>
             </ul>
           </div>
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">Support</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">Soporte</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/help" className="text-gray-400 hover:text-white">
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link href="/safety" className="text-gray-400 hover:text-white">
-                  Safety Center
-                </Link>
-              </li>
-              <li>
-                <Link href="/community" className="text-gray-400 hover:text-white">
-                  Community Guidelines
+                  Centro de ayuda
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="text-gray-400 hover:text-white">
-                  Contact Us
+                  Contactanos
                 </Link>
               </li>
             </ul>
@@ -102,22 +75,12 @@ export default function Footer() {
                   Privacy Policy
                 </Link>
               </li>
-              <li>
-                <Link href="/cookies" className="text-gray-400 hover:text-white">
-                  Cookie Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/accessibility" className="text-gray-400 hover:text-white">
-                  Accessibility
-                </Link>
-              </li>
             </ul>
           </div>
         </div>
         <div className="mt-8 pt-8 border-t border-gray-700">
           <p className="text-gray-400 text-sm text-center">
-            &copy; {new Date().getFullYear()} Prestar. All rights reserved.
+            &copy; {new Date().getFullYear()} Prestar. Todos los derechos reservados.
           </p>
         </div>
       </div>

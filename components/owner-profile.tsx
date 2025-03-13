@@ -17,7 +17,7 @@ interface OwnerProfileProps {
 export default function OwnerProfile({ owner }: OwnerProfileProps) {
   return (
     <div>
-      <h3 className="text-lg font-semibold mb-4">Item Owner</h3>
+      <h3 className="text-lg font-semibold mb-4">Dueño</h3>
       <div className="flex items-center mb-4">
         <div className="relative h-12 w-12 rounded-full overflow-hidden mr-3">
           <Image src={owner.image || "/placeholder.svg"} alt={owner.name} fill className="object-cover" />
@@ -34,8 +34,8 @@ export default function OwnerProfile({ owner }: OwnerProfileProps) {
       </div>
 
       <div className="text-sm text-gray-700 space-y-2 mb-4">
-        <div>Member since {owner.memberSince.toLocaleDateString()}</div>
-        <div>{owner.responseRate}% response rate</div>
+        <div>Miembro desde: {owner.memberSince.toLocaleDateString()}</div>
+        <div>{owner.responseRate}% Tiempo de respuesta</div>
       </div>
 
       <Link
@@ -43,7 +43,7 @@ export default function OwnerProfile({ owner }: OwnerProfileProps) {
         className="w-full flex items-center justify-center bg-white border border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-lg font-medium"
       >
         <MessageCircle className="h-5 w-5 mr-2" />
-        Contact Owner
+        Contacta al dueño
       </Link>
     </div>
   )
