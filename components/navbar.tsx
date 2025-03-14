@@ -1,11 +1,15 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { Menu, X, Bell } from "lucide-react"
+import { useState } from "react";
+import Link from "next/link";
+import { Menu, X, Bell } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { data: session } = useSession();
+  const Router = useRouter();
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -13,37 +17,88 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <span className="text-2xl font-bold text-emerald-600">Prestar</span>
+              <span className="text-2xl font-bold text-emerald-600">
+                Prestar
+              </span>
             </Link>
             <nav className="hidden md:ml-10 md:flex md:space-x-8">
-              <Link href="/items" className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium">
+              <Link
+                href="/items"
+                className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium"
+              >
                 Buscar Objetos
               </Link>
-              <Link href="/how-it-works" className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium">
+              <Link
+                href="/how-it-works"
+                className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium"
+              >
                 ¿Cómo funciona?
               </Link>
-              <Link href="/lend" className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium">
+              <Link
+                href="/lend"
+                className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium"
+              >
                 Presta tus cosas
               </Link>
             </nav>
           </div>
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/notifications" className="text-gray-700 hover:text-emerald-600 p-1 rounded-full">
+            <Link
+              href="/notifications"
+              className="text-gray-700 hover:text-emerald-600 p-1 rounded-full"
+            >
               <Bell className="h-6 w-6" />
             </Link>
-            <Link href="/login" className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium">
-              Ingresar
-            </Link>
-            <Link
-              href="/signup"
-              className="bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm font-medium"
-            >
-              Registrarse
-            </Link>
+
+          
+  
+            {session && (
+              <Link
+                href="/items/nuevo"
+                className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+              >
+                Crear publicación
+              </Link>
+            )}
+            {session ? (
+              <button
+                onClick={() => {
+                  signOut();
+                  setIsMenuOpen(false);
+                }}
+                className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+              >
+                Salir
+              </button>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/signup"
+                  className="block bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2 rounded-lg text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
           </div>
           <div className="flex items-center md:hidden">
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-700 hover:text-emerald-600 p-2">
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="text-gray-700 hover:text-emerald-600 p-2"
+            >
+              {isMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
@@ -58,40 +113,63 @@ export default function Navbar() {
               className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
-              Browse Items
+              Buscar Objetos
             </Link>
             <Link
               href="/how-it-works"
               className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
-              How It Works
+              ¿Cómo funciona?
             </Link>
             <Link
               href="/lend"
               className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
-              Lend Your Items
+              Presta tus cosas
             </Link>
-            <Link
-              href="/login"
-              className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Log in
-            </Link>
-            <Link
-              href="/signup"
-              className="block bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2 rounded-lg text-base font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Sign up
-            </Link>
+            {session && (
+              <Link
+                href="/items/nuevo"
+                className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+              >
+                Crear publicación
+              </Link>
+            )}
+            {session ? (
+              <>
+                <button
+                  onClick={() => {
+                    signOut();
+                    setIsMenuOpen(false);
+                  }}
+                  className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+                >
+                  Salir
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/signup"
+                  className="block bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2 rounded-lg text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
     </header>
-  )
+  );
 }
-

@@ -5,8 +5,8 @@ import OwnerProfile from "@/components/owner-profile"
 import BookingForm from "@/components/booking-form"
 import ReviewList from "@/components/review-list"
 import { getItemById } from "@/app/api/items/[itemId]/items/route"
-
-
+import { Suspense } from "react"
+import ReviewListSkeleton from "@/components/review-list-skeleton" // new
 
 export default async function ItemPage({ params }: { params: { id: string } }) {
   const items = await getItemById(params.id)
@@ -64,7 +64,9 @@ export default async function ItemPage({ params }: { params: { id: string } }) {
 
             <div className="py-4 my-4">
               <h2 className="text-xl font-bold mb-4">Reviews</h2>
-              <ReviewList itemId={params.id} />
+              <Suspense fallback={<ReviewListSkeleton />}>
+                <ReviewList itemId={params.id} />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -100,4 +102,3 @@ export default async function ItemPage({ params }: { params: { id: string } }) {
     </div>
   )
 }
-

@@ -1,25 +1,21 @@
+import { Suspense } from "react"
 import { prisma } from '@/lib/utils'
 import FeaturedItemsClient, { FeaturedItem } from './featured-items-client'
+import FeaturedItemsSkeleton from "./featured-items-skeleton"
 
-// This is a server component that will fetch data from the database
 export default async function FeaturedItems() {
-  // Fetch featured items from the database
   const items = await prisma.item.findMany({
     where: {
       isAvailable: true,
     },
-    take: 4,  // Limit to 4 featured items
-    orderBy: [
-      // You could add criteria here to select "featured" items
-      { createdAt: 'desc' }  // For now, just show newest items
-    ],
+    take: 4,
+    orderBy: [{ createdAt: 'desc' }],
     select: {
       id: true,
       title: true,
       price: true,
       location: true,
       images: true,
-      // Select category as a relation
       category: {
         select: {
           name: true
@@ -39,9 +35,7 @@ export default async function FeaturedItems() {
     },
   })
 
-  // Calculate average rating for each item
   const formattedItems: FeaturedItem[] = items.map((item) => {
-    // Calculate average rating if reviews exist
     const reviews = item.reviews || []
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
     const rating = reviews.length > 0 ? Number((totalRating / reviews.length).toFixed(1)) : undefined
@@ -49,7 +43,6 @@ export default async function FeaturedItems() {
     return {
       id: item.id,
       title: item.title,
-      // Extract the category name from the category object (or use a default if null)
       category: item.category?.name || "Sin categoría",
       price: item.price,
       rating: rating,
@@ -63,5 +56,9 @@ export default async function FeaturedItems() {
     }
   })
 
-  return <FeaturedItemsClient items={formattedItems} />
+  return (
+    <Suspense fallback={<FeaturedItemsSkeleton />}>
+      <FeaturedItemsClient items={formattedItems} />
+    </Suspense>
+  )
 }

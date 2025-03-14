@@ -5,8 +5,10 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function SignupPage() {
+  const router = useRouter()
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -14,16 +16,56 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
   })
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // In a real app, this would handle signup
-    console.log("Signup form submitted", formData)
+    setIsLoading(true)
+    setError("")
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Las contraseñas no coinciden")
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || "Error al registrar usuario")
+      }
+
+      // Redirigir a la página de login
+      router.push("/login?registered=true")
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError("Ocurrió un error al registrar. Por favor intenta de nuevo.")
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -34,13 +76,15 @@ export default function SignupPage() {
       </Link>
 
       <div className="bg-white rounded-xl shadow-md p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">Create an Account</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">Crea tu cuenta</h1>
+
+        {error && <div className="bg-red-50 text-red-600 p-3 rounded-md mb-4">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                First Name
+                Nombre
               </label>
               <input
                 type="text"
@@ -54,7 +98,7 @@ export default function SignupPage() {
             </div>
             <div>
               <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                Last Name
+                Apellido
               </label>
               <input
                 type="text"
@@ -85,7 +129,7 @@ export default function SignupPage() {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Password
+              Contraseña
             </label>
             <input
               type="password"
@@ -95,12 +139,13 @@ export default function SignupPage() {
               onChange={handleChange}
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
               required
+              minLength={8}
             />
           </div>
 
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-              Confirm Password
+              Confirmar Contraseña
             </label>
             <input
               type="password"
@@ -110,22 +155,24 @@ export default function SignupPage() {
               onChange={handleChange}
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
               required
+              minLength={8}
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium"
+            disabled={isLoading}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium disabled:opacity-70"
           >
-            Sign Up
+            {isLoading ? "Registrando..." : "Registrarse"}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            Already have an account?{" "}
+            ¿Ya tienes una cuenta?{" "}
             <Link href="/login" className="text-emerald-600 hover:underline">
-              Log in
+              Inicia sesión
             </Link>
           </p>
         </div>

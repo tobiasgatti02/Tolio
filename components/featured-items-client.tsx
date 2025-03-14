@@ -3,6 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Star } from "lucide-react"
+import { Skeleton } from "./ui/skeleton"
 
 export interface FeaturedItem {
   id: string
@@ -24,6 +25,26 @@ interface FeaturedItemsClientProps {
 }
 
 export default function FeaturedItemsClient({ items }: FeaturedItemsClientProps) {
+  if (!items || items.length === 0) {
+    // Render skeleton cards if there are no items
+    return (
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {Array.from({ length: 4 }).map((_, idx) => (
+          <div key={idx} className="bg-white rounded-xl overflow-hidden shadow-sm animate-pulse">
+            <div className="relative h-48 w-full">
+              <Skeleton className="h-full w-full" />
+            </div>
+            <div className="p-4 space-y-2">
+              <Skeleton className="h-3 w-16 rounded" />
+              <Skeleton className="h-4 w-3/4 rounded" />
+              <Skeleton className="h-3 w-10 rounded" />
+              <Skeleton className="h-4 w-12 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {items.map((item) => (
