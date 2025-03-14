@@ -39,7 +39,7 @@ const sortOptions = [
   { value: "newest", label: "Más recientes" },
 ]
 
-export default function ItemsPage({ initialCategories }: ItemsPageProps) {
+export default function ItemsPage(){
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -55,7 +55,7 @@ export default function ItemsPage({ initialCategories }: ItemsPageProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [filteredItems, setFilteredItems] = useState<Item[]>([])
-  const [categories, setCategories] = useState<Category[]>(initialCategories || [])
+  const [categories, setCategories] = useState<Category[]>([])
   
   // Fetch items when search params change
   useEffect(() => {
@@ -82,6 +82,24 @@ export default function ItemsPage({ initialCategories }: ItemsPageProps) {
     fetchItems()
   }, [searchParams])
 
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categorias')
+        if (!response.ok) {
+          throw new Error('Failed to fetch categories')
+        }
+        const data = await response.json()
+        setCategories(data)
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      }
+    }
+  
+    fetchCategories() // Actually call the function
+  }, [])
+  
   // Update search parameters and navigate
   const updateSearchParams = (params: Record<string, string | null>) => {
     const newParams = new URLSearchParams(searchParams.toString())
@@ -107,7 +125,7 @@ export default function ItemsPage({ initialCategories }: ItemsPageProps) {
       location: location,
     })
   }
-
+  
   // Handle filter changes
   const handleFilterChange = () => {
     updateSearchParams({
