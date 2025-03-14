@@ -1,9 +1,10 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { Calendar } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Calendar, Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
+import { createBooking } from "@/app/api/booking/route"
 
 interface BookingFormProps {
   itemId: string
@@ -14,8 +15,14 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [totalDays, setTotalDays] = useState(1)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState("")
+  
+  const router = useRouter()
+  const { toast } = useToast()
 
-  const handleDateChange = () => {
+  // Calculate total days when dates change
+  useEffect(() => {
     if (startDate && endDate) {
       const start = new Date(startDate)
       const end = new Date(endDate)
@@ -23,19 +30,77 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
       setTotalDays(diffDays || 1)
     }
-  }
+  }, [startDate, endDate])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // In a real app, this would submit the booking request
-    console.log("Booking request submitted", { itemId, startDate, endDate })
+  // Validate dates when they change
+  useEffect(() => {
+    if (startDate && endDate) {
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      setError("")
+      
+      if (start < today) {
+        setError("La fecha de inicio no puede ser en el pasado")
+      } else if (start >= end) {
+        setError("La fecha de finalización debe ser posterior a la fecha de inicio")
+      }
+    }
+  }, [startDate, endDate])
+
+  async function handleSubmit(formData: FormData) {
+    setIsSubmitting(true)
+    setError("")
+    
+    // Add itemId to the form data
+    formData.append("itemId", itemId)
+    
+    try {
+      // Use the server action
+      const result = await createBooking(formData)
+      
+      if (result.success && result.bookingId) {
+        toast({
+          title: "Reserva creada",
+          description: "Tu reserva ha sido enviada al propietario para su confirmación.",
+          variant: "default",
+        })
+        
+        // Redirect to the bookings page
+        router.push(`/bookings/${result.bookingId}`)
+      } else {
+        setError(result.error || "Hubo un error al crear la reserva")
+        toast({
+          title: "Error",
+          description: result.error || "Hubo un error al crear la reserva",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      setError("Error inesperado. Por favor inténtalo de nuevo.")
+      toast({
+        title: "Error",
+        description: "Error inesperado. Por favor inténtalo de nuevo.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form action={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 rounded-md p-3 text-sm">
+          {error}
+        </div>
+      )}
+      
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="start-date" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
             Comienzo de alquiler
           </label>
           <div className="relative">
@@ -44,19 +109,18 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
             </div>
             <input
               type="date"
-              id="start-date"
+              id="startDate"
+              name="startDate"
               className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
               value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value)
-                handleDateChange()
-              }}
+              onChange={(e) => setStartDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
               required
             />
           </div>
         </div>
         <div>
-          <label htmlFor="end-date" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
             Fin del alquiler
           </label>
           <div className="relative">
@@ -65,13 +129,12 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
             </div>
             <input
               type="date"
-              id="end-date"
+              id="endDate"
+              name="endDate"
               className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
               value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value)
-                handleDateChange()
-              }}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate || new Date().toISOString().split('T')[0]}
               required
             />
           </div>
@@ -81,27 +144,34 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
       <div className="bg-gray-50 p-4 rounded-lg">
         <div className="flex justify-between mb-2">
           <span>
-            ${price} × {totalDays} días
+            {price}€ × {totalDays} días
           </span>
-          <span>${price * totalDays}</span>
+          <span>{price * totalDays}€</span>
         </div>
         <div className="flex justify-between mb-2">
-          <span>Comisión</span>
-          <span>${Math.round(price * totalDays * 0.1)}</span>
+          <span>Comisión de servicio</span>
+          <span>{Math.round(price * totalDays * 0.1)}€</span>
         </div>
         <div className="border-t pt-2 mt-2 font-bold flex justify-between">
           <span>Total</span>
-          <span>${price * totalDays + Math.round(price * totalDays * 0.1)}</span>
+          <span>{price * totalDays + Math.round(price * totalDays * 0.1)}€</span>
         </div>
       </div>
 
       <button
         type="submit"
-        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium"
+        disabled={isSubmitting || !!error}
+        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white py-3 rounded-lg font-medium flex items-center justify-center"
       >
-        Request to Book
+        {isSubmitting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Procesando...
+          </>
+        ) : (
+          'Alquilar'
+        )}
       </button>
     </form>
   )
 }
-

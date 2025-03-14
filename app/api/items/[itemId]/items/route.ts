@@ -1,10 +1,6 @@
 import { prisma } from "@/lib/utils"
 import { cache } from 'react'
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { NextResponse } from "next/server"
-import { v4 as uuidv4 } from 'uuid'
-import { put } from '@vercel/blob'
+
 export const getItemById = cache(async (itemId: string) => {
   try {
     const reviews = await prisma.item.findMany({

@@ -51,7 +51,14 @@ export default function Navbar() {
             </Link>
 
           
-  
+            {session && (
+              <Link
+                href="/dashboard"
+                className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+              >
+                Mi panel
+              </Link>
+            )}
             {session && (
               <Link
                 href="/items/nuevo"

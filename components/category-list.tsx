@@ -8,7 +8,7 @@ export default async function CategoryList() {
       {categories.map((category) => (
         <Link
           key={category.id}
-          href={`/category/${category.name}`}
+          href={`/items?category=${category.name}&sort=relevance`}
           className="flex flex-col items-center p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
         >
           <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-3">

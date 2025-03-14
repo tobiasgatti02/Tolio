@@ -55,6 +55,8 @@ export default function FeaturedItemsClient({ items }: FeaturedItemsClientProps)
                 src={item.image || "/placeholder.svg"} 
                 alt={item.title} 
                 fill 
+                loading="lazy"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw" // Optimize sizes
                 className="object-cover" 
               />
             </div>

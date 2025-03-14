@@ -154,7 +154,8 @@ const handleSubmit = async (e: React.FormEvent) => {
       formDataObj.append("location", formData.location)
       formDataObj.append("features", JSON.stringify(formData.features))
   
-      images.forEach((image) => {
+      images.forEach((image, index) => {
+        console.log(`Appending image: ${image.name}, size: ${image.size}`)
         formDataObj.append("images", image)
       })
   

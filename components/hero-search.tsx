@@ -4,14 +4,35 @@ import type React from "react"
 
 import { useState } from "react"
 import { Search } from "lucide-react"
-
+import { useRouter, useSearchParams } from "next/navigation"
 export default function HeroSearch() {
   const [searchTerm, setSearchTerm] = useState("")
   const [location, setLocation] = useState("")
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const updateSearchParams = (params: Record<string, string | null>) => {
+    const newParams = new URLSearchParams(searchParams.toString())
+
+    // Update or remove parameters
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === null || value === "") {
+        newParams.delete(key)
+      } else {
+        newParams.set(key, value)
+      }
+    })
+
+    // Navigate to new URL
+    router.push(`/items?${newParams.toString()}`)
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Searching for:", searchTerm, "in", location)
+    updateSearchParams({
+      search: searchTerm,
+      location: location,
+    })
   }
 
   return (

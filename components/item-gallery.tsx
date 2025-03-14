@@ -13,7 +13,12 @@ export default function ItemGallery({ images }: ItemGalleryProps) {
   return (
     <div className="space-y-4">
       <div className="relative h-[400px] w-full rounded-xl overflow-hidden">
-        <Image src={images[activeImage] || "/placeholder.svg"} alt="Item image" fill className="object-cover" />
+        <Image 
+        src={images[activeImage] || "/placeholder.svg"}
+        alt="Item image" 
+        fill 
+        loading="lazy"
+        className="object-cover" />
       </div>
 
       <div className="flex space-x-2 overflow-x-auto pb-2">
