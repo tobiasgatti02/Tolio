@@ -1,53 +1,171 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
+import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
+import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-export async function POST(request: NextRequest) {
-  try {
-    const { firstName, lastName, email, password } = await request.json()
+// Validar y normalizar número de teléfono argentino
+function validateAndNormalizePhone(phone: string): { isValid: boolean; normalizedPhone?: string; error?: string } {
+  if (!phone) return { isValid: true } // Teléfono es opcional
+  
+  // Remover espacios, guiones y paréntesis
+  const cleanPhone = phone.replace(/[\s\-\(\)]/g, '')
+  
+  // Patrones para números argentinos
+  const patterns = [
+    /^\+54(9)?(\d{10})$/, // +54911XXXXXXXX o +549XXXXXXXXXX
+    /^54(9)?(\d{10})$/,   // 54911XXXXXXXX o 549XXXXXXXXXX
+    /^(9)?(\d{10})$/,     // 911XXXXXXXX o 9XXXXXXXXXX
+    /^(9)?1(\d{8})$/,     // 91XXXXXXXX o 1XXXXXXXX (Buenos Aires)
+    /^(\d{8})$/,          // XXXXXXXX (solo área metropolitana)
+  ]
 
-    // Validar los datos
-    if (!firstName || !lastName || !email || !password) {
-      return NextResponse.json({ message: "Todos los campos son requeridos" }, { status: 400 })
+  for (const pattern of patterns) {
+    const match = cleanPhone.match(pattern)
+    if (match) {
+      // Normalizar al formato +54 9 XXX XXX XXXX
+      let areaCode = ''
+      let number = ''
+      
+      if (match[2]) {
+        // Tiene código de área completo
+        number = match[2]
+        areaCode = number.substring(0, 3)
+        number = number.substring(3)
+      } else if (match[1] && match[1].length === 8) {
+        // Solo número de 8 dígitos (área metropolitana)
+        areaCode = '011'
+        number = match[1]
+      }
+      
+      // Validar que el número tenga la longitud correcta
+      if (number.length === 7 || number.length === 8) {
+        const normalizedPhone = `+54 9 ${areaCode} ${number.substring(0, 4)} ${number.substring(4)}`
+        return { isValid: true, normalizedPhone }
+      }
+    }
+  }
+  
+  return { 
+    isValid: false, 
+    error: "Formato de teléfono inválido. Use formato argentino: +54 9 11 1234 5678" 
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const { 
+      email, 
+      password, 
+      firstName, 
+      lastName, 
+      phone
+    } = body
+
+    // Validaciones básicas
+    if (!email || !password || !firstName || !lastName) {
+      return NextResponse.json(
+        { message: "Faltan campos requeridos" },
+        { status: 400 }
+      )
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { message: "Formato de email inválido" },
+        { status: 400 }
+      )
+    }
+
+    // Validar longitud de contraseña
+    if (password.length < 6) {
+      return NextResponse.json(
+        { message: "La contraseña debe tener al menos 6 caracteres" },
+        { status: 400 }
+      )
+    }
+
+    // Validar teléfono si se proporciona
+    let normalizedPhone = null
+    if (phone) {
+      const phoneValidation = validateAndNormalizePhone(phone)
+      if (!phoneValidation.isValid) {
+        return NextResponse.json(
+          { message: phoneValidation.error },
+          { status: 400 }
+        )
+      }
+      normalizedPhone = phoneValidation.normalizedPhone
+
+      // Verificar que el teléfono no esté en uso
+      const existingPhone = await prisma.user.findFirst({
+        where: { phoneNumber: normalizedPhone }
+      })
+
+      if (existingPhone) {
+        return NextResponse.json(
+          { message: "Este número de teléfono ya está registrado" },
+          { status: 409 }
+        )
+      }
     }
 
     // Verificar si el usuario ya existe
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email }
     })
 
     if (existingUser) {
-      return NextResponse.json({ message: "El email ya está registrado" }, { status: 400 })
+      return NextResponse.json(
+        { message: "Este email ya está registrado" },
+        { status: 400 }
+      )
     }
 
-    // Encriptar la contraseña
-    const hashedPassword = await bcrypt.hash(password, 10)
+    // Hashear la contraseña
+    const hashedPassword = await bcrypt.hash(password, 12)
 
     // Crear el usuario
     const user = await prisma.user.create({
       data: {
-        firstName,
-        lastName,
         email,
         password: hashedPassword,
+        firstName,
+        lastName,
+        phoneNumber: normalizedPhone,
+        // Campos opcionales
+        // birthDate: birthDate ? new Date(birthDate) : null,
+        // address: address || null,
+        // city: city || null,
+        // postalCode: postalCode || null,
+        isVerified: false, // Por defecto no verificado
+        verificationStatus: "PENDING"
       },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        createdAt: true
+      }
     })
 
-    // Eliminar la contraseña del objeto de respuesta
-    const { password: _, ...userWithoutPassword } = user
-
     return NextResponse.json(
-      {
-        message: "Usuario registrado exitosamente",
-        user: userWithoutPassword,
+      { 
+        message: "Usuario creado exitosamente",
+        user 
       },
-      { status: 201 },
+      { status: 201 }
     )
+
   } catch (error) {
-    console.error("Error al registrar usuario:", error)
-    return NextResponse.json({ message: "Error al registrar usuario" }, { status: 500 })
+    console.error("Error en registro:", error)
+    return NextResponse.json(
+      { message: "Error interno del servidor" },
+      { status: 500 }
+    )
   }
 }
-

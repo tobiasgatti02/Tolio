@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-xl font-bold mb-4">Prestar</h3>
+            <h3 className="text-xl font-bold mb-4">Tolio</h3>
             
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-white">
@@ -80,7 +80,7 @@ export default function Footer() {
         </div>
         <div className="mt-8 pt-8 border-t border-gray-700">
           <p className="text-gray-400 text-sm text-center">
-            &copy; {new Date().getFullYear()} Prestar. Todos los derechos reservados.
+            &copy; {new Date().getFullYear()} Tolio. Todos los derechos reservados.
           </p>
         </div>
       </div>

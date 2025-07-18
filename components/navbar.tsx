@@ -18,7 +18,7 @@ export default function Navbar() {
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
               <span className="text-2xl font-bold text-emerald-600">
-                Prestar
+                Tolio
               </span>
             </Link>
             <nav className="hidden md:ml-10 md:flex md:space-x-8">
@@ -34,12 +34,7 @@ export default function Navbar() {
               >
                 ¿Cómo funciona?
               </Link>
-              <Link
-                href="/lend"
-                className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium"
-              >
-                Presta tus cosas
-              </Link>
+
             </nav>
           </div>
           <div className="hidden md:flex items-center space-x-4">
@@ -129,13 +124,7 @@ export default function Navbar() {
             >
               ¿Cómo funciona?
             </Link>
-            <Link
-              href="/lend"
-              className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Presta tus cosas
-            </Link>
+
             {session && (
               <Link
                 href="/items/nuevo"

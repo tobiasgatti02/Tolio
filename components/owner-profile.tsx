@@ -28,7 +28,7 @@ export default function OwnerProfile({ owner }: OwnerProfileProps) {
           </Link>
           <div className="flex items-center text-sm text-gray-500">
             <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
-            {owner.rating} · {owner.reviews} reviews
+            {owner.rating} · {owner.reviews} confianza
           </div>
         </div>
       </div>

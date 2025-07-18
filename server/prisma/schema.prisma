@@ -8,28 +8,30 @@ datasource db {
 }
 
 model User {
-  id                String         @id @default(uuid())
-  email             String         @unique
-  password          String
-  firstName         String
-  lastName          String
-  profileImage      String?
-  bio               String?
-  phoneNumber       String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  isVerified        Boolean        @default(false)
-  verificationToken String?
-  resetToken        String?
-  resetTokenExpiry  DateTime?
-  bookings          Booking[]      @relation("Borrower")
-  receivedBookings  Booking[]      @relation("Owner")
-  ownedItems        Item[]
-  receivedMessages  Message[]      @relation("Receiver")
-  messages          Message[]      @relation("Sender")
-  notifications     Notification[]
-  receivedReviews   Review[]       @relation("Reviewee")
-  reviews           Review[]       @relation("Reviewer")
+  id                 String            @id @default(uuid())
+  email              String            @unique
+  password           String
+  firstName          String
+  lastName           String
+  profileImage       String?
+  bio                String?
+  phoneNumber        String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  isVerified         Boolean           @default(false)
+  verificationToken  String?
+  resetToken         String?
+  resetTokenExpiry   DateTime?
+  verificationStatus String?           @default("PENDING")
+  bookings           Booking[]         @relation("Borrower")
+  receivedBookings   Booking[]         @relation("Owner")
+  ownedItems         Item[]
+  receivedMessages   Message[]         @relation("Receiver")
+  messages           Message[]         @relation("Sender")
+  notifications      Notification[]
+  receivedReviews    Review[]          @relation("Reviewee")
+  reviews            Review[]          @relation("Reviewer")
+  verificationData   VerificationData?
 }
 
 model Item {
@@ -71,18 +73,19 @@ model Booking {
 }
 
 model Review {
-  id         String   @id @default(uuid())
-  rating     Int
-  comment    String
-  createdAt  DateTime @default(now())
-  itemId     String
-  reviewerId String
-  revieweeId String
-  bookingId  String   @unique
-  booking    Booking  @relation(fields: [bookingId], references: [id])
-  item       Item     @relation(fields: [itemId], references: [id])
-  reviewee   User     @relation("Reviewee", fields: [revieweeId], references: [id])
-  reviewer   User     @relation("Reviewer", fields: [reviewerId], references: [id])
+  id           String   @id @default(uuid())
+  rating       Int
+  comment      String
+  createdAt    DateTime @default(now())
+  itemId       String
+  reviewerId   String
+  revieweeId   String
+  bookingId    String   @unique
+  trustFactors String[]
+  booking      Booking  @relation(fields: [bookingId], references: [id])
+  item         Item     @relation(fields: [itemId], references: [id])
+  reviewee     User     @relation("Reviewee", fields: [revieweeId], references: [id])
+  reviewer     User     @relation("Reviewer", fields: [reviewerId], references: [id])
 }
 
 model Payment {
@@ -121,9 +124,25 @@ model Notification {
 model Category {
   id    Int    @id @default(autoincrement())
   name  String @unique
-  icon String 
-  svg String
+  icon  String
+  svg   String
   items Item[]
+}
+
+model VerificationData {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  documentType     String
+  documentNumber   String
+  frontImageUrl    String
+  backImageUrl     String?
+  verificationDate DateTime
+  status           String
+  rejectionReason  String?
+  metadata         Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id])
 }
 
 enum BookingStatus {
@@ -135,6 +154,7 @@ enum BookingStatus {
 
 enum PaymentStatus {
   PENDING
+  PAID
   COMPLETED
   REFUNDED
   FAILED
@@ -145,6 +165,9 @@ enum NotificationType {
   BOOKING_CONFIRMED
   BOOKING_CANCELLED
   PAYMENT_RECEIVED
+  PAYMENT_PENDING
   REVIEW_RECEIVED
   MESSAGE_RECEIVED
+  MUTUAL_REVIEW_REQUEST
+  BOOKING_COMPLETED
 }

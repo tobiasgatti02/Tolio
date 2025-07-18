@@ -130,30 +130,72 @@ export async function POST(request: Request) {
   }
 
   try {
+    console.log("Starting item creation...")
+    console.log("Session user:", session.user)
+    
+    // Verify that the user exists in the database, create if not exists
+    let userExists = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, firstName: true, lastName: true }
+    })
+    
+    if (!userExists) {
+      console.log("User not found in database, creating user:", session.user.id)
+      
+      // Extract name parts
+      const fullName = session.user.name || 'Usuario Anónimo'
+      const nameParts = fullName.split(' ')
+      const firstName = nameParts[0] || 'Usuario'
+      const lastName = nameParts.slice(1).join(' ') || 'Anónimo'
+      
+      userExists = await prisma.user.create({
+        data: {
+          id: session.user.id,
+          email: session.user.email || `${session.user.id}@tolio.app`,
+          firstName,
+          lastName,
+          password: '', // Empty password since auth is handled by NextAuth
+          profileImage: session.user.image,
+        },
+        select: { id: true, firstName: true, lastName: true }
+      })
+      
+      console.log("User created:", userExists)
+    } else {
+      console.log("User exists in DB:", userExists)
+    }
+    
     const formData = await request.formData()
     
     // Extract text fields
     const title = formData.get('title') as string
     const description = formData.get('description') as string
-    const categoryName = formData.get('category') as string
+    const categoryIdStr = formData.get('category') as string
+    const categoryId = parseInt(categoryIdStr)
     const price = parseFloat(formData.get('price') as string)
     const deposit = parseFloat(formData.get('deposit') as string)
     const location = formData.get('location') as string
     const featuresRaw = formData.get('features') as string
     const features = featuresRaw ? JSON.parse(featuresRaw) : []
 
+    console.log("Form data extracted:", { title, description, categoryId, price, deposit, location, features })
+
     // Basic validation
-    if (!title || !description || !categoryName || isNaN(price) || isNaN(deposit) || !location) {
+    if (!title || !description || isNaN(categoryId) || isNaN(price) || isNaN(deposit) || !location) {
+      console.log("Validation failed: Missing required fields")
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Find the category by name to get its ID
+    // Find the category by ID
+    console.log("Looking for category with ID:", categoryId)
     const category = await prisma.category.findUnique({
-      where: { name: categoryName },
-      select: { id: true }
+      where: { id: categoryId },
+      select: { id: true, name: true }
     })
 
+    console.log("Category found:", category)
     if (!category) {
+      console.log("Category not found with ID:", categoryId)
       return NextResponse.json({ error: "Invalid category" }, { status: 400 })
     }
 
@@ -183,6 +225,18 @@ export async function POST(request: Request) {
     }
 
     // Create the item in the database
+    console.log("Creating item with data:", {
+      title,
+      description,
+      price,
+      deposit,
+      location,
+      features,
+      imageCount: imageUrls.length,
+      ownerId: session.user.id,
+      categoryId: category.id,
+    })
+    
     const newItem = await prisma.item.create({
       data: {
         title,
@@ -198,11 +252,100 @@ export async function POST(request: Request) {
       }
     })
 
+    console.log("Item created successfully:", newItem.id)
     return NextResponse.json(newItem, { status: 201 })
   } catch (error) {
+    console.error("Error creating item:", error)
+    return NextResponse.json({ 
+      error: "Failed to create item", 
+      details: error instanceof Error ? error.message : "Unknown error" 
+    }, { status: 500 })
+  }
+}
+
+export async function PUT(request: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user || !session.user.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  try {
+    const formData = await request.formData()
+    var itemId = formData.get('id') as string
+    // Extract text fields
+    const title = formData.get('title') as string
+    const description = formData.get('description') as string
+    const categoryIdStr = formData.get('category') as string
+    const categoryId = parseInt(categoryIdStr)
+    const price = parseFloat(formData.get('price') as string)
+    const deposit = parseFloat(formData.get('deposit') as string)
+    const location = formData.get('location') as string
+    const featuresRaw = formData.get('features') as string
+    const features = featuresRaw ? JSON.parse(featuresRaw) : []
+
+    // Basic validation
+    if (!title || !description || isNaN(categoryId) || isNaN(price) || isNaN(deposit) || !location) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    // Find the category by ID
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+      select: { id: true }
+    })
+
+    if (!category) {
+      return NextResponse.json({ error: "Invalid category" }, { status: 400 })
+    }
+
+    const imageFiles = formData.getAll('images') as File[]
+    const imageUrls: string[] = []
+
+    if (imageFiles && imageFiles.length > 0) {
+      for (const imageFile of imageFiles) {
+        if (imageFile.size > 0) {
+          // Resize and compress image before storing
+          const buffer = Buffer.from(await imageFile.arrayBuffer())
+          
+          // Optimize the image - resize to max 800px width and compress
+          const optimizedBuffer = await sharp(buffer)
+            .resize({ width: 800, withoutEnlargement: true })
+            .jpeg({ quality: 80 })
+            .toBuffer()
+          
+          // Convert to more efficient base64
+          const base64 = optimizedBuffer.toString('base64')
+          const mimeType = "image/jpeg" // Consistently use JPEG
+          const dataUrl = `data:${mimeType};base64,${base64}`
+
+          imageUrls.push(dataUrl)
+        }
+      }
+    }
+
+    // Create the item in the database
+    const newItem = await prisma.item.update({
+      where: { id: itemId },
+      data: {
+        title,
+        description,
+        price,
+        deposit,
+        location,
+        features,
+        images: imageUrls.length > 0 ? imageUrls : ['/placeholder.svg'],
+        ownerId: session.user.id,
+        isAvailable: true,
+        categoryId: category.id,
+      }
+    })
+
+    return NextResponse.json(newItem, { status: 201 })
+  }
+  catch (error) {
     console.error("Error creating item:", error)
     return NextResponse.json({ error: "Failed to create item" }, { status: 500 })
   }
 }
 
-// REMOVED: The ItemsLayout component that was causing circular dependencies
+

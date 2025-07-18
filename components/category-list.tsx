@@ -1,4 +1,4 @@
-import { getCategories } from "@/app/api/categorias/route"
+import { getCategories } from "@/lib/categories"
 import Link from "next/link"
 
 export default async function CategoryList() {
@@ -14,7 +14,9 @@ export default async function CategoryList() {
           <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-3">
             {category.svg ? (
               <div dangerouslySetInnerHTML={{ __html: category.svg }} />
-            ) : null}
+            ) : (
+              <span className="text-2xl">{category.icon}</span>
+            )}
           </div>
           <span className="text-sm font-medium text-gray-800">{category.name}</span>
         </Link>

@@ -227,7 +227,7 @@ export default function ItemsPage(){
 
               {/* Price range */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Precio por día (€)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Precio por día ($)</label>
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
@@ -327,7 +327,7 @@ export default function ItemsPage(){
 
             {/* Price range */}
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Precio por día (€)</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Precio por día ($)</h3>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="number"
@@ -435,9 +435,9 @@ export default function ItemsPage(){
                 <div className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm flex items-center">
                   <span>
                     Precio:
-                    {searchParams.get("minPrice") ? ` ${searchParams.get("minPrice")}€` : " 0€"}
+                    {searchParams.get("minPrice") ? ` ${searchParams.get("minPrice")}$` : " 0$"}
                     {" - "}
-                    {searchParams.get("maxPrice") ? `${searchParams.get("maxPrice")}€` : "máx"}
+                    {searchParams.get("maxPrice") ? `${searchParams.get("maxPrice")}$` : "máx"}
                   </span>
                   <button
                     onClick={() => updateSearchParams({ minPrice: null, maxPrice: null })}
@@ -499,7 +499,7 @@ export default function ItemsPage(){
                       </div>
                       <div className="mt-auto flex justify-between items-center">
                         <div className="text-gray-900 font-bold">
-                          {item.price}€<span className="text-gray-500 font-normal text-sm">/día</span>
+                          {item.price}$<span className="text-gray-500 font-normal text-sm">/día</span>
                         </div>
                         <div className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full">Disponible</div>
                       </div>

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/utils"
 import { revalidatePath } from "next/cache"
 import { NextResponse } from "next/server"
 import { cache } from "react"
+import { BookingStatus } from "@prisma/client"
 
 // Define the response type
 export type BookingResponse = {
@@ -185,3 +186,112 @@ export const getBookings = cache(async (userId?: string) => {
     throw new Error("Failed to fetch bookings")
   }
 })
+
+export async function handleReservationStatus(bookingId: string, status: BookingStatus): Promise<BookingResponse> {
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user || !session.user.id) {
+    return { 
+      success: false, 
+      error: "Unauthorized" 
+    }
+  }
+
+  const userId = session.user.id
+
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: { status: true, ownerId: true, borrowerId: true }
+    })
+
+    if (!booking) {
+      return { 
+        success: false, 
+        error: "Reserva no encontrada" 
+      }
+    }
+
+    if (booking.ownerId !== userId && booking.borrowerId !== userId) {
+      return { 
+        success: false, 
+        error: "No tienes permiso para modificar esta reserva" 
+      }
+    }
+
+    if (booking.status === "CANCELLED" || booking.status === "COMPLETED") {
+      return { 
+        success: false, 
+        error: "La reserva ya ha sido cancelada o completada" 
+      }
+    }
+
+    if (status === "CANCELLED" && booking.status === "PENDING") {
+      await prisma.booking.delete({
+        where: { id: bookingId }
+      })
+    } else {
+      await prisma.booking.update({
+        where: { id: bookingId },
+        data: { status }
+      })
+    }
+
+    revalidatePath(`/bookings`)
+
+    return { 
+      success: true 
+    }
+  } catch (error) {
+    console.error("Failed to update booking status:", error)
+    return { 
+      success: false, 
+      error: "Error al actualizar el estado de la reserva. Por favor, inténtalo de nuevo." 
+    }
+  }
+}
+
+export async function getBookingById(bookingId: string ) {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        item: {
+          select: {
+            id: true,
+            title: true,
+            price: true,
+            images: true,
+          }
+        },
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImage: true,
+          }
+        },
+        borrower: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImage: true,
+          }
+        }
+      }
+    })
+
+    return {
+      ...booking, // Correctly spread the booking object
+      startDate: booking?.startDate,
+      endDate: booking?.endDate,
+      createdAt: booking?.createdAt,
+      updatedAt: booking?.updatedAt
+    }
+  } catch (error) {
+    console.error("Failed to fetch booking:", error)
+    throw new Error("Failed to fetch booking")
+  }
+  
+}

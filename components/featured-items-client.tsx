@@ -69,7 +69,7 @@ export default function FeaturedItemsClient({ items }: FeaturedItemsClientProps)
                 <div className="flex items-center mb-2">
                   <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                   <span className="text-sm font-medium ml-1">{item.rating}</span>
-                  <span className="text-xs text-gray-500 ml-1">({item.reviewCount} reviews)</span>
+                  <span className="text-xs text-gray-500 ml-1">({item.reviewCount} confianza)</span>
                 </div>
               )}
               <div className="flex justify-between items-center">

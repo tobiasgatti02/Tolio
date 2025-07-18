@@ -5,6 +5,7 @@ import { Calendar, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 import { createBooking } from "@/app/api/booking/route"
+import { Yesteryear } from "next/font/google"
 
 interface BookingFormProps {
   itemId: string
@@ -38,11 +39,13 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
       const start = new Date(startDate)
       const end = new Date(endDate)
       const today = new Date()
+      let yesterday = new Date()
+      yesterday.setDate(today.getDate() - 1)
       today.setHours(0, 0, 0, 0)
 
       setError("")
       
-      if (start < today) {
+      if (start < yesterday) {
         setError("La fecha de inicio no puede ser en el pasado")
       } else if (start >= end) {
         setError("La fecha de finalización debe ser posterior a la fecha de inicio")
@@ -54,11 +57,9 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
     setIsSubmitting(true)
     setError("")
     
-    // Add itemId to the form data
     formData.append("itemId", itemId)
     
     try {
-      // Use the server action
       const result = await createBooking(formData)
       
       if (result.success && result.bookingId) {
@@ -144,17 +145,17 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
       <div className="bg-gray-50 p-4 rounded-lg">
         <div className="flex justify-between mb-2">
           <span>
-            {price}€ × {totalDays} días
+            {price}$ × {totalDays} días
           </span>
-          <span>{price * totalDays}€</span>
+          <span>{price * totalDays}$</span>
         </div>
         <div className="flex justify-between mb-2">
           <span>Comisión de servicio</span>
-          <span>{Math.round(price * totalDays * 0.1)}€</span>
+          <span>{Math.round(price * totalDays * 0.1)}$</span>
         </div>
         <div className="border-t pt-2 mt-2 font-bold flex justify-between">
           <span>Total</span>
-          <span>{price * totalDays + Math.round(price * totalDays * 0.1)}€</span>
+          <span>{price * totalDays + Math.round(price * totalDays * 0.1)}$</span>
         </div>
       </div>
 

@@ -9,7 +9,9 @@ import { Suspense } from "react"
 import ReviewListSkeleton from "@/components/review-list-skeleton" // new
 
 export default async function ItemPage({ params }: { params: { id: string } }) {
+  console.log('start1')
   const items = await getItemById(params.id)
+  console.log('end')
   const item = Array.isArray(items) && items.length > 0 ? items[0] : null
   
   if (!item) {
