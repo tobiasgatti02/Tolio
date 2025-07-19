@@ -13,7 +13,7 @@ export async function GET() {
 
     const items = await DashboardService.getUserItems(session.user.id)
 
-    return NextResponse.json(items)
+    return NextResponse.json({ items })
   } catch (error) {
     console.error('Error in dashboard items API:', error)
     return NextResponse.json(

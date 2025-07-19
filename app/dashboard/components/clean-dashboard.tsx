@@ -13,17 +13,20 @@ import {
   Wallet, ArrowUpRight, ArrowDownRight, Menu, X,
   ChevronDown, ChevronRight
 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { STATUS_COLORS, BOOKING_STATUS, ERROR_MESSAGES } from "@/lib/dashboard-constants"
+import { DashboardBooking, DashboardStats, DashboardItem, DashboardReview, DashboardNotification } from "@/lib/types"
 
-interface DashboardStats {
-  totalItems: number
-  activeBookings: number
-  pendingBookings: number
-  completedBookings: number
-  totalEarnings: number
-  trustScore: number
-  notifications: number
-  todayEarnings: number
-  monthlyEarnings: number
+interface MenuItem {
+  id: string
+  label: string
+  icon: any
+  path: string
+  count?: number
+  subItems?: MenuItem[]
 }
 
 interface NotificationItem {
@@ -34,39 +37,6 @@ interface NotificationItem {
   createdAt: Date
   read: boolean
   actionUrl?: string
-}
-
-interface DashboardItem {
-  id: string
-  title: string
-  images: string[]
-  price: number
-  isAvailable: boolean
-  bookings: number
-  earnings: number
-  category: string
-  createdAt: Date
-}
-
-interface BookingItem {
-  id: string
-  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
-  item: {
-    id: string
-    title: string
-    images: string[]
-    price: number
-  }
-  borrower: {
-    id: string
-    firstName: string
-    profileImage?: string
-    }
-  startDate: Date
-  endDate: Date
-  totalAmount: number
-  paymentStatus: 'PENDING' | 'PAID' | 'COMPLETED' | 'REFUNDED' | 'FAILED'
-  createdAt: Date
 }
 
 export default function CleanDashboard({ 
@@ -81,6 +51,7 @@ export default function CleanDashboard({
   
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [stats, setStats] = useState<DashboardStats>({
     totalItems: 0,
     activeBookings: 0,
@@ -94,7 +65,7 @@ export default function CleanDashboard({
   })
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [items, setItems] = useState<DashboardItem[]>([])
-  const [bookings, setBookings] = useState<BookingItem[]>([])
+  const [bookings, setBookings] = useState<DashboardBooking[]>([])
   const [dropdowns, setDropdowns] = useState<{[key: string]: boolean}>({})
 
   // Determinar la sección activa basada en la URL
@@ -117,6 +88,7 @@ export default function CleanDashboard({
       
       try {
         setLoading(true)
+        setError(null)
         
         // Usar URLs relativas en su lugar
         const [statsRes, itemsRes, bookingsRes, notificationsRes] = await Promise.all([
@@ -126,36 +98,44 @@ export default function CleanDashboard({
           fetch('/api/dashboard/notifications')
         ])
 
+        // Manejar respuestas de stats
         if (statsRes.ok) {
           const statsData = await statsRes.json()
           setStats(statsData)
+        } else if (statsRes.status === 401) {
+          setError('Sesión expirada. Por favor, inicia sesión nuevamente.')
+          return
         } else {
           console.error('Error fetching stats:', statsRes.status, statsRes.statusText)
         }
 
+        // Manejar respuestas de items
         if (itemsRes.ok) {
           const itemsData = await itemsRes.json()
           setItems(itemsData)
-        } else {
+        } else if (itemsRes.status !== 401) {
           console.error('Error fetching items:', itemsRes.status, itemsRes.statusText)
         }
 
+        // Manejar respuestas de bookings
         if (bookingsRes.ok) {
           const bookingsData = await bookingsRes.json()
           setBookings(bookingsData)
-        } else {
+        } else if (bookingsRes.status !== 401) {
           console.error('Error fetching bookings:', bookingsRes.status, bookingsRes.statusText)
         }
 
+        // Manejar respuestas de notifications
         if (notificationsRes.ok) {
           const notificationsData = await notificationsRes.json()
           setNotifications(notificationsData)
-        } else {
+        } else if (notificationsRes.status !== 401) {
           console.error('Error fetching notifications:', notificationsRes.status, notificationsRes.statusText)
         }
 
       } catch (error) {
-        console.error('Error cargando datos del dashboard:', error)
+        console.error('Error fetching dashboard data:', error)
+        setError('Error al cargar los datos del dashboard.')
       } finally {
         setLoading(false)
       }
@@ -164,34 +144,27 @@ export default function CleanDashboard({
     fetchDashboardData()
   }, [])
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     { 
       id: 'overview', 
       label: 'Resumen', 
       icon: Home, 
       path: '/dashboard',
-      count: stats.notifications > 0 ? stats.notifications : undefined
+      count: (stats.notifications || 0) > 0 ? stats.notifications : undefined
     },
     { 
       id: 'items', 
       label: 'Mis Artículos', 
       icon: Package, 
       path: '/dashboard/my-items',
-      count: stats.totalItems,
-      subItems: [
-        { label: 'Publicar artículo', path: '/items/nuevo', icon: Plus },
-      ]
+      count: stats.totalItems || 0,
     },
     { 
       id: 'bookings', 
       label: 'Reservas', 
       icon: Calendar, 
       path: '/dashboard/bookings',
-      count: stats.activeBookings + stats.pendingBookings,
-      subItems: [
-        { label: 'Reservas activas', path: '/dashboard/bookings?status=active', icon: Clock },
-        { label: 'Historial', path: '/dashboard/bookings?status=completed', icon: CheckCircle }
-      ]
+      count: (stats.activeBookings || 0) + (stats.pendingBookings || 0),
     },
     { 
       id: 'reviews', 
@@ -204,11 +177,6 @@ export default function CleanDashboard({
       label: 'Configuración', 
       icon: Settings, 
       path: '/dashboard/settings',
-      subItems: [
-        { label: 'Perfil', path: '/dashboard/settings?tab=profile', icon: User },
-        { label: 'Pagos', path: '/dashboard/settings?tab=payments', icon: CreditCard },
-        { label: 'Notificaciones', path: '/dashboard/settings?tab=notifications', icon: Bell }
-      ]
     },
   ]
 
@@ -223,13 +191,40 @@ export default function CleanDashboard({
     if (pathname === '/dashboard') {
       return (
         <div className="space-y-6">
+          {/* Error state */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Error</h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p>{error}</p>
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded text-sm font-medium transition-colors"
+                    >
+                      Reintentar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Estadísticas principales */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white p-6 rounded-xl border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Artículos publicados</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalItems}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalItems || 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <Package className="w-6 h-6 text-blue-600" />
@@ -241,7 +236,7 @@ export default function CleanDashboard({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Reservas activas</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.activeBookings}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.activeBookings || 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                   <Calendar className="w-6 h-6 text-green-600" />
@@ -253,7 +248,7 @@ export default function CleanDashboard({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Ganancias totales</p>
-                  <p className="text-2xl font-bold text-gray-900">${stats.totalEarnings.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-gray-900">${(stats.totalEarnings || 0).toLocaleString()}</p>
                 </div>
                 <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
                   <DollarSign className="w-6 h-6 text-emerald-600" />
@@ -265,7 +260,7 @@ export default function CleanDashboard({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Puntuación</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.trustScore.toFixed(1)}/5.0</p>
+                  <p className="text-2xl font-bold text-gray-900">{(stats.trustScore || 0).toFixed(1)}/5.0</p>
                 </div>
                 <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                   <Star className="w-6 h-6 text-yellow-600" />
@@ -285,17 +280,21 @@ export default function CleanDashboard({
                       <Calendar className="w-5 h-5 text-gray-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{booking.item.title}</p>
-                      <p className="text-sm text-gray-500">Reservado por {booking?.borrower.firstName}</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">{booking.item.nombre}</p>
+                      <p className="text-sm text-gray-500">
+                        {booking.borrower ? `Reservado por ${booking.borrower.name}` : 
+                         booking.owner ? `Prestado a ${booking.owner.name}` : 
+                         'Información de usuario no disponible'}
+                      </p>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      booking.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
-                      booking.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                        <Badge className={`${
+                      booking.status === 'CONFIRMADA' ? 'bg-green-100 text-green-800' :
+                      booking.status === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
-                      {booking.status === 'CONFIRMED' ? 'Confirmado' :
-                       booking.status === 'PENDING' ? 'Pendiente' : booking.status}
-                    </span>
+                      {booking.status === 'CONFIRMADA' ? 'Confirmado' :
+                       booking.status === 'PENDIENTE' ? 'Pendiente' : booking.status}
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -371,15 +370,15 @@ export default function CleanDashboard({
             {!loading && (
               <div className="mt-4 grid grid-cols-3 gap-3 text-center">
                 <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-lg font-bold text-gray-900">{stats.trustScore.toFixed(1)}</p>
+                  <p className="text-lg font-bold text-gray-900">{(stats.trustScore || 0).toFixed(1)}</p>
                   <p className="text-xs text-gray-500">Confianza</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-lg font-bold text-gray-900">{stats.totalItems}</p>
+                  <p className="text-lg font-bold text-gray-900">{stats.totalItems || 0}</p>
                   <p className="text-xs text-gray-500">Artículos</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2 mx-auto">
-                  <p className="text-lg font-bold text-gray-900">${stats.totalEarnings.toLocaleString()}</p>
+                  <p className="text-lg font-bold text-gray-900">${(stats.totalEarnings || 0).toLocaleString()}</p>
                   <p className="text-xs text-gray-500">Ganado</p>
                 </div>
               </div>
@@ -433,7 +432,7 @@ export default function CleanDashboard({
                 </div>
                 {item.subItems && dropdowns[item.id] && (
                   <div className="ml-8 mt-2 space-y-1">
-                    {item.subItems.map((subItem, index) => (
+                    {item.subItems.map((subItem: MenuItem, index: number) => (
                       <Link
                         key={index}
                         href={subItem.path}
@@ -470,8 +469,46 @@ export default function CleanDashboard({
         <div className="flex-1 lg:ml-0">
           <main className="p-6">
             {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="space-y-6">
+                {/* Loading skeleton for stats */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="bg-white p-6 rounded-xl border border-gray-200">
+                      <div className="animate-pulse">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-2">
+                            <div className="h-4 bg-gray-200 rounded w-24"></div>
+                            <div className="h-8 bg-gray-200 rounded w-16"></div>
+                          </div>
+                          <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Loading skeleton for charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {[...Array(2)].map((_, i) => (
+                    <div key={i} className="bg-white p-6 rounded-xl border border-gray-200">
+                      <div className="animate-pulse">
+                        <div className="h-4 bg-gray-200 rounded w-32 mb-4"></div>
+                        <div className="space-y-3">
+                          {[...Array(3)].map((_, j) => (
+                            <div key={j} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                              <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                              <div className="flex-1 space-y-2">
+                                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                              </div>
+                              <div className="h-6 bg-gray-200 rounded w-16"></div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
               renderContent()

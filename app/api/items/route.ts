@@ -39,13 +39,7 @@ export async function GET(request: Request) {
     
     // Apply category filter
     if (category) {
-      const categoryObj = await prisma.category.findUnique({
-        where: { name: category }
-      })
-      
-      if (categoryObj) {
-        where.categoryId = categoryObj.id
-      }
+      where.category = { contains: category, mode: 'insensitive' }
     }
     
     // Apply price filters
@@ -76,12 +70,11 @@ export async function GET(request: Request) {
         orderBy = { createdAt: 'desc' } // Default sort
     }
     
-    // Execute the query with filters
+        // Execute the query with filters
     const items = await prisma.item.findMany({
       where,
       orderBy,
       include: {
-        category: true,
         reviews: true,
         owner: {
           select: {
@@ -98,7 +91,7 @@ export async function GET(request: Request) {
     const formattedItems = items.map(item => {
       // Calculate average rating
       const averageRating = item.reviews.length > 0
-        ? item.reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / item.reviews.length
+        ? item.reviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0) / item.reviews.length
         : 0
         
       return {
@@ -107,7 +100,7 @@ export async function GET(request: Request) {
         description: item.description,
         price: item.price,
         location: item.location,
-        category: item.category?.name, // Return the category name, not the object
+        category: item.category, // Return the category string directly
         rating: parseFloat(averageRating.toFixed(1)),
         reviews: item.reviews.length,
         features: item.features,
@@ -170,33 +163,19 @@ export async function POST(request: Request) {
     // Extract text fields
     const title = formData.get('title') as string
     const description = formData.get('description') as string
-    const categoryIdStr = formData.get('category') as string
-    const categoryId = parseInt(categoryIdStr)
+    const category = formData.get('category') as string
     const price = parseFloat(formData.get('price') as string)
     const deposit = parseFloat(formData.get('deposit') as string)
     const location = formData.get('location') as string
     const featuresRaw = formData.get('features') as string
     const features = featuresRaw ? JSON.parse(featuresRaw) : []
 
-    console.log("Form data extracted:", { title, description, categoryId, price, deposit, location, features })
+    console.log("Form data extracted:", { title, description, category, price, deposit, location, features })
 
     // Basic validation
-    if (!title || !description || isNaN(categoryId) || isNaN(price) || isNaN(deposit) || !location) {
+    if (!title || !description || !category || isNaN(price) || isNaN(deposit) || !location) {
       console.log("Validation failed: Missing required fields")
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-    }
-
-    // Find the category by ID
-    console.log("Looking for category with ID:", categoryId)
-    const category = await prisma.category.findUnique({
-      where: { id: categoryId },
-      select: { id: true, name: true }
-    })
-
-    console.log("Category found:", category)
-    if (!category) {
-      console.log("Category not found with ID:", categoryId)
-      return NextResponse.json({ error: "Invalid category" }, { status: 400 })
     }
 
     const imageFiles = formData.getAll('images') as File[]
@@ -234,7 +213,7 @@ export async function POST(request: Request) {
       features,
       imageCount: imageUrls.length,
       ownerId: session.user.id,
-      categoryId: category.id,
+      category: category,
     })
     
     const newItem = await prisma.item.create({
@@ -248,7 +227,7 @@ export async function POST(request: Request) {
         images: imageUrls.length > 0 ? imageUrls : ['/placeholder.svg'],
         ownerId: session.user.id,
         isAvailable: true,
-        categoryId: category.id,
+        category: category,
       }
     })
 
@@ -275,8 +254,7 @@ export async function PUT(request: Request) {
     // Extract text fields
     const title = formData.get('title') as string
     const description = formData.get('description') as string
-    const categoryIdStr = formData.get('category') as string
-    const categoryId = parseInt(categoryIdStr)
+    const category = formData.get('category') as string
     const price = parseFloat(formData.get('price') as string)
     const deposit = parseFloat(formData.get('deposit') as string)
     const location = formData.get('location') as string
@@ -284,21 +262,9 @@ export async function PUT(request: Request) {
     const features = featuresRaw ? JSON.parse(featuresRaw) : []
 
     // Basic validation
-    if (!title || !description || isNaN(categoryId) || isNaN(price) || isNaN(deposit) || !location) {
+    if (!title || !description || !category || isNaN(price) || isNaN(deposit) || !location) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-    }
-
-    // Find the category by ID
-    const category = await prisma.category.findUnique({
-      where: { id: categoryId },
-      select: { id: true }
-    })
-
-    if (!category) {
-      return NextResponse.json({ error: "Invalid category" }, { status: 400 })
-    }
-
-    const imageFiles = formData.getAll('images') as File[]
+    }    const imageFiles = formData.getAll('images') as File[]
     const imageUrls: string[] = []
 
     if (imageFiles && imageFiles.length > 0) {
@@ -336,16 +302,18 @@ export async function PUT(request: Request) {
         images: imageUrls.length > 0 ? imageUrls : ['/placeholder.svg'],
         ownerId: session.user.id,
         isAvailable: true,
-        categoryId: category.id,
+        category: category,
       }
     })
 
     return NextResponse.json(newItem, { status: 201 })
-  }
-  catch (error) {
+    return NextResponse.json(newItem, { status: 201 })
+  } catch (error) {
     console.error("Error creating item:", error)
-    return NextResponse.json({ error: "Failed to create item" }, { status: 500 })
+    return NextResponse.json({ 
+      error: "Failed to create item", 
+      details: error instanceof Error ? error.message : "Unknown error" 
+    }, { status: 500 })
   }
 }
-
 

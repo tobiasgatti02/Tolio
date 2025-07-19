@@ -5,9 +5,12 @@ import Link from "next/link";
 import { Menu, X, Bell } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import NotificationBadge from "./ui/notification-badge";
+import NotificationsPanel from "./ui/notifications-panel";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const { data: session } = useSession();
   const Router = useRouter();
 
@@ -38,14 +41,13 @@ export default function Navbar() {
             </nav>
           </div>
           <div className="hidden md:flex items-center space-x-4">
-            <Link
-              href="/notifications"
-              className="text-gray-700 hover:text-emerald-600 p-1 rounded-full"
-            >
-              <Bell className="h-6 w-6" />
-            </Link>
+            {session && session.user?.id && (
+              <NotificationBadge 
+                userId={session.user.id}
+                onClick={() => setIsNotificationsOpen(true)}
+              />
+            )}
 
-          
             {session && (
               <Link
                 href="/dashboard"
@@ -165,6 +167,15 @@ export default function Navbar() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Panel de notificaciones */}
+      {session && session.user?.id && (
+        <NotificationsPanel
+          isOpen={isNotificationsOpen}
+          onClose={() => setIsNotificationsOpen(false)}
+          userId={session.user.id}
+        />
       )}
     </header>
   );

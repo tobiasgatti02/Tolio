@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { 
   PenTool, Car, Laptop, Camera as CameraIcon, Music, 
-  Book, Tent, Utensils, Monitor, Gamepad2, Home 
+  Book, Tent, Utensils, Monitor, Gamepad2, Home
 } from 'lucide-react'
 
 interface FormData {
@@ -287,22 +287,22 @@ export default function EnhancedCreateItemForm() {
           </label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {categories.map((category) => {
-              const IconComponent = categoryIcons[category.name] || Monitor
+              const IconComponent = categoryIcons[category.nombre] || Monitor
               return (
                 <button
                   key={category.id}
                   type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, category: category.id }))}
+                  onClick={() => setFormData(prev => ({ ...prev, category: category.nombre }))}
                   className={`
                     p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105
-                    ${formData.category === category.id
+                    ${formData.category === category.nombre
                       ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                       : 'border-gray-200 hover:border-emerald-300'
                     }
                   `}
                 >
                   <IconComponent className="w-6 h-6 mx-auto mb-2" />
-                  <span className="text-sm font-medium">{category.name}</span>
+                  <span className="text-sm font-medium">{category.nombre}</span>
                 </button>
               )
             })}

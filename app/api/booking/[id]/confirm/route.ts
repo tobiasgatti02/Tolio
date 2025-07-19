@@ -49,7 +49,16 @@ export async function PATCH(
       data: {
         userId: booking.borrowerId,
         type: "BOOKING_CONFIRMED",
+        title: "Reserva confirmada",
         content: `Tu reserva para "${booking.item.title}" ha sido confirmada`,
+        bookingId: bookingId,
+        itemId: booking.itemId,
+        actionUrl: `/dashboard/bookings/${bookingId}`,
+        metadata: {
+          bookingId,
+          itemTitle: booking.item.title,
+          ownerName: booking.item.owner.firstName + ' ' + booking.item.owner.lastName
+        }
       }
     })
 

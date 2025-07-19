@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { 
   Calendar, Clock, CheckCircle, XCircle, 
   Filter, Search, Star, Eye, MessageCircle,
@@ -8,35 +9,8 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { DashboardBooking } from '@/lib/types'
 import ReviewModal from "./review-modal"
-
-interface BookingItem {
-  id: string
-  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
-  item: {
-    id: string
-    title: string
-    images: string[]
-    price: number
-  }
-  borrower: {
-    id: string
-    firstName: string
-    profileImage?: string | null
-  }
-  owner: {
-    id: string
-    firstName: string
-    profileImage?: string | null
-  }
-  startDate: Date
-  endDate: Date
-  totalAmount: number
-  paymentStatus: 'PENDING' | 'PAID' | 'COMPLETED' | 'REFUNDED' | 'FAILED'
-  createdAt: Date
-  canReview: boolean
-  hasReviewed: boolean
-}
 
 interface BookingsStats {
   totalSpent: number
@@ -45,8 +19,8 @@ interface BookingsStats {
 }
 
 export default function BookingsClient({ userId }: { userId: string }) {
-  const [bookings, setBookings] = useState<BookingItem[]>([])
-  const [filteredBookings, setFilteredBookings] = useState<BookingItem[]>([])
+  const [bookings, setBookings] = useState<DashboardBooking[]>([])
+  const [filteredBookings, setFilteredBookings] = useState<DashboardBooking[]>([])
   const [stats, setStats] = useState<BookingsStats>({
     totalSpent: 0,
     activeBookings: 0,
@@ -55,7 +29,7 @@ export default function BookingsClient({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'completed'>('all')
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedBooking, setSelectedBooking] = useState<BookingItem | null>(null)
+  const [selectedBooking, setSelectedBooking] = useState<DashboardBooking | null>(null)
   const [showReviewModal, setShowReviewModal] = useState(false)
 
   useEffect(() => {
@@ -82,19 +56,20 @@ export default function BookingsClient({ userId }: { userId: string }) {
     }
   }
 
-  const calculateStats = (bookingsData: BookingItem[]) => {
-    const userBookings = bookingsData.filter(booking => booking.borrower.id === userId)
+  const calculateStats = (bookingsData: DashboardBooking[]) => {
+    // Filter bookings where current user is the borrower (has spent money)
+    const userBookings = bookingsData.filter(booking => booking.userRole === 'borrower')
     
     const totalSpent = userBookings
-      .filter(booking => booking.status === 'COMPLETED')
-      .reduce((sum, booking) => sum + booking.totalAmount, 0)
+      .filter(booking => booking.status === 'COMPLETADA')
+      .reduce((sum, booking) => sum + booking.total, 0)
     
     const activeBookings = bookingsData.filter(booking => 
-      ['PENDING', 'CONFIRMED'].includes(booking.status)
+      ['PENDIENTE', 'CONFIRMADA'].includes(booking.status)
     ).length
     
     const completedBookings = bookingsData.filter(booking => 
-      booking.status === 'COMPLETED'
+      booking.status === 'COMPLETADA'
     ).length
 
     setStats({ totalSpent, activeBookings, completedBookings })
@@ -105,17 +80,17 @@ export default function BookingsClient({ userId }: { userId: string }) {
 
     // Aplicar filtro por estado
     if (activeFilter === 'active') {
-      filtered = filtered.filter(booking => ['PENDING', 'CONFIRMED'].includes(booking.status))
+      filtered = filtered.filter(booking => ['PENDIENTE', 'CONFIRMADA'].includes(booking.status))
     } else if (activeFilter === 'completed') {
-      filtered = filtered.filter(booking => booking.status === 'COMPLETED')
+      filtered = filtered.filter(booking => booking.status === 'COMPLETADA')
     }
 
     // Aplicar búsqueda
     if (searchTerm) {
       filtered = filtered.filter(booking =>
-        booking.item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.borrower.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.owner.firstName.toLowerCase().includes(searchTerm.toLowerCase())
+        booking.item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (booking.borrower?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (booking.owner?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
 
@@ -162,7 +137,7 @@ export default function BookingsClient({ userId }: { userId: string }) {
     return format(dateObj, "d 'de' MMMM, yyyy", { locale: es })
   }
 
-  const openReviewModal = (booking: BookingItem) => {
+  const openReviewModal = (booking: DashboardBooking) => {
     setSelectedBooking(booking)
     setShowReviewModal(true)
   }
@@ -171,6 +146,26 @@ export default function BookingsClient({ userId }: { userId: string }) {
     setSelectedBooking(null)
     setShowReviewModal(false)
     fetchBookings() // Refresh data after review
+  }
+
+  const handleBookingAction = async (bookingId: string, action: 'confirm' | 'reject') => {
+    try {
+      const response = await fetch(`/api/booking/${bookingId}/${action}`, {
+        method: 'PATCH'
+      })
+      
+      if (response.ok) {
+        // Refrescar las reservas
+        fetchBookings()
+        alert(`Reserva ${action === 'confirm' ? 'confirmada' : 'rechazada'} exitosamente`)
+      } else {
+        const errorData = await response.json()
+        alert(`Error: ${errorData.message || 'No se pudo procesar la reserva'}`)
+      }
+    } catch (error) {
+      console.error('Error processing booking:', error)
+      alert('Error al procesar la reserva')
+    }
   }
 
   if (loading) {
@@ -309,7 +304,7 @@ export default function BookingsClient({ userId }: { userId: string }) {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredBookings.map((booking) => {
                   const statusInfo = getStatusInfo(booking.status)
-                  const isOwner = booking.owner.id === userId
+                  const isOwner = booking.userRole === 'owner'
                   const otherUser = isOwner ? booking.borrower : booking.owner
                   
                   return (
@@ -319,46 +314,46 @@ export default function BookingsClient({ userId }: { userId: string }) {
                           <div className="flex-shrink-0 h-12 w-12">
                             <img
                               className="h-12 w-12 rounded-lg object-cover"
-                              src={booking.item.images[0] || '/placeholder.jpg'}
-                              alt={booking.item.title}
+                              src={booking.item.imagenes[0] || '/placeholder.jpg'}
+                              alt={booking.item.nombre}
                             />
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
-                              {booking.item.title}
+                              {booking.item.nombre}
                             </div>
                             <div className="text-sm text-gray-500">
-                              ${booking.item.price}/día
+                              ${booking.item.precioPorDia}/día
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {formatDate(booking.startDate)}
+                          {formatDate(booking.fechaInicio)}
                         </div>
                         <div className="text-sm text-gray-500">
-                          hasta {formatDate(booking.endDate)}
+                          hasta {formatDate(booking.fechaFin)}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-8 w-8">
-                            {otherUser.profileImage ? (
-                              <img
-                                className="h-8 w-8 rounded-full"
-                                src={otherUser.profileImage}
-                                alt=""
-                              />
+                            {otherUser ? (
+                              <>
+                                <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                  {otherUser.name.charAt(0).toUpperCase()}
+                                </div>
+                              </>
                             ) : (
-                              <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                                {otherUser.firstName.charAt(0).toUpperCase()}
+                              <div className="h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-sm font-medium">
+                                ?
                               </div>
                             )}
                           </div>
                           <div className="ml-3">
                             <div className="text-sm font-medium text-gray-900">
-                              {otherUser.firstName}
+                              {otherUser?.name || 'Usuario no disponible'}
                             </div>
                             <div className="text-sm text-gray-500">
                               {isOwner ? 'Prestatario' : 'Prestador'}
@@ -368,10 +363,7 @@ export default function BookingsClient({ userId }: { userId: string }) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          ${booking.totalAmount.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {booking.paymentStatus}
+                          ${booking.total.toLocaleString()}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -382,21 +374,46 @@ export default function BookingsClient({ userId }: { userId: string }) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          <button className="text-blue-600 hover:text-blue-900">
+                          <Link href={`/dashboard/bookings/${booking.id}`} className="text-blue-600 hover:text-blue-900" title="Ver detalles">
                             <Eye className="w-4 h-4" />
-                          </button>
+                          </Link>
+                          
+                          {/* Botones para propietario con reserva pendiente */}
+                          {isOwner && booking.status === 'PENDIENTE' && (
+                            <>
+                              <button
+                                onClick={() => handleBookingAction(booking.id, 'confirm')}
+                                className="text-green-600 hover:text-green-900 px-2 py-1 rounded-md hover:bg-green-50"
+                                title="Aceptar reserva"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleBookingAction(booking.id, 'reject')}
+                                className="text-red-600 hover:text-red-900 px-2 py-1 rounded-md hover:bg-red-50"
+                                title="Rechazar reserva"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+
                           {booking.canReview && !booking.hasReviewed && (
                             <button
                               onClick={() => openReviewModal(booking)}
-                              className="text-green-600 hover:text-green-900"
+                              className="text-yellow-600 hover:text-yellow-900"
                               title="Calificar"
                             >
                               <Star className="w-4 h-4" />
                             </button>
                           )}
-                          <button className="text-gray-600 hover:text-gray-900">
+                          <Link 
+                            href={`/messages/${otherUser?.id}`} 
+                            className="text-gray-600 hover:text-gray-900" 
+                            title="Enviar mensaje"
+                          >
                             <MessageCircle className="w-4 h-4" />
-                          </button>
+                          </Link>
                         </div>
                       </td>
                     </tr>

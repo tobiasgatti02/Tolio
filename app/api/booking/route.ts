@@ -104,14 +104,40 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
         itemId,
         borrowerId: userId,
         ownerId: item.ownerId
+      },
+      include: {
+        item: {
+          select: {
+            title: true
+          }
+        },
+        borrower: {
+          select: {
+            firstName: true,
+            lastName: true
+          }
+        }
       }
     })
 
     await prisma.notification.create({
       data: {
         type: "BOOKING_REQUEST",
-        content: `Tienes un nuevo pedido de alquiler!`,
-        userId: item.ownerId
+        title: "Nueva solicitud de reserva",
+        content: `${booking.borrower.firstName} ${booking.borrower.lastName} quiere alquilar "${booking.item.title}"`,
+        userId: item.ownerId,
+        bookingId: booking.id,
+        itemId: itemId,
+        actionUrl: `/dashboard/bookings/${booking.id}`,
+        metadata: {
+          bookingId: booking.id,
+          itemId: itemId,
+          itemTitle: booking.item.title,
+          borrowerName: `${booking.borrower.firstName} ${booking.borrower.lastName}`,
+          startDate: startDate,
+          endDate: endDate,
+          totalPrice: totalPrice
+        }
       }
     })
 

@@ -1,16 +1,11 @@
 import { PrismaClient } from '@prisma/client'
 import { DashboardStats, DashboardItem, DashboardBooking, DashboardReview, DashboardNotification } from './types'
-import { ERROR_MESSAGES, DASHBOARD_CONFIG } from './dashboard-constants'
 
 const prisma = new PrismaClient()
 
 export class DashboardService {
   
   static async getUserStats(userId: string): Promise<DashboardStats> {
-    if (!userId || typeof userId !== 'string') {
-      throw new Error(ERROR_MESSAGES.INVALID_USER_ID)
-    }
-
     try {
       const [
         totalItems,
@@ -34,8 +29,7 @@ export class DashboardService {
           select: {
             status: true,
             totalPrice: true,
-            borrowerId: true,
-            createdAt: true
+            borrowerId: true
           }
         }),
         
@@ -62,8 +56,8 @@ export class DashboardService {
       ])
 
       const activeBookings = userBookings.filter(b => b.status === 'CONFIRMED').length
-      const pendingBookings = userBookings.filter(b => b.status === 'PENDING').length
       const completedBookings = userBookings.filter(b => b.status === 'COMPLETED').length
+      const pendingBookings = userBookings.filter(b => b.status === 'PENDING').length
       
       // Ganancias (como prestador)
       const totalEarnings = userBookings
@@ -79,43 +73,33 @@ export class DashboardService {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       const todayEarnings = userBookings
-        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && new Date(b.createdAt) >= today)
+        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId)
         .reduce((sum, b) => sum + (b.totalPrice || 0), 0)
 
       // Ganancias del mes
-      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
       const monthlyEarnings = userBookings
-        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && new Date(b.createdAt) >= monthStart)
+        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId)
         .reduce((sum, b) => sum + (b.totalPrice || 0), 0)
 
       const averageRating = userReviews.length > 0 
         ? userReviews.reduce((sum, r) => sum + r.rating, 0) / userReviews.length 
         : 0
 
-      // Calcular trustScore basado en rating promedio, cantidad de reviews y bookings completados
-      let trustScore: number = DASHBOARD_CONFIG.DEFAULT_TRUST_SCORE
-      if (averageRating > 0) {
-        trustScore = Math.min(
-          DASHBOARD_CONFIG.MAX_TRUST_SCORE, 
-          averageRating * DASHBOARD_CONFIG.TRUST_SCORE_WEIGHTS.RATING + 
-          (userReviews.length / 10) * DASHBOARD_CONFIG.TRUST_SCORE_WEIGHTS.REVIEW_COUNT + 
-          (completedBookings / 20) * DASHBOARD_CONFIG.TRUST_SCORE_WEIGHTS.BOOKING_COUNT
-        )
-      }
+      const trustScore = Math.min(100, Math.max(0, averageRating * 20))
 
       return {
-        totalItems,
-        activeBookings,
-        pendingBookings,
-        completedBookings,
         totalEarnings,
-        trustScore: Math.round(trustScore * 10) / 10, // Redondear a 1 decimal
-        notifications: notifications,
-        todayEarnings,
-        monthlyEarnings,
-        // Campos adicionales para compatibilidad
         totalSpent,
-        averageRating
+        activeBookings,
+        totalItems,
+        averageRating,
+        completedBookings,
+        pendingBookings,
+        trustScore,
+        notifications,
+        todayEarnings,
+        monthlyEarnings
       }
     } catch (error) {
       console.error('Error fetching user stats:', error)
@@ -124,10 +108,6 @@ export class DashboardService {
   }
 
   static async getUserItems(userId: string): Promise<DashboardItem[]> {
-    if (!userId || typeof userId !== 'string') {
-      throw new Error('User ID is required and must be a string')
-    }
-
     try {
       const items = await prisma.item.findMany({
         where: { ownerId: userId },
@@ -152,9 +132,9 @@ export class DashboardService {
         nombre: item.title,
         descripcion: item.description,
         categoria: item.category,
-        subcategoria: undefined, // No hay subcategoría en el esquema actual
+        subcategoria: item.subcategory || undefined,
         precioPorDia: item.price,
-        status: item.isAvailable ? 'DISPONIBLE' : 'NO_DISPONIBLE' as any,
+        status: item.isAvailable ? 'AVAILABLE' : 'UNAVAILABLE' as any,
         imagenes: item.images,
         ubicacion: item.location,
         averageRating: item.reviews.length > 0 
@@ -171,10 +151,6 @@ export class DashboardService {
   }
 
   static async getUserBookings(userId: string, filter?: 'all' | 'active' | 'completed'): Promise<DashboardBooking[]> {
-    if (!userId || typeof userId !== 'string') {
-      throw new Error('User ID is required and must be a string')
-    }
-
     try {
       let statusFilter = {}
       
@@ -261,10 +237,6 @@ export class DashboardService {
   }
 
   static async getUserReviews(userId: string): Promise<DashboardReview[]> {
-    if (!userId || typeof userId !== 'string') {
-      throw new Error('User ID is required and must be a string')
-    }
-
     try {
       const reviews = await prisma.review.findMany({
         where: { revieweeId: userId },
@@ -309,10 +281,6 @@ export class DashboardService {
   }
 
   static async getUserNotifications(userId: string, unreadOnly: boolean = false): Promise<DashboardNotification[]> {
-    if (!userId || typeof userId !== 'string') {
-      throw new Error('User ID is required and must be a string')
-    }
-
     try {
       const notifications = await prisma.notification.findMany({
         where: {

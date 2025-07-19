@@ -2,37 +2,10 @@
 
 import { useState } from "react"
 import { Star, X, Send } from "lucide-react"
-
-interface BookingItem {
-  id: string
-  status: string
-  item: {
-    id: string
-    title: string
-    images: string[]
-    price: number
-  }
-  borrower: {
-    id: string
-    firstName: string
-    profileImage?: string | null
-  }
-  owner: {
-    id: string
-    firstName: string
-    profileImage?: string | null
-  }
-  startDate: Date
-  endDate: Date
-  totalAmount: number
-  paymentStatus: string
-  createdAt: Date
-  canReview: boolean
-  hasReviewed: boolean
-}
+import { DashboardBooking } from '@/lib/types'
 
 interface ReviewModalProps {
-  booking: BookingItem
+  booking: DashboardBooking
   userId: string
   onClose: () => void
 }
@@ -43,9 +16,13 @@ export default function ReviewModal({ booking, userId, onClose }: ReviewModalPro
   const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const isOwner = booking.owner.id === userId
+  const isOwner = booking.userRole === 'owner'
   const reviewee = isOwner ? booking.borrower : booking.owner
   const relationshipType = isOwner ? 'borrower' : 'owner'
+
+  if (!reviewee) {
+    return null
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,12 +46,11 @@ export default function ReviewModal({ booking, userId, onClose }: ReviewModalPro
           revieweeId: reviewee.id,
           rating,
           comment,
-          trustFactors: [] // Can be expanded later
+          trustFactors: []
         }),
       })
 
       if (response.ok) {
-        // Create notification for the reviewee
         await fetch('/api/notifications', {
           method: 'POST',
           headers: {
@@ -83,7 +59,7 @@ export default function ReviewModal({ booking, userId, onClose }: ReviewModalPro
           body: JSON.stringify({
             userId: reviewee.id,
             type: 'REVIEW_RECEIVED',
-            content: `Has recibido una nueva reseña de ${rating} estrellas para el artículo "${booking.item.title}"`
+            content: `Has recibido una nueva reseña de ${rating} estrellas para el artículo "${booking.item.nombre}"`
           }),
         })
 
@@ -115,28 +91,18 @@ export default function ReviewModal({ booking, userId, onClose }: ReviewModalPro
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Usuario info */}
           <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-            {reviewee.profileImage ? (
-              <img
-                className="w-12 h-12 rounded-full"
-                src={reviewee.profileImage}
-                alt=""
-              />
-            ) : (
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-medium">
-                {reviewee.firstName.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-medium">
+              {reviewee.name.charAt(0).toUpperCase()}
+            </div>
             <div>
-              <p className="font-medium text-gray-900">{reviewee.firstName}</p>
-              <p className="text-sm text-gray-600">
-                {relationshipType === 'borrower' ? 'Prestatario' : 'Prestador'} de "{booking.item.title}"
+              <p className="font-medium text-gray-900">{reviewee.name}</p>
+              <p className="text-sm text-gray-500">
+                {relationshipType === 'borrower' ? 'Prestatario' : 'Prestador'} de "{booking.item.nombre}"
               </p>
             </div>
           </div>
 
-          {/* Rating */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Calificación
@@ -149,7 +115,7 @@ export default function ReviewModal({ booking, userId, onClose }: ReviewModalPro
                   onClick={() => setRating(star)}
                   onMouseEnter={() => setHoveredRating(star)}
                   onMouseLeave={() => setHoveredRating(0)}
-                  className="p-1"
+                  className="p-1 focus:outline-none"
                 >
                   <Star
                     className={`w-8 h-8 ${
@@ -163,7 +129,6 @@ export default function ReviewModal({ booking, userId, onClose }: ReviewModalPro
             </div>
           </div>
 
-          {/* Comment */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Comentario (opcional)
@@ -172,33 +137,26 @@ export default function ReviewModal({ booking, userId, onClose }: ReviewModalPro
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder={`Comparte tu experiencia ${relationshipType === 'borrower' ? 'con este prestatario' : 'con este prestador'}...`}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Comparte tu experiencia..."
             />
           </div>
 
-          {/* Actions */}
-          <div className="flex space-x-3">
+          <div className="flex items-center justify-end space-x-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading || rating === 0}
-              className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
-              {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  <span>Enviar Reseña</span>
-                </>
-              )}
+              <Send className="w-4 h-4" />
+              <span>{loading ? 'Enviando...' : 'Enviar reseña'}</span>
             </button>
           </div>
         </form>

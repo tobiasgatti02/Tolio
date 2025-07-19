@@ -1,11 +1,17 @@
 // Dashboard types
 export interface DashboardStats {
-  totalEarnings: number;
-  totalSpent: number;
-  activeBookings: number;
   totalItems: number;
-  averageRating: number;
+  activeBookings: number;
+  pendingBookings: number;
   completedBookings: number;
+  totalEarnings: number;
+  trustScore: number;
+  notifications: number;
+  todayEarnings: number;
+  monthlyEarnings: number;
+  // Campos adicionales para compatibilidad
+  totalSpent?: number;
+  averageRating?: number;
 }
 
 export interface DashboardItem {

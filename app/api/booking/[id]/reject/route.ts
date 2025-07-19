@@ -49,7 +49,17 @@ export async function PATCH(
       data: {
         userId: booking.borrowerId,
         type: "BOOKING_CANCELLED",
+        title: "Reserva rechazada",
         content: `Tu reserva para "${booking.item.title}" ha sido rechazada`,
+        bookingId: bookingId,
+        itemId: booking.itemId,
+        actionUrl: `/dashboard/bookings/${bookingId}`,
+        metadata: {
+          bookingId,
+          itemTitle: booking.item.title,
+          ownerName: booking.item.owner.firstName + ' ' + booking.item.owner.lastName,
+          reason: 'rejected_by_owner'
+        }
       }
     })
 
