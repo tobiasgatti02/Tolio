@@ -8,7 +8,7 @@ function getMercadoPagoClient() {
     : process.env.MERCADOPAGO_ACCESS_TOKEN
 
   if (!accessToken) {
-    throw new Error(`MercadoPago access token not found for environment: ${environment}`)
+    throw new Error(`MercadoPago access token not found for environment: ${environment}. Please check your environment variables in Vercel dashboard.`)
   }
 
   return new MercadoPagoConfig({
@@ -31,10 +31,10 @@ function getPaymentApi() {
 
 // Configuración de URLs
 export const paymentConfig = {
-  successUrl: process.env.MERCADOPAGO_SUCCESS_URL || 'http://localhost:3001/payment/success',
-  failureUrl: process.env.MERCADOPAGO_FAILURE_URL || 'http://localhost:3001/payment/failure',
-  pendingUrl: process.env.MERCADOPAGO_PENDING_URL || 'http://localhost:3001/payment/pending',
-  webhookUrl: process.env.MERCADOPAGO_WEBHOOK_URL || 'http://localhost:3001/api/webhooks/mercadopago',
+  successUrl: process.env.MERCADOPAGO_SUCCESS_URL || 'http://localhost:3000/payment/success',
+  failureUrl: process.env.MERCADOPAGO_FAILURE_URL || 'http://localhost:3000/payment/failure',
+  pendingUrl: process.env.MERCADOPAGO_PENDING_URL || 'http://localhost:3000/payment/pending',
+  webhookUrl: process.env.MERCADOPAGO_WEBHOOK_URL || 'http://localhost:3000/api/webhooks/mercadopago',
   environment: process.env.MERCADOPAGO_ENVIRONMENT || 'sandbox',
   publicKey: process.env.MERCADOPAGO_ENVIRONMENT === 'sandbox' 
     ? process.env.MERCADOPAGO_PUBLIC_KEY_SANDBOX
@@ -74,6 +74,8 @@ export async function createPaymentPreference(data: {
         failure: `${paymentConfig.failureUrl}?external_reference=${data.bookingId}`,
         pending: `${paymentConfig.pendingUrl}?external_reference=${data.bookingId}`
       },
+      // auto_return solo funciona con URLs HTTPS públicas
+      ...(paymentConfig.environment === 'production' && { auto_return: "approved" }),
       notification_url: paymentConfig.webhookUrl,
       statement_descriptor: "PRESTAR",
       payment_methods: {
