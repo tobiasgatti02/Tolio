@@ -8,10 +8,10 @@ import Image from "next/image"
 import { Star, MapPin, Filter, Search, X, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
 
 interface Category {
-  id: number;
-  svg?: string;
-  name: string;
-  icon?: string;
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  imagen?: string;
 }
 
 interface Item {
@@ -113,32 +113,30 @@ export default function ItemsPage(){
       }
     })
 
-    // Navigate to new URL
+    // Navigate to new URL immediately
     router.push(`/items?${newParams.toString()}`)
   }
 
-  // Handle search form submission
+  // Auto-update when filters change
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      updateSearchParams({
+        search: searchTerm,
+        location: location,
+        category: selectedCategory,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
+        sort: sortBy,
+      })
+    }, 300) // Debounce for 300ms
+
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm, location, selectedCategory, minPrice, maxPrice, sortBy])
+
+  // Handle search form submission (mantener para compatibilidad)
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    updateSearchParams({
-      search: searchTerm,
-      location: location,
-    })
-  }
-  
-  // Handle filter changes
-  const handleFilterChange = () => {
-    updateSearchParams({
-      category: selectedCategory,
-      minPrice: minPrice,
-      maxPrice: maxPrice,
-      sort: sortBy,
-    })
-
-    // Close filter panel on mobile
-    if (window.innerWidth < 768) {
-      setIsFilterOpen(false)
-    }
+    // Los filtros ya se aplican automáticamente
   }
 
   // Clear all filters
@@ -149,43 +147,47 @@ export default function ItemsPage(){
     setMinPrice("")
     setMaxPrice("")
     setSortBy("relevance")
-
-    router.push("/items")
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-12">
-      {/* Search bar */}
-      <div className="mb-8">
-        <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-3">
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Search bar mejorado */}
+      <div className="mb-6">
+        <div className="flex flex-col md:flex-row gap-4 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="relative flex-grow">
+            <Search className="absolute left-3 top-3.5 h-5 w-5 text-emerald-500" />
             <input
               type="text"
-              placeholder="¿Qué necesitas?"
-              className="w-full px-4 py-3 pl-10 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none border-gray-300"
+              placeholder="¿Qué necesitas alquilar?"
+              className="w-full px-4 py-3 pl-10 rounded-lg border-emerald-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
           </div>
           <div className="relative md:w-1/3">
+            <MapPin className="absolute left-3 top-3.5 h-5 w-5 text-emerald-500" />
             <input
               type="text"
-              placeholder="Ubicación"
-              className="w-full px-4 py-3 pl-10 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none border-gray-300"
+              placeholder="Ciudad, barrio..."
+              className="w-full px-4 py-3 pl-10 rounded-lg border-emerald-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
             />
-            <MapPin className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
           </div>
-          <button
-            type="submit"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg flex items-center justify-center"
-          >
-            <Search className="h-5 w-5 mr-2" />
-            Buscar
-          </button>
-        </form>
+          <div className="relative md:w-1/4">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg border-emerald-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors bg-white"
+            >
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
@@ -218,8 +220,8 @@ export default function ItemsPage(){
                 >
                   <option value="">Todas las categorías</option>
                   {categories.map((category) => (
-                    <option key={category.id} value={category.name}>
-                      {category.name}
+                    <option key={category.id} value={category.nombre}>
+                      {category.nombre}
                     </option>
                   ))}
                 </select>
@@ -268,17 +270,10 @@ export default function ItemsPage(){
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={handleFilterChange}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-medium"
-                >
-                  Aplicar
-                </button>
-                <button
-                  type="button"
                   onClick={clearFilters}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg font-medium"
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg font-medium transition-colors"
                 >
-                  Limpiar
+                  Limpiar filtros
                 </button>
               </div>
             </div>
@@ -313,12 +308,12 @@ export default function ItemsPage(){
                       id={`category-${category.id}`}
                       type="radio"
                       name="category"
-                      checked={selectedCategory === category.name}
-                      onChange={() => setSelectedCategory(category.name)}
+                      checked={selectedCategory === category.nombre}
+                      onChange={() => setSelectedCategory(category.nombre)}
                       className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300"
                     />
                     <label htmlFor={`category-${category.id}`} className="ml-2 text-sm text-gray-700">
-                      {category.name}
+                      {category.nombre}
                     </label>
                   </div>
                 ))}
@@ -368,15 +363,8 @@ export default function ItemsPage(){
             <div className="space-y-2">
               <button
                 type="button"
-                onClick={handleFilterChange}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-medium"
-              >
-                Aplicar filtros
-              </button>
-              <button
-                type="button"
                 onClick={clearFilters}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg font-medium"
+                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg font-medium transition-colors"
               >
                 Limpiar filtros
               </button>

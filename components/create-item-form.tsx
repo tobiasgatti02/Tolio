@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { X, Upload, Loader2 } from 'lucide-react'
 import { PenTool,Car, Laptop, Camera, Music, Book, Tent, Utensils } from 'lucide-react'
-import { getCategories } from "@/app/api/categorias/route"
   
 
 interface FormData {
@@ -227,14 +226,14 @@ const handleSubmit = async (e: React.FormEvent) => {
           name="category"
           value={formData.category}
           onChange={handleChange}
-          className={`block w-full rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 ${
+          className={`block w-full rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500 transition-colors py-3 px-4 ${
             errors.category ? "border-red-300" : "border-gray-300"
           }`}
         >
-          <option value="">Selecciona una categoría</option>
+          <option value="" className="text-gray-500">Selecciona una categoría</option>
           {categories.map((category) => (
-            <option key={category.id} value={category.name}>
-              {category.name}
+            <option key={category.id} value={category.nombre} className="py-2">
+              {category.nombre}
             </option>
           ))}
         </select>
@@ -363,29 +362,37 @@ const handleSubmit = async (e: React.FormEvent) => {
         />
         <div
           onClick={triggerFileInput}
-          className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer hover:bg-gray-50 ${
-            errors.images ? "border-red-300" : "border-gray-300"
+          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200 ${
+            errors.images 
+              ? "border-red-300 bg-red-50 hover:bg-red-100" 
+              : "border-emerald-300 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-400"
           }`}
         >
-          <Upload className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-500">Haz clic para seleccionar imágenes</p>
-          <p className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP hasta 5MB</p>
+          <Upload className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
+          <p className="text-sm font-medium text-emerald-700">Haz clic para seleccionar imágenes</p>
+          <p className="text-xs text-emerald-600 mt-1">PNG, JPG, WEBP hasta 5MB cada una</p>
         </div>
         {errors.images && <p className="mt-1 text-sm text-red-600">{errors.images}</p>}
 
         {imagesPreviews.length > 0 && (
           <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             {imagesPreviews.map((preview, index) => (
-              <div key={index} className="relative">
-                <div className="relative h-24 w-full rounded-md overflow-hidden">
-                  <Image src={preview || "/placeholder.svg"} alt={`Preview ${index + 1}`} fill className="object-cover" />
+              <div key={index} className="relative group">
+                <div className="relative aspect-square w-full rounded-lg overflow-hidden border-2 border-gray-200 hover:border-emerald-300 transition-colors">
+                  <Image 
+                    src={preview || "/placeholder.svg"} 
+                    alt={`Preview ${index + 1}`} 
+                    fill 
+                    className="object-cover" 
+                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
+                  />
                 </div>
                 <button
                   type="button"
                   onClick={() => removeImage(index)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3 w-3" />
                 </button>
               </div>
             ))}

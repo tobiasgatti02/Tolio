@@ -9,6 +9,8 @@ export const getReviewsByItemId = cache(async (itemId: string) => {
         id: true,
         rating: true,
         comment: true,
+        response: true,
+        responseDate: true,
         createdAt: true,
         reviewer: {
           select: {
@@ -25,6 +27,7 @@ export const getReviewsByItemId = cache(async (itemId: string) => {
     return reviews.map(review => ({
       ...review,
       createdAt: review.createdAt.toISOString(),
+      responseDate: review.responseDate?.toISOString() || null,
     }))
   } catch (error) {
     console.error("Failed to fetch reviews:", error)

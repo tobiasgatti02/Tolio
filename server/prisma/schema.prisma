@@ -91,30 +91,42 @@ model Booking {
 }
 
 model Review {
-  id         String   @id @default(uuid())
-  rating     Int
-  comment    String
-  createdAt  DateTime @default(now())
-  itemId     String
-  reviewerId String
-  revieweeId String
-  bookingId  String   @unique
-  booking    Booking  @relation(fields: [bookingId], references: [id])
-  item       Item     @relation(fields: [itemId], references: [id])
-  reviewee   User     @relation("Reviewee", fields: [revieweeId], references: [id])
-  reviewer   User     @relation("Reviewer", fields: [reviewerId], references: [id])
+  id           String    @id @default(uuid())
+  rating       Int
+  comment      String
+  response     String?
+  responseDate DateTime?
+  createdAt    DateTime  @default(now())
+  itemId       String
+  reviewerId   String
+  revieweeId   String
+  bookingId    String    @unique
+  booking      Booking   @relation(fields: [bookingId], references: [id])
+  item         Item      @relation(fields: [itemId], references: [id])
+  reviewee     User      @relation("Reviewee", fields: [revieweeId], references: [id])
+  reviewer     User      @relation("Reviewer", fields: [reviewerId], references: [id])
 }
 
 model Payment {
-  id              String        @id @default(uuid())
-  amount          Float
-  paymentMethod   String
-  status          PaymentStatus @default(PENDING)
-  stripePaymentId String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  bookingId       String        @unique
-  booking         Booking       @relation(fields: [bookingId], references: [id])
+  id                    String        @id @default(uuid())
+  amount                Float
+  paymentMethod         String
+  status                PaymentStatus @default(PENDING)
+  // Stripe fields (legacy)
+  stripePaymentId       String?
+  // MercadoPago fields
+  mercadopagoPaymentId  String?       @unique
+  mercadopagoStatus     String?
+  mercadopagoStatusDetail String?
+  preferenceId          String?       @unique
+  externalReference     String?
+  // General fields
+  paymentProvider       String        @default("mercadopago") // "stripe" or "mercadopago"
+  paidAt                DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  bookingId             String        @unique
+  booking               Booking       @relation(fields: [bookingId], references: [id])
 }
 
 model Notification {

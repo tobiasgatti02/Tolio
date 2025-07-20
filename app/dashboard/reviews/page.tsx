@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { Star, MessageSquare, ThumbsUp, Filter, Search } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import ReviewResponse from "@/components/review-response"
 
 export const metadata = {
   title: "Reseñas | Tolio",
@@ -27,6 +28,7 @@ interface Review {
   type: 'received' | 'given'
   createdAt: Date | string
   response: string | null
+  responseDate: Date | null
 }
 
 // Función para formatear fechas
@@ -51,7 +53,13 @@ async function getUserReviews(userId: string): Promise<Review[]> {
             }
           }
         },
-        include: {
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          response: true,
+          responseDate: true,
+          createdAt: true,
           reviewer: {
             select: {
               id: true,
@@ -61,7 +69,7 @@ async function getUserReviews(userId: string): Promise<Review[]> {
             }
           },
           booking: {
-            include: {
+            select: {
               item: {
                 select: {
                   id: true,
@@ -82,7 +90,13 @@ async function getUserReviews(userId: string): Promise<Review[]> {
         where: {
           reviewerId: userId
         },
-        include: {
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          response: true,
+          responseDate: true,
+          createdAt: true,
           reviewer: {
             select: {
               id: true,
@@ -92,7 +106,7 @@ async function getUserReviews(userId: string): Promise<Review[]> {
             }
           },
           booking: {
-            include: {
+            select: {
               item: {
                 select: {
                   id: true,
@@ -126,7 +140,8 @@ async function getUserReviews(userId: string): Promise<Review[]> {
         image: review.booking.item.images[0]
       },
       type: reviewsAsLender.some(r => r.id === review.id) ? 'received' as const : 'given' as const,
-      response: null // Campo para respuestas futuras
+      response: review.response,
+      responseDate: review.responseDate
     }))
     
     await prisma.$disconnect()
@@ -319,24 +334,40 @@ export default async function ReviewsPage() {
 
                     <p className="text-gray-900 mt-3">{review.comment}</p>
 
-                    {/* Response */}
-                    {review.response && (
-                      <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                    {/* Solo mostrar respuestas para reviews recibidas (donde el usuario es el propietario) */}
+                    {review.type === 'received' && (
+                      <ReviewResponse
+                        reviewId={review.id}
+                        existingResponse={review.response}
+                      />
+                    )}
+
+                    {/* Mostrar respuesta para reviews dadas */}
+                    {review.type === 'given' && review.response && (
+                      <div className="mt-4 p-4 bg-emerald-50 border-l-4 border-emerald-200 rounded-r-lg">
                         <div className="flex items-center space-x-2 mb-2">
-                          <span className="text-sm font-medium text-blue-900">Tu respuesta:</span>
+                          <MessageSquare className="w-4 h-4 text-emerald-600" />
+                          <span className="text-sm font-medium text-emerald-800">Respuesta del propietario:</span>
                         </div>
-                        <p className="text-blue-800 text-sm">{review.response}</p>
+                        <p className="text-emerald-700 text-sm">{review.response}</p>
+                        {review.responseDate && (
+                          <p className="text-xs text-emerald-600 mt-1">
+                            {formatDate(new Date(review.responseDate))}
+                          </p>
+                        )}
                       </div>
                     )}
 
                     {/* Action buttons */}
                     <div className="flex items-center space-x-3 mt-4">
-                      {!review.response && (
-                        <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                          Responder
-                        </button>
-                      )}
-                      <button className="text-sm text-gray-600 hover:text-gray-800">
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        review.type === 'received' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {review.type === 'received' ? 'Recibida' : 'Enviada'}
+                      </span>
+                      <button className="text-sm text-emerald-600 hover:text-emerald-800 font-medium">
                         Ver artículo
                       </button>
                     </div>
