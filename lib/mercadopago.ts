@@ -2,11 +2,13 @@ import { MercadoPagoConfig, Preference, Payment as MPPayment } from 'mercadopago
 
 // Función para obtener el cliente de MercadoPago de forma dinámica
 function getMercadoPagoClient() {
-  const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN_SANDBOX
   const environment = process.env.MERCADOPAGO_ENVIRONMENT || 'sandbox'
+  const accessToken = environment === 'sandbox' 
+    ? process.env.MERCADOPAGO_ACCESS_TOKEN_SANDBOX
+    : process.env.MERCADOPAGO_ACCESS_TOKEN
 
   if (!accessToken) {
-    throw new Error('MERCADOPAGO_ACCESS_TOKEN_SANDBOX environment variable is not set')
+    throw new Error(`MercadoPago access token not found for environment: ${environment}`)
   }
 
   return new MercadoPagoConfig({
@@ -29,21 +31,24 @@ function getPaymentApi() {
 
 // Configuración de URLs
 export const paymentConfig = {
-  successUrl: process.env.MERCADOPAGO_SUCCESS_URL || 'http://localhost:3000/payment/success',
-  failureUrl: process.env.MERCADOPAGO_FAILURE_URL || 'http://localhost:3000/payment/failure',
-  pendingUrl: process.env.MERCADOPAGO_PENDING_URL || 'http://localhost:3000/payment/pending',
-  webhookUrl: process.env.MERCADOPAGO_WEBHOOK_URL || 'http://localhost:3000/api/webhooks/mercadopago',
+  successUrl: process.env.MERCADOPAGO_SUCCESS_URL || 'http://localhost:3001/payment/success',
+  failureUrl: process.env.MERCADOPAGO_FAILURE_URL || 'http://localhost:3001/payment/failure',
+  pendingUrl: process.env.MERCADOPAGO_PENDING_URL || 'http://localhost:3001/payment/pending',
+  webhookUrl: process.env.MERCADOPAGO_WEBHOOK_URL || 'http://localhost:3001/api/webhooks/mercadopago',
   environment: process.env.MERCADOPAGO_ENVIRONMENT || 'sandbox',
-  publicKey: process.env.MERCADOPAGO_PUBLIC_KEY_SANDBOX
+  publicKey: process.env.MERCADOPAGO_ENVIRONMENT === 'sandbox' 
+    ? process.env.MERCADOPAGO_PUBLIC_KEY_SANDBOX
+    : process.env.MERCADOPAGO_PUBLIC_KEY
 }
 
 // Función para crear una preferencia de pago
 export async function createPaymentPreference(data: {
-  id: string;
-  title: string;
-  price: number;
-  quantity: number;
   bookingId: string;
+  amount: number;
+  title: string;
+  description: string;
+  userEmail: string;
+  userName: string;
 }) {
   try {
     const preferenceApi = getPreferenceApi();
@@ -51,19 +56,24 @@ export async function createPaymentPreference(data: {
     const preferenceData = {
       items: [
         {
-          id: data.id,
+          id: data.bookingId,
           title: data.title,
-          unit_price: data.price,
-          quantity: data.quantity
+          description: data.description,
+          unit_price: data.amount,
+          quantity: 1,
+          currency_id: "ARS"
         }
       ],
+      payer: {
+        name: data.userName,
+        email: data.userEmail
+      },
       external_reference: data.bookingId,
       back_urls: {
-        success: paymentConfig.successUrl,
-        failure: paymentConfig.failureUrl,
-        pending: paymentConfig.pendingUrl
+        success: `${paymentConfig.successUrl}?external_reference=${data.bookingId}`,
+        failure: `${paymentConfig.failureUrl}?external_reference=${data.bookingId}`,
+        pending: `${paymentConfig.pendingUrl}?external_reference=${data.bookingId}`
       },
-      auto_return: "approved",
       notification_url: paymentConfig.webhookUrl,
       statement_descriptor: "PRESTAR",
       payment_methods: {
@@ -75,7 +85,11 @@ export async function createPaymentPreference(data: {
     }
 
     const response = await preferenceApi.create({ body: preferenceData })
-    return response
+    return {
+      preferenceId: response.id,
+      initPoint: response.init_point,
+      sandboxInitPoint: response.sandbox_init_point
+    }
   } catch (error) {
     console.error('Error creating payment preference:', error)
     throw error

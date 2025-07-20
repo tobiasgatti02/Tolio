@@ -5,11 +5,12 @@ export async function GET(request: NextRequest) {
   try {
     // Crear una preferencia de prueba para verificar que las credenciales funcionan
     const testData = {
-      id: 'test-item',
+      bookingId: 'test-booking-123',
+      amount: 100,
       title: 'Test Payment',
-      price: 100,
-      quantity: 1,
-      bookingId: 'test-booking-123'
+      description: 'Testing MercadoPago integration',
+      userEmail: 'test@example.com',
+      userName: 'Test User'
     }
 
     const preference = await createPaymentPreference(testData)
@@ -17,10 +18,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'MercadoPago credentials are working!',
-      preferenceId: preference.id,
+      preferenceId: preference.preferenceId,
       environment: paymentConfig.environment,
       publicKey: paymentConfig.publicKey,
-      sandboxInitPoint: preference.sandbox_init_point
+      initPoint: preference.initPoint,
+      sandboxInitPoint: preference.sandboxInitPoint
     })
 
   } catch (error) {
