@@ -61,7 +61,6 @@ export async function POST(request: NextRequest) {
         revieweeId,
         rating,
         comment: comment || "",
-        trustFactors: trustFactors || [],
         createdAt: new Date(),
       }
     })
@@ -77,6 +76,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: revieweeId,
         type: "REVIEW_RECEIVED",
+        title: "Nueva reseña recibida",
         content: `${reviewer?.firstName} ${reviewer?.lastName} te ha dejado una reseña de ${rating} estrellas`,
       }
     })
@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId: revieweeId,
           type: "MESSAGE_RECEIVED", // Usamos este tipo existente por ahora
+          title: "Es tu turno de evaluar",
           content: `${reviewer?.firstName} ya dejó su reseña. ¡Es tu turno de evaluar la experiencia!`,
         }
       })

@@ -374,8 +374,13 @@ export default function BookingsClient({ userId }: { userId: string }) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          <Link href={`/dashboard/bookings/${booking.id}`} className="text-blue-600 hover:text-blue-900" title="Ver detalles">
-                            <Eye className="w-4 h-4" />
+                          <Link 
+                            href={`/dashboard/bookings/${booking.id}`} 
+                            className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
+                            title="Ver detalles"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            Ver
                           </Link>
                           
                           {/* Botones para propietario con reserva pendiente */}
@@ -383,17 +388,19 @@ export default function BookingsClient({ userId }: { userId: string }) {
                             <>
                               <button
                                 onClick={() => handleBookingAction(booking.id, 'confirm')}
-                                className="text-green-600 hover:text-green-900 px-2 py-1 rounded-md hover:bg-green-50"
+                                className="inline-flex items-center px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
                                 title="Aceptar reserva"
                               >
-                                <CheckCircle className="w-4 h-4" />
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Aceptar
                               </button>
                               <button
                                 onClick={() => handleBookingAction(booking.id, 'reject')}
-                                className="text-red-600 hover:text-red-900 px-2 py-1 rounded-md hover:bg-red-50"
+                                className="inline-flex items-center px-3 py-1 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
                                 title="Rechazar reserva"
                               >
-                                <XCircle className="w-4 h-4" />
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Rechazar
                               </button>
                             </>
                           )}

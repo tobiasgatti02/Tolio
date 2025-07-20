@@ -81,6 +81,7 @@ export interface DashboardNotification {
   message: string;
   read: boolean;
   createdAt: string;
+  actionUrl?: string;
   relatedBookingId?: string;
   relatedItemId?: string;
 }

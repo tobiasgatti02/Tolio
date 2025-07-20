@@ -41,44 +41,30 @@ export default function ChatClient({ otherUserId }: ChatClientProps) {
   const [otherUser, setOtherUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
-  const prevMessagesLength = useRef(0)
 
   const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
     messagesEndRef.current?.scrollIntoView({ behavior })
-  }
-
-  const handleScroll = () => {
-    if (messagesContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
-      setShouldAutoScroll(isNearBottom)
-    }
   }
 
   useEffect(() => {
     fetchMessages()
     fetchOtherUser()
     
-    // Polling cada 3 segundos para nuevos mensajes
-    const interval = setInterval(fetchMessages, 3000)
+    // Polling cada 10 segundos para nuevos mensajes (menos frecuente)
+    const interval = setInterval(fetchMessages, 10000)
     
     return () => clearInterval(interval)
   }, [otherUserId])
 
   useEffect(() => {
-    // Solo hacer scroll automático si es la primera carga o si el usuario está cerca del bottom
+    // Solo hacer scroll automático en la primera carga
     if (loading && messages.length > 0) {
       // Primera carga - ir al bottom inmediatamente
       scrollToBottom('auto')
-    } else if (shouldAutoScroll && messages.length > prevMessagesLength.current) {
-      // Solo scroll automático si hay nuevos mensajes y el usuario está cerca del bottom
-      scrollToBottom()
     }
-    prevMessagesLength.current = messages.length
-  }, [messages, loading, shouldAutoScroll])
+  }, [messages, loading])
 
   const fetchOtherUser = async () => {
     try {
@@ -149,7 +135,6 @@ export default function ChatClient({ otherUserId }: ChatClientProps) {
 
       if (response.ok) {
         setNewMessage("")
-        setShouldAutoScroll(true) // Asegurar que haga scroll cuando envías un mensaje
         fetchMessages() // Refrescar mensajes
       }
     } catch (error) {
@@ -222,7 +207,6 @@ export default function ChatClient({ otherUserId }: ChatClientProps) {
       <div 
         ref={messagesContainerRef}
         className="flex-1 overflow-y-auto p-4 space-y-4"
-        onScroll={handleScroll}
       >
         {messages.length === 0 ? (
           <div className="text-center py-8">
@@ -266,21 +250,6 @@ export default function ChatClient({ otherUserId }: ChatClientProps) {
         )}
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Botón flotante para ir al final */}
-      {!shouldAutoScroll && (
-        <div className="absolute bottom-20 right-6">
-          <button
-            onClick={() => {
-              setShouldAutoScroll(true)
-              scrollToBottom()
-            }}
-            className="bg-emerald-500 text-white p-3 rounded-full shadow-lg hover:bg-emerald-600 transition-colors"
-          >
-            <ChevronDown className="h-5 w-5" />
-          </button>
-        </div>
-      )}
 
       {/* Message Input */}
       <div className="bg-white border-t p-4">

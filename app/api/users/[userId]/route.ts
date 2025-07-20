@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }
 
-    const { userId } = params
+    const { userId } = await params
 
     const user = await prisma.user.findUnique({
       where: { id: userId },

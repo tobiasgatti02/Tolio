@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 export async function getCategories() {
   try {
     const categories = await prisma.category.findMany({
-      orderBy: { name: 'asc' }
+      orderBy: { nombre: 'asc' }
     })
     return categories
   } catch (error) {

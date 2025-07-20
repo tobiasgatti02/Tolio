@@ -300,7 +300,7 @@ export default function NotificationsClient({ userId }: NotificationsClientProps
                               </Button>
                             )}
                             {notification.relatedBookingId && (
-                              <Link href={`/bookings/${notification.relatedBookingId}`}>
+                              <Link href={`/dashboard/bookings/${notification.relatedBookingId}`}>
                                 <Button size="sm" variant="outline">
                                   Ver reserva
                                 </Button>

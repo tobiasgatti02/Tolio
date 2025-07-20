@@ -69,8 +69,8 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
           variant: "default",
         })
         
-        // Redirect to the bookings page
-        router.push(`/bookings/${result.bookingId}`)
+        // Redirect to the dashboard bookings page
+        router.push(`/dashboard/bookings/${result.bookingId}`)
       } else {
         setError(result.error || "Hubo un error al crear la reserva")
         toast({

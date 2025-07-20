@@ -4,9 +4,9 @@ import { redirect } from "next/navigation"
 import ChatClient from "./chat-client"
 
 interface PageProps {
-  params: {
+  params: Promise<{
     userId: string
-  }
+  }>
 }
 
 export default async function ChatPage({ params }: PageProps) {
@@ -16,5 +16,7 @@ export default async function ChatPage({ params }: PageProps) {
     redirect("/login")
   }
 
-  return <ChatClient otherUserId={params.userId} />
+  const { userId } = await params
+
+  return <ChatClient otherUserId={userId} />
 }

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/utils"
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,7 +14,7 @@ export async function PATCH(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
-    const bookingId = params.id
+    const { id: bookingId } = await params
 
     // Verificar que la reserva existe y el usuario es el propietario
     const booking = await prisma.booking.findUnique({

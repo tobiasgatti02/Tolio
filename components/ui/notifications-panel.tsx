@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useNotifications } from '@/contexts/notifications-context'
 import { 
   Bell, 
   Check, 
@@ -41,10 +42,13 @@ export default function NotificationsPanel({ isOpen, onClose, userId }: Notifica
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const { decrementUnreadCount, refreshUnreadCount } = useNotifications()
 
   useEffect(() => {
     if (isOpen) {
       fetchNotifications()
+      // Actualizar el contador inmediatamente cuando se abra el panel
+      refreshUnreadCount()
     }
   }, [isOpen])
 
@@ -70,6 +74,9 @@ export default function NotificationsPanel({ isOpen, onClose, userId }: Notifica
       await fetch(`/api/notifications/${notificationId}/mark-read`, {
         method: 'PATCH'
       })
+      
+      // Actualizar local state
+      const wasUnread = notifications.find(n => n.id === notificationId)?.isRead === false
       setNotifications(prev => 
         prev.map(notif => 
           notif.id === notificationId 
@@ -77,6 +84,11 @@ export default function NotificationsPanel({ isOpen, onClose, userId }: Notifica
             : notif
         )
       )
+      
+      // Si la notificación no estaba leída, decrementar el contador inmediatamente
+      if (wasUnread) {
+        decrementUnreadCount()
+      }
     } catch (error) {
       console.error('Error marking notification as read:', error)
     }
@@ -164,13 +176,14 @@ export default function NotificationsPanel({ isOpen, onClose, userId }: Notifica
                 className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
                   !notification.isRead ? 'bg-blue-50' : ''
                 }`}
+                onClick={() => handleNotificationClick(notification)}
               >
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0 mt-1">
                     {getNotificationIcon(notification.type)}
                   </div>
                   
-                  <div className="flex-1 min-w-0" onClick={() => handleNotificationClick(notification)}>
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-gray-900 truncate">
                         {notification.title}
@@ -188,36 +201,17 @@ export default function NotificationsPanel({ isOpen, onClose, userId }: Notifica
                         locale: es 
                       })}
                     </p>
+                    {notification.actionUrl && (
+                      <p className="text-xs text-blue-600 mt-1 font-medium">
+                        👆 Click para ver detalles
+                      </p>
+                    )}
                   </div>
 
                   {notification.actionUrl && (
                     <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1" />
                   )}
                 </div>
-
-                {/* Botones de acción para reservas pendientes */}
-                {notification.type === 'BOOKING_REQUEST' && notification.bookingId && (
-                  <div className="mt-3 flex space-x-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleBookingAction(notification.bookingId!, 'confirm')
-                      }}
-                      className="flex-1 bg-green-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-green-600 transition-colors"
-                    >
-                      Aceptar
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleBookingAction(notification.bookingId!, 'reject')
-                      }}
-                      className="flex-1 bg-red-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition-colors"
-                    >
-                      Rechazar
-                    </button>
-                  </div>
-                )}
               </div>
             ))
           )}

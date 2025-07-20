@@ -5,7 +5,7 @@ import { prisma } from "@/lib/utils"
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,7 +14,7 @@ export async function PATCH(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
-    const bookingId = params.id
+    const { id: bookingId } = await params
 
     // Verificar que la reserva existe y el usuario es parte de ella
     const booking = await prisma.booking.findUnique({
@@ -52,8 +52,16 @@ export async function PATCH(
     await prisma.notification.create({
       data: {
         userId: otherUserId,
-        type: "MESSAGE_RECEIVED", // Usamos este tipo por ahora
+        type: "MESSAGE_RECEIVED",
+        title: "Reserva completada",
         content: `La reserva para "${booking.item.title}" ha sido completada. ¡Deja tu reseña!`,
+        bookingId: bookingId,
+        itemId: booking.itemId,
+        actionUrl: `/dashboard/bookings/${bookingId}`,
+        metadata: {
+          bookingId,
+          itemTitle: booking.item.title
+        }
       }
     })
 

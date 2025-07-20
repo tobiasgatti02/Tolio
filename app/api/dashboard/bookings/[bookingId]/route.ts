@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { bookingId: string } }
+  { params }: { params: Promise<{ bookingId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }
 
-    const { bookingId } = params
+    const { bookingId } = await params
 
     // Obtener el booking con toda la información relacionada
     const booking = await prisma.booking.findUnique({

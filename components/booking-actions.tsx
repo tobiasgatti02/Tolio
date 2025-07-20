@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import MutualReviewModal from "@/components/mutual-review-modal"
 import CancelBookingButton from "@/components/cancelBookingButton"
 import { toast } from "@/hooks/use-toast"
+import { Clock, CheckCircle, XCircle } from "lucide-react"
 
 interface BookingActionsProps {
   booking: {
@@ -191,45 +192,127 @@ export default function BookingActions({
       <div className="flex flex-col gap-3">
         {/* Show different actions based on booking status */}
         {booking.status === "PENDING" && isBorrower && (
-          <CancelBookingButton bookingId={booking.id} />
+          <>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-2">
+              <p className="text-sm text-yellow-800">
+                Tu solicitud de reserva está pendiente de confirmación por parte del propietario.
+              </p>
+            </div>
+            <CancelBookingButton bookingId={booking.id} />
+          </>
         )}
         
         {booking.status === "PENDING" && isOwner && (
-          <div className="flex gap-3">
-            <Button
-              onClick={handleConfirmBooking}
-              disabled={isSubmitting}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              {isSubmitting ? "Confirmando..." : "Confirmar reserva"}
-            </Button>
-            <Button
-              onClick={handleRejectBooking}
-              disabled={isSubmitting}
-              variant="destructive"
-              className="flex-1"
-            >
-              {isSubmitting ? "Rechazando..." : "Rechazar"}
-            </Button>
-          </div>
+          <>
+            <div className="bg-emerald-50 border-l-4 border-emerald-400 rounded-lg p-4 mb-3">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <Clock className="h-5 w-5 text-emerald-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-emerald-800">
+                    🎯 Acción requerida: Nueva solicitud de reserva
+                  </p>
+                  <p className="text-sm text-emerald-700 mt-1">
+                    {booking.borrower.firstName} {booking.borrower.lastName} quiere alquilar tu artículo. 
+                    Revisa los detalles y decide si aceptar o rechazar la solicitud.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleConfirmBooking}
+                disabled={isSubmitting}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-4 text-base shadow-md hover:shadow-lg transition-all"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Confirmando...
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    Confirmar reserva
+                  </div>
+                )}
+              </Button>
+              <Button
+                onClick={handleRejectBooking}
+                disabled={isSubmitting}
+                variant="destructive"
+                className="flex-1 font-medium py-4 text-base shadow-md hover:shadow-lg transition-all"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Rechazando...
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <XCircle className="h-5 w-5 mx-auto" />
+                    Rechazar
+                  </div>
+                )}
+              </Button>
+            </div>
+          </>
         )}
         
         {booking.status === "CONFIRMED" && (
-          <Button
-            onClick={handleCompleteBooking}
-            disabled={isSubmitting}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            {isSubmitting ? "Completando..." : "Marcar como completado"}
-          </Button>
+          <>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-2">
+              <p className="text-sm text-green-800 font-medium">
+                Reserva confirmada
+              </p>
+              <p className="text-sm text-green-700 mt-1">
+                {isOwner 
+                  ? "Has confirmado esta reserva. Cuando el período de alquiler termine, marca la reserva como completada."
+                  : "Tu reserva ha sido confirmada. ¡Disfruta del alquiler!"
+                }
+              </p>
+            </div>
+            <Button
+              onClick={handleCompleteBooking}
+              disabled={isSubmitting}
+              className="bg-green-600 hover:bg-green-700 text-white font-medium py-3"
+            >
+              {isSubmitting ? "Completando..." : "✓ Marcar como completado"}
+            </Button>
+          </>
         )}
         
-        {booking.status === "COMPLETED" && isBorrower && (
-          <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            <Link href={`/reviews/create?bookingId=${booking.id}`}>
-              Dejar reseña
-            </Link>
-          </Button>
+        {booking.status === "COMPLETED" && (
+          <>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2">
+              <p className="text-sm text-gray-800 font-medium">
+                Reserva completada
+              </p>
+              <p className="text-sm text-gray-700 mt-1">
+                Esta reserva ha sido completada exitosamente.
+                {isBorrower && " ¡No olvides dejar una reseña!"}
+              </p>
+            </div>
+            {isBorrower && (
+              <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3">
+                <Link href={`/reviews/create?bookingId=${booking.id}`}>
+                  ⭐ Dejar reseña
+                </Link>
+              </Button>
+            )}
+          </>
+        )}
+
+        {booking.status === "CANCELLED" && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p className="text-sm text-red-800 font-medium">
+              Reserva cancelada
+            </p>
+            <p className="text-sm text-red-700 mt-1">
+              Esta reserva ha sido cancelada.
+            </p>
+          </div>
         )}
       </div>
 

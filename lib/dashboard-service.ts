@@ -328,12 +328,13 @@ export class DashboardService {
       return notifications.map(notification => ({
         id: notification.id,
         type: notification.type as any,
-        title: notification.type.replace(/_/g, ' ').toLowerCase(),
+        title: notification.title || notification.type.replace(/_/g, ' ').toLowerCase(),
         message: notification.content,
         read: notification.isRead,
         createdAt: notification.createdAt.toISOString(),
-        relatedBookingId: undefined,
-        relatedItemId: undefined
+        actionUrl: notification.actionUrl || undefined,
+        relatedBookingId: notification.bookingId || undefined,
+        relatedItemId: notification.itemId || undefined
       }))
     } catch (error) {
       console.error('Error fetching notifications:', error)
@@ -344,6 +345,7 @@ export class DashboardService {
   static async createNotification(data: {
     userId: string
     type: any
+    title: string
     content: string
   }): Promise<void> {
     try {
@@ -351,6 +353,7 @@ export class DashboardService {
         data: {
           userId: data.userId,
           type: data.type,
+          title: data.title,
           content: data.content,
           isRead: false
         }

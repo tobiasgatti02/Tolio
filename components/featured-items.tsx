@@ -13,17 +13,7 @@ const getFeaturedItems = unstable_cache(
       },
       take: 8, // Aumentamos a 8 items
       orderBy: [{ createdAt: 'desc' }],
-      select: {
-        id: true,
-        title: true,
-        price: true,
-        location: true,
-        images: true,
-        category: {
-          select: {
-            name: true
-          }
-        },
+      include: {
         owner: {
           select: {
             firstName: true,
@@ -46,7 +36,7 @@ const getFeaturedItems = unstable_cache(
       return {
         id: item.id,
         title: item.title,
-        category: item.category?.name || "Sin categoría",
+        category: item.category || "Sin categoría",
         price: item.price,
         rating: rating,
         reviewCount: reviews.length > 0 ? reviews.length : undefined,
