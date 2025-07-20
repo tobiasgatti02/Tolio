@@ -1,30 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { paymentConfig, preferenceApi } from '@/lib/mercadopago'
+import { paymentConfig, createPaymentPreference } from '@/lib/mercadopago'
 
 export async function GET(request: NextRequest) {
   try {
     // Crear una preferencia de prueba para verificar que las credenciales funcionan
-    const testPreference = {
-      items: [
-        {
-          id: 'test-item',
-          title: 'Test Payment',
-          description: 'Testing MercadoPago integration',
-          quantity: 1,
-          unit_price: 100,
-          currency_id: 'ARS'
-        }
-      ],
-      back_urls: {
-        success: paymentConfig.successUrl,
-        failure: paymentConfig.failureUrl,
-        pending: paymentConfig.pendingUrl
-      },
-      auto_return: 'approved',
-      external_reference: 'test-payment-123'
+    const testData = {
+      id: 'test-item',
+      title: 'Test Payment',
+      price: 100,
+      quantity: 1,
+      bookingId: 'test-booking-123'
     }
 
-    const preference = await preferenceApi.create({ body: testPreference })
+    const preference = await createPaymentPreference(testData)
     
     return NextResponse.json({
       success: true,
