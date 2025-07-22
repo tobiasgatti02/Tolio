@@ -1,136 +1,160 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getPaymentInfo, getPaymentStatus } from '@/lib/mercadopago'
+import { NextRequest } from 'next/server'
+import { Payment } from 'mercadopago'
 import { PrismaClient } from '@prisma/client'
+import { MercadoPagoConfig } from 'mercadopago'
 
 const prisma = new PrismaClient()
 
+// Cliente de Mercado Pago principal (marketplace)
+const mercadopago = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN!
+})
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    // Obtener parámetros de la URL (para notificaciones tipo merchant_order)
+    const searchParams = request.nextUrl.searchParams
+    const topicFromUrl = searchParams.get('topic')
+    const idFromUrl = searchParams.get('id')
     
-    console.log('Webhook received:', body)
+    // Obtener parámetros del body (para notificaciones tipo payment)
+    let body: any = {}
+    try {
+      body = await request.json()
+    } catch {
+      // Si no hay body JSON, usar parámetros de URL
+    }
+    
+    const typeFromBody = body.type
+    const dataIdFromBody = body.data?.id
+    
+    console.log('🔔 Webhook received:')
+    console.log('type from body:', typeFromBody)
+    console.log('topic from URL:', topicFromUrl)
+    console.log('data.id from body:', dataIdFromBody)
+    console.log('id from URL:', idFromUrl)
+    console.log('Full body:', body)
+    
+    // Determinar el tipo de notificación y el ID
+    let paymentId: string | null = null
+    
+    if (typeFromBody === 'payment' && dataIdFromBody) {
+      // Formato estándar: {"type": "payment", "data": {"id": "123"}}
+      paymentId = dataIdFromBody
+    } else if (topicFromUrl === 'merchant_order' && idFromUrl) {
+      // Para merchant_order, usar el ID directamente (este puede ser diferente)
+      // Por ahora, ignoramos merchant_order y solo procesamos payment
+      console.log('Received merchant_order notification, ignoring')
+      return new Response(null, { status: 200 })
+    } else if (body.data?.id) {
+      // Fallback: usar cualquier ID que venga en body.data.id
+      paymentId = body.data.id
+    }
+    
+    if (!paymentId) {
+      console.log('No payment ID found in notification')
+      return new Response(null, { status: 200 })
+    }
 
-    // MercadoPago envía diferentes tipos de notificaciones
-    if (body.type === 'payment') {
-      const paymentId = body.data?.id
+    console.log('💳 Attempting to get payment with ID:', paymentId)
 
-      if (!paymentId) {
-        console.log('No payment ID in webhook')
-        return NextResponse.json({ status: 'ok' })
-      }
-
-      // Obtener información del pago desde MercadoPago
-      const paymentInfo = await getPaymentInfo(paymentId.toString())
+    // Primero intentamos con el access token del marketplace
+    let payment: any
+    let paymentFound = false
+    
+    try {
+      payment = await new Payment(mercadopago).get({id: paymentId})
+      paymentFound = true
+      console.log('✅ Payment found with marketplace token')
+    } catch (marketplaceError: any) {
+      console.log('❌ Payment not found with marketplace token:', marketplaceError.message)
       
-      if (!paymentInfo) {
-        console.log('Payment info not found for ID:', paymentId)
-        return NextResponse.json({ status: 'error', message: 'Payment not found' })
-      }
-
-      const externalReference = paymentInfo.external_reference
-      
-      if (!externalReference) {
-        console.log('No external reference in payment')
-        return NextResponse.json({ status: 'ok' })
-      }
-
-      // Buscar el pago en nuestra base de datos usando el booking ID
-      const payment = await prisma.payment.findFirst({
-        where: {
-          bookingId: externalReference
-        },
-        include: {
-          booking: {
-            include: {
-              borrower: true,
-              owner: true,
-              item: true
+      // Si no se encuentra con el token del marketplace, 
+      // necesitamos buscar el booking para obtener el access token del owner
+      try {
+        // Intentar obtener el pago usando el external_reference
+        // Primero hacemos una consulta básica para obtener información del pago
+        const paymentInfo = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+          headers: {
+            'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}`
+          }
+        })
+        
+        if (paymentInfo.ok) {
+          const paymentData = await paymentInfo.json()
+          const bookingId = paymentData.external_reference
+          
+          if (bookingId) {
+            // Buscar el booking para obtener el owner access token
+            const booking = await prisma.booking.findUnique({
+              where: { id: bookingId },
+              include: {
+                item: {
+                  include: {
+                    owner: true
+                  }
+                }
+              }
+            })
+            
+            if (booking?.item?.owner?.marketplaceAccessToken) {
+              console.log('🔄 Trying with owner access token...')
+              
+              // Crear cliente con el access token del owner
+              const ownerMercadoPago = new MercadoPagoConfig({
+                accessToken: booking.item.owner.marketplaceAccessToken
+              })
+              
+              payment = await new Payment(ownerMercadoPago).get({id: paymentId})
+              paymentFound = true
+              console.log('✅ Payment found with owner token')
             }
           }
         }
-      })
-
-      if (!payment) {
-        console.log('Payment not found in database for booking:', externalReference)
-        return NextResponse.json({ status: 'ok' })
+      } catch (ownerError: any) {
+        console.log('❌ Could not get payment with owner token:', ownerError.message)
       }
-
-      // Actualizar el estado del pago
-      const newStatus = getPaymentStatus(paymentInfo.status || '', paymentInfo.status_detail || '')
-      
-      const updatedPayment = await prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          mercadopagoPaymentId: paymentId.toString(),
-          mercadopagoStatus: paymentInfo.status,
-          mercadopagoStatusDetail: paymentInfo.status_detail,
-          status: newStatus,
-          paidAt: newStatus === 'COMPLETED' ? new Date() : null
-        }
-      })
-
-      // Si el pago fue aprobado, actualizar el estado de la reserva
-      if (newStatus === 'COMPLETED') {
-        await prisma.booking.update({
-          where: { id: payment.bookingId },
-          data: { status: 'CONFIRMED' }
-        })
-
-        // Crear notificación para el propietario
-        await prisma.notification.create({
-          data: {
-            userId: payment.booking.owner.id,
-            type: 'PAYMENT_RECEIVED',
-            title: 'Pago recibido',
-            content: `Has recibido un pago de $${payment.amount} por la reserva de "${payment.booking.item.title}"`,
-            bookingId: payment.bookingId,
-            actionUrl: `/dashboard/bookings/${payment.bookingId}`
-          }
-        })
-
-        // Crear notificación para el prestatario
-        await prisma.notification.create({
-          data: {
-            userId: payment.booking.borrower.id,
-            type: 'BOOKING_CONFIRMED',
-            title: 'Reserva confirmada',
-            content: `Tu pago ha sido procesado y la reserva de "${payment.booking.item.title}" ha sido confirmada`,
-            bookingId: payment.bookingId,
-            actionUrl: `/bookings/${payment.bookingId}`
-          }
-        })
-      }
-
-      console.log('Payment updated:', {
-        paymentId: payment.id,
-        status: newStatus,
-        mercadopagoId: paymentId
-      })
-
-      return NextResponse.json({ status: 'ok' })
     }
 
-    // Para otros tipos de notificaciones, simplemente responder OK
-    return NextResponse.json({ status: 'ok' })
+    if (!paymentFound) {
+      console.log('❌ Payment not found with any token')
+      return new Response(null, { status: 200 })
+    }
 
+    console.log('📄 Payment status:', payment.status)
+    console.log('📄 Payment external_reference:', payment.external_reference)
+
+    // Si se aprueba, actualizamos el estado
+    if (payment.status === 'approved') {
+      const bookingId = payment.external_reference
+      
+      if (bookingId) {
+        // Actualizar el estado del pago
+        await prisma.payment.updateMany({
+          where: { bookingId },
+          data: {
+            mercadopagoPaymentId: payment.id?.toString(),
+            mercadopagoStatus: payment.status,
+            status: 'COMPLETED',
+            paidAt: new Date()
+          }
+        })
+
+        // Actualizar el estado de la reserva
+        await prisma.booking.update({
+          where: { id: bookingId },
+          data: { status: 'CONFIRMED' }
+        })
+        
+        console.log('✅ Payment processed successfully:', paymentId)
+      }
+    }
   } catch (error) {
-    console.error('Webhook error:', error)
-    return NextResponse.json(
-      { status: 'error', message: 'Internal server error' },
-      { status: 500 }
-    )
-  } finally {
-    await prisma.$disconnect()
+    // Log del error pero no fallar
+    console.log('Webhook error:', error)
   }
+
+  // Responder con status 200 para indicar que la notificación fue recibida
+  return new Response(null, { status: 200 })
 }
 
-// También manejar GET para validación del webhook
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams
-  const topic = searchParams.get('topic')
-  const id = searchParams.get('id')
-
-  console.log('Webhook GET validation:', { topic, id })
-
-  return NextResponse.json({ status: 'ok' })
-}

@@ -22,6 +22,11 @@ model User {
   verificationToken String?
   resetToken        String?
   resetTokenExpiry  DateTime?
+  // MercadoPago Marketplace fields
+  marketplaceAccessToken String?   // Token para crear pagos en nombre del usuario
+  marketplaceRefreshToken String?  // Token para renovar el access token
+  marketplaceUserId      String?   // ID del usuario en MercadoPago
+  marketplaceConnectedAt DateTime? // Fecha de conexión con MercadoPago
   bookings          Booking[]      @relation("Borrower")
   receivedBookings  Booking[]      @relation("Owner")
   ownedItems        Item[]
@@ -120,6 +125,10 @@ model Payment {
   mercadopagoStatusDetail String?
   preferenceId          String?       @unique
   externalReference     String?
+  // Marketplace fields
+  marketplaceFee        Float?        // Comisión del marketplace
+  ownerAmount           Float?        // Monto que recibe el propietario
+  marketplaceAmount     Float?        // Monto que recibe el marketplace
   // General fields
   paymentProvider       String        @default("mercadopago") // "stripe" or "mercadopago"
   paidAt                DateTime?

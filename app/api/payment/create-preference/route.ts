@@ -1,10 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]/route'
-import { createPaymentPreference } from '@/lib/mercadopago'
+import { createPaymentPreference } from '../../../../lib/mercadopago'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
+
+async function handleTestPayment(user: any, amount: number, description: string) {
+  try {
+    // Crear preferencia de pago de prueba
+    const preference = await createPaymentPreference({
+      bookingId: `test-${Date.now()}`,
+      amount: amount,
+      title: 'Test de Pago Marketplace',
+      description: description,
+      userEmail: user.email,
+      userName: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim()
+    })
+
+    return NextResponse.json({
+      success: true,
+      isTest: true,
+      payment: {
+        preferenceId: preference.preferenceId,
+        initPoint: preference.initPoint,
+        sandboxInitPoint: preference.sandboxInitPoint
+      }
+    })
+  } catch (error) {
+    console.error('Error creating test payment:', error)
+    return NextResponse.json(
+      { error: 'Error creando test de pago' },
+      { status: 500 }
+    )
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +47,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { bookingId } = await request.json()
+    const { bookingId, amount, description } = await request.json()
+
+    // Modo test: crear preferencia sin reserva
+    if (!bookingId && amount && description) {
+      return await handleTestPayment(session.user, amount, description)
+    }
 
     if (!bookingId) {
       return NextResponse.json(
@@ -26,17 +61,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Buscar la reserva
+    // Buscar la reserva (versión simplificada)
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
         item: {
           include: {
-            owner: true
+            owner: {
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+              }
+            }
           }
         },
-        borrower: true,
-        payment: true
+        borrower: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          }
+        }
       }
     })
 
@@ -63,15 +111,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verificar si ya existe un pago
-    if (booking.payment) {
-      return NextResponse.json(
-        { error: 'Ya existe un pago para esta reserva' },
-        { status: 400 }
-      )
-    }
-
-    // Crear preferencia de pago
+    // Crear preferencia de pago básica
     const preference = await createPaymentPreference({
       bookingId: booking.id,
       amount: booking.totalPrice,
@@ -81,7 +121,7 @@ export async function POST(request: NextRequest) {
       userName: `${booking.borrower.firstName} ${booking.borrower.lastName}`
     })
 
-    // Crear registro de pago en la base de datos
+    // Crear registro de pago en la base de datos (simplificado)
     const payment = await prisma.payment.create({
       data: {
         bookingId: booking.id,

@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { 
-  User, Camera, Edit, Save, Check, X 
+  User, Camera, Edit, Save, Check, X, CreditCard, ExternalLink, CheckCircle, AlertCircle, TestTube 
 } from "lucide-react"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 interface SettingsClientProps {
   user: any
@@ -12,6 +14,7 @@ interface SettingsClientProps {
 export default function SettingsClient({ user }: SettingsClientProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [mpLoading, setMpLoading] = useState(false)
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -20,6 +23,111 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     phoneNumber: user?.phoneNumber || '',
     bio: user?.bio || ''
   })
+
+  const searchParams = useSearchParams()
+
+  // Manejar query params de success/error
+  useEffect(() => {
+    const success = searchParams.get('success')
+    const error = searchParams.get('error')
+    const mpCode = searchParams.get('mp_code')
+    const needsAuth = searchParams.get('needs_auth')
+    
+    // Si hay un código MP pendiente después del login
+    if (mpCode && needsAuth) {
+      // Procesar el código MP automáticamente
+      processMpCode(mpCode)
+      return
+    }
+    
+    if (success === 'connected') {
+      setMessage({ type: 'success', text: 'MercadoPago conectado exitosamente' })
+      setTimeout(() => setMessage(null), 5000)
+      // Limpiar URL
+      window.history.replaceState({}, '', '/dashboard/settings')
+    } else if (error) {
+      let errorMessage = 'Error al conectar con MercadoPago'
+      if (error === 'no_code') errorMessage = 'No se recibió código de autorización'
+      if (error === 'connection_failed') errorMessage = 'Falló la conexión con MercadoPago'
+      
+      setMessage({ type: 'error', text: errorMessage })
+      setTimeout(() => setMessage(null), 5000)
+      // Limpiar URL
+      window.history.replaceState({}, '', '/dashboard/settings')
+    }
+  }, [searchParams])
+
+  // Función para procesar código MP después del login
+  const processMpCode = async (code: string) => {
+    try {
+      setMpLoading(true)
+      setMessage({ type: 'success', text: 'Procesando conexión con MercadoPago...' })
+      
+      // Llamar directamente al endpoint de conexión con el código
+      const response = await fetch(`/api/mercadopago/connect?code=${code}`)
+      
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'MercadoPago conectado exitosamente' })
+        setTimeout(() => {
+          window.location.href = '/dashboard/settings'
+        }, 2000)
+      } else {
+        throw new Error('Error al procesar conexión')
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error al conectar con MercadoPago después del login' })
+    } finally {
+      setMpLoading(false)
+      // Limpiar URL
+      window.history.replaceState({}, '', '/dashboard/settings')
+    }
+  }
+
+  const isConnectedToMP = !!user?.marketplaceAccessToken
+
+  const handleConnectMP = async () => {
+    try {
+      setMpLoading(true)
+      
+      // Obtener URL de autorización desde el API
+      const response = await fetch('/api/mercadopago/auth-url')
+      if (!response.ok) {
+        throw new Error('Error al obtener URL de autorización')
+      }
+      
+      const data = await response.json()
+      
+      // Redirigir a MercadoPago para autorización
+      window.location.href = data.authUrl
+      
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error al conectar con MercadoPago' })
+      setTimeout(() => setMessage(null), 3000)
+    } finally {
+      setMpLoading(false)
+    }
+  }
+
+  const handleDisconnectMP = async () => {
+    try {
+      setMpLoading(true)
+      const response = await fetch('/api/mercadopago/disconnect', {
+        method: 'POST'
+      })
+      if (!response.ok) {
+        throw new Error('Error al desconectar MercadoPago')
+      }
+      setMessage({ type: 'success', text: 'MercadoPago desconectado correctamente' })
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error al desconectar MercadoPago' })
+      setTimeout(() => setMessage(null), 3000)
+    } finally {
+      setMpLoading(false)
+    }
+  }
 
   const handleSave = async () => {
     try {
@@ -194,6 +302,132 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                       !isEditing ? 'bg-gray-50 text-gray-500' : ''
                     }`}
                   />
+                </div>
+              </div>
+
+              {/* MercadoPago Marketplace Section */}
+              <div className="space-y-6 pt-8 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <CreditCard className="w-5 h-5" />
+                      MercadoPago Marketplace
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Conecta tu cuenta para recibir pagos directamente cuando alguien alquile tus objetos
+                    </p>
+                  </div>
+                  {isConnectedToMP && (
+                    <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                      <CheckCircle className="w-4 h-4" />
+                      Conectado
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-6">
+                  {isConnectedToMP ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">Cuenta conectada</p>
+                          <p className="text-sm text-gray-600">
+                            Conectada el {user.marketplaceConnectedAt ? new Date(user.marketplaceConnectedAt).toLocaleDateString('es-ES') : 'Fecha no disponible'}
+                          </p>
+                          {user.marketplaceUserId && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              ID: {user.marketplaceUserId}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          onClick={handleDisconnectMP}
+                          disabled={mpLoading}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                        >
+                          {mpLoading ? (
+                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <X className="w-4 h-4" />
+                          )}
+                          {mpLoading ? 'Desconectando...' : 'Desconectar'}
+                        </button>
+                      </div>
+                      
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-blue-900">
+                              ¡Todo listo para recibir pagos!
+                            </p>
+                            <p className="text-sm text-blue-700 mt-1">
+                              Cuando alguien alquile tus objetos, recibirás el pago directamente en tu cuenta de MercadoPago (menos la comisión del 2% de PRESTAR).
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Test de Pagos */}
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-start gap-3">
+                            <TestTube className="w-5 h-5 text-yellow-600 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-medium text-yellow-900">
+                                Prueba la integración de pagos
+                              </p>
+                              <p className="text-sm text-yellow-700 mt-1">
+                                Verifica que todo funcione correctamente con tarjetas de prueba
+                              </p>
+                            </div>
+                          </div>
+                          <Link 
+                            href="/test/payments"
+                            className="flex items-center gap-2 px-3 py-1.5 text-sm text-yellow-700 border border-yellow-300 rounded-lg hover:bg-yellow-100 transition-colors"
+                          >
+                            <TestTube className="w-4 h-4" />
+                            Probar Pagos
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-gray-900">Cuenta no conectada</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Para recibir pagos directamente cuando alguien alquile tus objetos, necesitas conectar tu cuenta de MercadoPago.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white border border-gray-200 rounded-lg p-4">
+                        <h4 className="font-medium text-gray-900 mb-2">Beneficios de conectar tu cuenta:</h4>
+                        <ul className="text-sm text-gray-600 space-y-1">
+                          <li>• Recibe pagos automáticamente</li>
+                          <li>• Sin transferencias manuales</li>
+                          <li>• Comisión transparente del 2%</li>
+                          <li>• Historial de pagos detallado</li>
+                        </ul>
+                      </div>
+                      
+                      <button
+                        onClick={handleConnectMP}
+                        disabled={mpLoading}
+                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 w-full sm:w-auto justify-center sm:justify-start"
+                      >
+                        {mpLoading ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <ExternalLink className="w-4 h-4" />
+                        )}
+                        {mpLoading ? 'Conectando...' : 'Conectar con MercadoPago'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
