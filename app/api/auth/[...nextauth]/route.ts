@@ -1,8 +1,13 @@
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { PrismaClient } from "@prisma/client";
 import NextAuth, { DefaultSession, NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+
+// Conditionally import PrismaAdapter and PrismaClient only on server
+let PrismaAdapter, PrismaClient;
+if (typeof window === 'undefined') {
+  PrismaAdapter = require("@auth/prisma-adapter").PrismaAdapter;
+  PrismaClient = require("@prisma/client").PrismaClient;
+}
 
 // Extend the built-in session types
 declare module "next-auth" {
@@ -13,11 +18,11 @@ declare module "next-auth" {
   }
 }
 
-const prisma = new PrismaClient();
+const prisma = typeof window === 'undefined' ? new PrismaClient() : null;
 
 export const authOptions: NextAuthOptions = {
     secret: process.env.NEXTAUTH_SECRET, // Asegúrate de definir esta variable en tu .env
-  adapter: PrismaAdapter(prisma),
+  adapter: typeof window === 'undefined' ? PrismaAdapter(prisma) : undefined,
   providers: [
     CredentialsProvider({
       name: "Credentials",

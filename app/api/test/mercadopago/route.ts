@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { paymentConfig, createPaymentPreference } from '@/lib/mercadopago'
+import { createPaymentPreference } from '@/lib/mercadopago'
 
 export async function GET(request: NextRequest) {
   try {
     // Crear una preferencia de prueba para verificar que las credenciales funcionan
     const testData = {
       bookingId: 'test-booking-123',
-      amount: 100,
       title: 'Test Payment',
-      description: 'Testing MercadoPago integration',
-      userEmail: 'test@example.com',
-      userName: 'Test User'
+      quantity: 1,
+      unit_price: 100,
+      userId: 'test-user-123',
+      itemId: 'test-item-123'
     }
 
     const preference = await createPaymentPreference(testData)
@@ -18,11 +18,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'MercadoPago credentials are working!',
-      preferenceId: preference.preferenceId,
-      environment: paymentConfig.environment,
-      publicKey: paymentConfig.publicKey,
-      initPoint: preference.initPoint,
-      sandboxInitPoint: preference.sandboxInitPoint
+      preferenceId: preference.id,
+      environment: process.env.MERCADOPAGO_ENVIRONMENT || 'production',
+      publicKey: process.env.NEXT_PUBLIC_MP_PUBLIC_KEY,
+      initPoint: preference.init_point,
+      sandboxInitPoint: preference.sandbox_init_point
     })
 
   } catch (error) {
