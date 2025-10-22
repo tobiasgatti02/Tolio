@@ -1,6 +1,31 @@
-import { getCategories } from "@/lib/categories"
 import { getCategoryIcon } from "@/lib/category-icons"
 import Link from "next/link"
+
+interface Category {
+  id: string
+  nombre: string
+  descripcion?: string
+  imagen?: string
+  createdAt: string
+  updatedAt: string
+}
+
+async function getCategories(): Promise<Category[]> {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/categories`, {
+      cache: 'force-cache',
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch categories')
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching categories:', error)
+    return []
+  }
+}
 
 export default async function CategoryList() {
   const categories = await getCategories()

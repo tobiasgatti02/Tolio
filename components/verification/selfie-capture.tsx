@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
-import { Camera, RefreshCw, Check, ArrowLeft, User } from "lucide-react"
+import { Camera, RefreshCw, Check, ArrowLeft, User, RotateCcw } from "lucide-react"
 
 interface SelfieCaptureProps {
   onCapture: (imageData: string) => void
@@ -12,18 +12,34 @@ export default function SelfieCapture({ onCapture, onBack }: SelfieCaptureProps)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [countdown, setCountdown] = useState<number | null>(null)
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user") // user = frontal, environment = trasera
+  const [isMobile, setIsMobile] = useState(false)
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  console.log('🤳 [SELFIE-CAPTURE] Componente montado')
+  console.log('🤳 [SELFIE-CAPTURE] Componente montado, facingMode:', facingMode)
+
+  // Detectar si es dispositivo móvil
+  useEffect(() => {
+    const checkIsMobile = () => {
+      const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                    window.innerWidth <= 768
+      setIsMobile(mobile)
+      console.log('📱 [SELFIE-CAPTURE] Es móvil:', mobile)
+    }
+    
+    checkIsMobile()
+    window.addEventListener('resize', checkIsMobile)
+    return () => window.removeEventListener('resize', checkIsMobile)
+  }, [])
 
   const startCamera = useCallback(async () => {
-    console.log('📸 [SELFIE-CAPTURE] Iniciando cámara frontal...')
+    console.log('📸 [SELFIE-CAPTURE] Iniciando cámara:', facingMode)
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
-          facingMode: "user", // Cámara frontal
+          facingMode: facingMode,
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
@@ -36,8 +52,13 @@ export default function SelfieCapture({ onCapture, onBack }: SelfieCaptureProps)
       }
     } catch (error) {
       console.error('❌ [SELFIE-CAPTURE] Error al acceder a la cámara:', error)
+      // Si falla con la cámara trasera, intentar con la frontal
+      if (facingMode === "environment") {
+        console.log('🔄 [SELFIE-CAPTURE] Intentando con cámara frontal...')
+        setFacingMode("user")
+      }
     }
-  }, [])
+  }, [facingMode])
 
   const stopCamera = useCallback(() => {
     console.log('🛑 [SELFIE-CAPTURE] Deteniendo cámara...')
@@ -47,6 +68,12 @@ export default function SelfieCapture({ onCapture, onBack }: SelfieCaptureProps)
       console.log('✅ [SELFIE-CAPTURE] Cámara detenida')
     }
   }, [stream])
+
+  const switchCamera = useCallback(async () => {
+    console.log('🔄 [SELFIE-CAPTURE] Cambiando cámara...')
+    stopCamera()
+    setFacingMode(prev => prev === "user" ? "environment" : "user")
+  }, [stopCamera])
 
   const captureImage = useCallback(() => {
     console.log('📷 [SELFIE-CAPTURE] Capturando imagen...')
@@ -112,16 +139,16 @@ export default function SelfieCapture({ onCapture, onBack }: SelfieCaptureProps)
     }
   }, [capturedImage, onCapture])
 
-  // Iniciar cámara al montar
+  // Iniciar cámara al montar y cuando cambie facingMode
   useEffect(() => {
-    console.log('🔄 [SELFIE-CAPTURE] useEffect: Iniciando cámara')
+    console.log('🔄 [SELFIE-CAPTURE] useEffect: Iniciando cámara con facingMode:', facingMode)
     startCamera()
 
     return () => {
       console.log('🧹 [SELFIE-CAPTURE] Limpiando recursos...')
       stopCamera()
     }
-  }, [startCamera, stopCamera])
+  }, [startCamera, stopCamera, facingMode])
 
   return (
     <div>
@@ -152,10 +179,14 @@ export default function SelfieCapture({ onCapture, onBack }: SelfieCaptureProps)
             />
             <canvas ref={canvasRef} className="hidden" />
 
+            {/* Indicador de cámara */}
+            {isMobile && (
+              <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                {facingMode === "user" ? "Frontal" : "Trasera"}
+              </div>
+            )}
+
             {/* Guía de rostro */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-48 h-64 border-2 border-dashed border-white/70 rounded-full"></div>
-            </div>
 
             {/* Cuenta regresiva */}
             {countdown !== null && (
@@ -197,14 +228,26 @@ export default function SelfieCapture({ onCapture, onBack }: SelfieCaptureProps)
             Atrás
           </button>
 
-          <button
-            onClick={startCountdown}
-            disabled={countdown !== null}
-            className="flex items-center bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-50"
-          >
-            <Camera className="h-4 w-4 mr-2" />
-            Tomar selfie
-          </button>
+          <div className="flex gap-2">
+            {isMobile && (
+              <button
+                onClick={switchCamera}
+                className="flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                title={`Cambiar a cámara ${facingMode === "user" ? "trasera" : "frontal"}`}
+              >
+                <RotateCcw className="h-4 w-4" />
+              </button>
+            )}
+
+            <button
+              onClick={startCountdown}
+              disabled={countdown !== null}
+              className="flex items-center bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-50"
+            >
+              <Camera className="h-4 w-4 mr-2" />
+              Tomar selfie
+            </button>
+          </div>
         </div>
       )}
     </div>
