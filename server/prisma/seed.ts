@@ -6,13 +6,14 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Iniciando el poblado de la base de datos...')
 
-  // Limpiar datos existentes (opcional)
+  // Limpiar datos existentes (opcional) - respetando el orden de las foreign keys
   console.log('🧹 Limpiando datos existentes...')
   await prisma.notification.deleteMany({})
   await prisma.review.deleteMany({})
   await prisma.booking.deleteMany({})
   await prisma.item.deleteMany({})
   await prisma.user.deleteMany({})
+  await prisma.subcategory.deleteMany({})
   await prisma.category.deleteMany({})
 
   // Crear categorías

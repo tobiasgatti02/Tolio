@@ -13,14 +13,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Limpiar los datos de MercadoPago marketplace del usuario
+    // Limpiar los datos de MercadoPago del usuario
     await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        marketplaceAccessToken: null,
-        marketplaceRefreshToken: null,
-        marketplaceUserId: null,
-        marketplaceConnectedAt: null,
+        mercadopagoAccessToken: null,
+        mercadopagoRefreshToken: null,
+        mercadopagoUserId: null,
+        mercadopagoConnected: false,
+        mercadopagoConnectedAt: null,
       },
     })
 

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Limpiar Caché - Stripe Keys</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #635BFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #4F46E5;
+        }
+        .success {
+            background: #10B981;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .info {
+            background: #EFF6FF;
+            border-left: 4px solid #3B82F6;
+            padding: 12px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🧹 Limpiar Caché de Stripe</h1>
+        
+        <div class="info">
+            <strong>Problema:</strong> El navegador está usando claves antiguas de Stripe cacheadas.
+        </div>
+
+        <h3>Soluciones:</h3>
+
+        <button onclick="clearAllCache()">
+            1️⃣ Borrar Todo el Caché
+        </button>
+
+        <button onclick="clearServiceWorkers()">
+            2️⃣ Desregistrar Service Workers
+        </button>
+
+        <button onclick="clearLocalStorage()">
+            3️⃣ Limpiar Local Storage
+        </button>
+
+        <button onclick="hardReload()">
+            4️⃣ Hard Reload (Ctrl+Shift+R)
+        </button>
+
+        <div id="result"></div>
+
+        <div class="info" style="margin-top: 20px;">
+            <strong>Después de limpiar:</strong><br>
+            Recarga la página con <code>Cmd+Shift+R</code>
+        </div>
+    </div>
+
+    <script>
+        function showSuccess(message) {
+            document.getElementById('result').innerHTML = 
+                `<div class="success">✅ ${message}</div>`;
+        }
+
+        async function clearAllCache() {
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                showSuccess('Caché borrado exitosamente');
+            }
+        }
+
+        async function clearServiceWorkers() {
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map(reg => reg.unregister()));
+                showSuccess('Service Workers desregistrados');
+            }
+        }
+
+        function clearLocalStorage() {
+            localStorage.clear();
+            sessionStorage.clear();
+            showSuccess('Storage limpiado');
+        }
+
+        function hardReload() {
+            location.reload(true);
+        }
+
+        // Auto-detectar y mostrar info
+        window.onload = async () => {
+            console.log('🔑 Verificando claves de Stripe...');
+            console.log('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:', 
+                typeof window !== 'undefined' && 
+                document.querySelector('script[data-stripe-key]')?.dataset?.stripeKey || 
+                'No encontrada');
+        };
+    </script>
+</body>
+</html>

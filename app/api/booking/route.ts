@@ -1,5 +1,3 @@
-"use server"
-
 import { getServerSession } from "next-auth"
 import { authOptions } from "../auth/[...nextauth]/route"
 import { prisma } from "@/lib/utils"
@@ -320,4 +318,111 @@ export async function getBookingById(bookingId: string ) {
     throw new Error("Failed to fetch booking")
   }
   
+}
+
+// HTTP POST endpoint for creating bookings (for Stripe integration)
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { itemId, startDate, endDate, totalPrice, ownerId } = body
+
+    if (!itemId || !startDate || !endDate || !totalPrice || !ownerId) {
+      return NextResponse.json({ 
+        error: 'Faltan campos requeridos' 
+      }, { status: 400 })
+    }
+
+    // Validate dates
+    if (isNaN(Date.parse(startDate)) || isNaN(Date.parse(endDate))) {
+      return NextResponse.json({ 
+        error: 'Formato de fecha inválido' 
+      }, { status: 400 })
+    }
+
+    if (Date.parse(startDate) > Date.parse(endDate)) {
+      return NextResponse.json({ 
+        error: 'La fecha de finalización debe ser posterior a la fecha de inicio' 
+      }, { status: 400 })
+    }
+
+    // Check if user is trying to book their own item
+    if (ownerId === session.user.id) {
+      return NextResponse.json({ 
+        error: 'No puedes alquilar tu propio artículo' 
+      }, { status: 400 })
+    }
+
+    // Check for conflicting bookings
+    const conflictingBookings = await prisma.booking.findMany({
+      where: {
+        itemId,
+        status: { in: ["PENDING", "CONFIRMED"] },
+        OR: [
+          {
+            startDate: { lte: new Date(endDate) },
+            endDate: { gte: new Date(startDate) }
+          }
+        ]
+      }
+    })
+
+    if (conflictingBookings.length > 0) {
+      return NextResponse.json({ 
+        error: 'Este artículo ya está reservado para las fechas seleccionadas' 
+      }, { status: 409 })
+    }
+
+    // Create the booking
+    const booking = await prisma.booking.create({
+      data: {
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        totalPrice: totalPrice,
+        status: "CONFIRMED", // CONFIRMED porque el pago está autorizado
+        itemId,
+        borrowerId: session.user.id,
+        ownerId: ownerId
+      },
+      include: {
+        item: {
+          select: {
+            title: true
+          }
+        }
+      }
+    })
+
+    // Create notification for owner
+    await prisma.notification.create({
+      data: {
+        type: "BOOKING_REQUEST",
+        title: "Nueva reserva confirmada",
+        content: `Tienes una nueva reserva para "${booking.item.title}"`,
+        userId: ownerId,
+        bookingId: booking.id,
+        itemId: itemId,
+        actionUrl: `/dashboard/bookings/${booking.id}`,
+        metadata: {
+          bookingId: booking.id,
+          itemId: itemId,
+          itemTitle: booking.item.title,
+          startDate: startDate,
+          endDate: endDate,
+          totalPrice: totalPrice
+        }
+      }
+    })
+
+    return NextResponse.json(booking)
+  } catch (error) {
+    console.error('Error creating booking:', error)
+    return NextResponse.json({ 
+      error: 'Error al crear la reserva' 
+    }, { status: 500 })
+  }
 }

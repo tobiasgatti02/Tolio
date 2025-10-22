@@ -51,7 +51,7 @@ export default function Navbar() {
             {session && (
               <Link
                 href="/dashboard"
-                className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+                className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium"
               >
                 Mi panel
               </Link>
@@ -59,7 +59,7 @@ export default function Navbar() {
             {session && (
               <Link
                 href="/items/nuevo"
-                className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+                className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium"
               >
                 Crear publicación
               </Link>
@@ -70,7 +70,7 @@ export default function Navbar() {
                   signOut();
                   setIsMenuOpen(false);
                 }}
-                className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+                className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium"
               >
                 Salir
               </button>

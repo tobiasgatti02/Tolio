@@ -11,7 +11,7 @@ export default async function SettingsPage() {
     redirect('/login')
   }
 
-  // Obtener información completa del usuario incluyendo datos de MercadoPago
+  // Obtener información completa del usuario
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
@@ -22,9 +22,12 @@ export default async function SettingsPage() {
       phoneNumber: true,
       bio: true,
       profileImage: true,
-      marketplaceAccessToken: true,
-      marketplaceConnectedAt: true,
-      marketplaceUserId: true,
+      stripeAccountId: true,
+      stripeOnboarded: true,
+      mercadopagoAccessToken: true,
+      mercadopagoUserId: true,
+      mercadopagoConnected: true,
+      mercadopagoConnectedAt: true,
     }
   })
 

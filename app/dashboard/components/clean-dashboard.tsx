@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { STATUS_COLORS, BOOKING_STATUS, ERROR_MESSAGES } from "@/lib/dashboard-constants"
 import { DashboardBooking, DashboardStats, DashboardItem, DashboardReview, DashboardNotification } from "@/lib/types"
+import StripeAccountCheck from "@/components/stripe-account-check"
 
 interface MenuItem {
   id: string
@@ -167,6 +168,12 @@ export default function CleanDashboard({
       count: (stats.activeBookings || 0) + (stats.pendingBookings || 0),
     },
     { 
+      id: 'crypto-deals', 
+      label: 'Crypto Escrow', 
+      icon: Wallet, 
+      path: '/dashboard/crypto-deals',
+    },
+    { 
       id: 'reviews', 
       label: 'Reseñas', 
       icon: Star, 
@@ -217,6 +224,9 @@ export default function CleanDashboard({
               </div>
             </div>
           )}
+
+          {/* Aviso de Stripe */}
+          <StripeAccountCheck />
 
           {/* Estadísticas principales */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

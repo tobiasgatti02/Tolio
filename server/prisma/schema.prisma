@@ -22,11 +22,17 @@ model User {
   verificationToken String?
   resetToken        String?
   resetTokenExpiry  DateTime?
-  // MercadoPago Marketplace fields
-  marketplaceAccessToken String?   // Token para crear pagos en nombre del usuario
-  marketplaceRefreshToken String?  // Token para renovar el access token
-  marketplaceUserId      String?   // ID del usuario en MercadoPago
-  marketplaceConnectedAt DateTime? // Fecha de conexión con MercadoPago
+  // Stripe Connect fields
+  stripeAccountId   String?        @unique // Stripe Connect account ID
+  stripeOnboarded   Boolean        @default(false) // Si completó el onboarding de Stripe
+  stripeCustomerId  String?        @unique // Stripe Customer ID para pagos
+  // MercadoPago OAuth fields
+  mercadopagoAccessToken  String?  @unique // Access token del vendedor para recibir pagos
+  mercadopagoRefreshToken String?  // Refresh token para renovar el access token
+  mercadopagoUserId       String?  // User ID en MercadoPago
+  mercadopagoConnected    Boolean  @default(false) // Si completó la autorización
+  mercadopagoConnectedAt  DateTime? // Cuándo se conectó
+  // Relations
   bookings          Booking[]      @relation("Borrower")
   receivedBookings  Booking[]      @relation("Owner")
   ownedItems        Item[]
@@ -114,23 +120,25 @@ model Review {
 
 model Payment {
   id                    String        @id @default(uuid())
-  amount                Float
-  paymentMethod         String
+  amount                Float         // Monto total del pago
   status                PaymentStatus @default(PENDING)
-  // Stripe fields (legacy)
-  stripePaymentId       String?
+  // Stripe fields
+  stripePaymentIntentId String?       @unique // Stripe PaymentIntent ID
+  stripeTransferId      String?       // Stripe Transfer ID al owner
+  stripeChargeId        String?       // Stripe Charge ID
+  capturedAt            DateTime?     // Cuándo se capturó el pago
+  refundedAt            DateTime?     // Cuándo se hizo refund
+  refundAmount          Float?        // Monto reembolsado
   // MercadoPago fields
-  mercadopagoPaymentId  String?       @unique
-  mercadopagoStatus     String?
-  mercadopagoStatusDetail String?
-  preferenceId          String?       @unique
-  externalReference     String?
+  mercadopagoPreferenceId String?     // ID de preferencia de MercadoPago
+  mercadopagoPaymentId    String?     @unique // ID del pago en MercadoPago
+  mercadopagoStatus       String?     // Estado del pago en MP (approved, pending, rejected, etc)
   // Marketplace fields
-  marketplaceFee        Float?        // Comisión del marketplace
+  marketplaceFee        Float?        // Comisión del marketplace (5%)
   ownerAmount           Float?        // Monto que recibe el propietario
   marketplaceAmount     Float?        // Monto que recibe el marketplace
   // General fields
-  paymentProvider       String        @default("mercadopago") // "stripe" or "mercadopago"
+  paymentProvider       String        @default("stripe") // "stripe" | "mercadopago"
   paidAt                DateTime?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
@@ -185,7 +193,10 @@ enum NotificationType {
   BOOKING_REQUEST
   BOOKING_CONFIRMED
   BOOKING_CANCELLED
+  BOOKING_COMPLETED
   PAYMENT_RECEIVED
   REVIEW_RECEIVED
   MESSAGE_RECEIVED
 }
+
+

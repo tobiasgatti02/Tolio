@@ -1,20 +1,40 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { 
-  User, Camera, Edit, Save, Check, X, CreditCard, ExternalLink, CheckCircle, AlertCircle, TestTube 
-} from "lucide-react"
-import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { Save, X, Wallet, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import StripeAccountStatus from "@/components/stripe-account-status"
+import StripeConnectOnboarding from "@/components/stripe-connect-onboarding"
+import MercadoPagoConnect from "@/components/mercadopago-connect"
+import MercadoPagoStatus from "@/components/mercadopago-status"
 
 interface SettingsClientProps {
-  user: any
+  user: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+    phoneNumber: string | null
+    bio: string | null
+    profileImage: string | null
+    stripeAccountId: string | null
+    stripeOnboarded: boolean
+    mercadopagoAccessToken: string | null
+    mercadopagoUserId: string | null
+    mercadopagoConnected: boolean
+    mercadopagoConnectedAt: Date | null
+  }
 }
 
 export default function SettingsClient({ user }: SettingsClientProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [mpLoading, setMpLoading] = useState(false)
+  const [stripeLoading, setStripeLoading] = useState(false)
+  const [stripeAccountComplete, setStripeAccountComplete] = useState(false)
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -24,134 +44,43 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     bio: user?.bio || ''
   })
 
-  const searchParams = useSearchParams()
-
-  // Manejar query params de success/error
   useEffect(() => {
-    const success = searchParams.get('success')
-    const error = searchParams.get('error')
-    const mpCode = searchParams.get('mp_code')
-    const needsAuth = searchParams.get('needs_auth')
-    
-    // Si hay un código MP pendiente después del login
-    if (mpCode && needsAuth) {
-      // Procesar el código MP automáticamente
-      processMpCode(mpCode)
-      return
+    if (user?.stripeAccountId) {
+      checkStripeAccount()
     }
-    
-    if (success === 'connected') {
-      setMessage({ type: 'success', text: 'MercadoPago conectado exitosamente' })
-      setTimeout(() => setMessage(null), 5000)
-      // Limpiar URL
-      window.history.replaceState({}, '', '/dashboard/settings')
-    } else if (error) {
-      let errorMessage = 'Error al conectar con MercadoPago'
-      if (error === 'no_code') errorMessage = 'No se recibió código de autorización'
-      if (error === 'connection_failed') errorMessage = 'Falló la conexión con MercadoPago'
-      
-      setMessage({ type: 'error', text: errorMessage })
-      setTimeout(() => setMessage(null), 5000)
-      // Limpiar URL
-      window.history.replaceState({}, '', '/dashboard/settings')
-    }
-  }, [searchParams])
+  }, [user?.stripeAccountId])
 
-  // Función para procesar código MP después del login
-  const processMpCode = async (code: string) => {
+  const checkStripeAccount = async () => {
+    setStripeLoading(true)
     try {
-      setMpLoading(true)
-      setMessage({ type: 'success', text: 'Procesando conexión con MercadoPago...' })
-      
-      // Llamar directamente al endpoint de conexión con el código
-      const response = await fetch(`/api/mercadopago/connect?code=${code}`)
-      
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'MercadoPago conectado exitosamente' })
-        setTimeout(() => {
-          window.location.href = '/dashboard/settings'
-        }, 2000)
-      } else {
-        throw new Error('Error al procesar conexión')
-      }
+      const res = await fetch('/api/stripe/check-account')
+      const data = await res.json()
+      setStripeAccountComplete(data.isComplete)
     } catch (error) {
-      setMessage({ type: 'error', text: 'Error al conectar con MercadoPago después del login' })
+      console.error('Error checking Stripe:', error)
     } finally {
-      setMpLoading(false)
-      // Limpiar URL
-      window.history.replaceState({}, '', '/dashboard/settings')
-    }
-  }
-
-  const isConnectedToMP = !!user?.marketplaceAccessToken
-
-  const handleConnectMP = async () => {
-    try {
-      setMpLoading(true)
-      
-      // Obtener URL de autorización desde el API
-      const response = await fetch('/api/mercadopago/auth-url')
-      if (!response.ok) {
-        throw new Error('Error al obtener URL de autorización')
-      }
-      
-      const data = await response.json()
-      
-      // Redirigir a MercadoPago para autorización
-      window.location.href = data.authUrl
-      
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Error al conectar con MercadoPago' })
-      setTimeout(() => setMessage(null), 3000)
-    } finally {
-      setMpLoading(false)
-    }
-  }
-
-  const handleDisconnectMP = async () => {
-    try {
-      setMpLoading(true)
-      const response = await fetch('/api/mercadopago/disconnect', {
-        method: 'POST'
-      })
-      if (!response.ok) {
-        throw new Error('Error al desconectar MercadoPago')
-      }
-      setMessage({ type: 'success', text: 'MercadoPago desconectado correctamente' })
-      setTimeout(() => {
-        window.location.reload()
-      }, 1500)
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Error al desconectar MercadoPago' })
-      setTimeout(() => setMessage(null), 3000)
-    } finally {
-      setMpLoading(false)
+      setStripeLoading(false)
     }
   }
 
   const handleSave = async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      const response = await fetch('/api/user/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch('/api/user/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
 
-      if (!response.ok) {
-        throw new Error('Error al guardar los cambios')
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Información actualizada exitosamente' })
+        setIsEditing(false)
+        setTimeout(() => setMessage(null), 3000)
+      } else {
+        throw new Error('Error al actualizar')
       }
-
-      const result = await response.json()
-      setMessage({ type: 'success', text: 'Perfil actualizado correctamente' })
-      setIsEditing(false)
-      
-      // Limpiar mensaje después de 3 segundos
-      setTimeout(() => setMessage(null), 3000)
     } catch (error) {
-      setMessage({ type: 'error', text: 'Error al guardar los cambios' })
+      setMessage({ type: 'error', text: 'Error al actualizar la información' })
       setTimeout(() => setMessage(null), 3000)
     } finally {
       setLoading(false)
@@ -159,301 +88,228 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   }
 
   return (
-    <div className="p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Configuración</h1>
-          <p className="text-gray-600 mt-2">Gestiona tu información personal y preferencias</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6">
-            <div className="space-y-8">
-              {/* Mensaje de éxito/error */}
-              {message && (
-                <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                  {message.text}
-                </div>
+    <div className="space-y-6">
+      {message && (
+        <Card className={message.type === 'success' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              {message.type === 'success' ? (
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-red-600" />
               )}
-              
-              {/* Profile picture */}
-              <div className="flex items-center space-x-6">
-                <div className="relative">
-                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-semibold">
-                    {formData.firstName ? formData.firstName.charAt(0).toUpperCase() : 'U'}
-                  </div>
-                  <button className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors">
-                    <Camera className="w-4 h-4" />
-                  </button>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Foto de perfil</h3>
-                  <p className="text-sm text-gray-600">JPG, GIF o PNG. Máximo 10MB.</p>
-                </div>
-              </div>
+              <p className={`text-sm ${message.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
+                {message.text}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-              {/* Personal information */}
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">Información personal</h3>
-                  <button
-                    onClick={() => {
-                      if (isEditing) {
-                        // Cancelar - restaurar datos originales
-                        setFormData({
-                          firstName: user?.firstName || '',
-                          lastName: user?.lastName || '',
-                          email: user?.email || '',
-                          phoneNumber: user?.phoneNumber || '',
-                          bio: user?.bio || ''
-                        })
-                      }
-                      setIsEditing(!isEditing)
-                    }}
-                    className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                  >
-                    {isEditing ? <X className="w-4 h-4" /> : <Edit className="w-4 h-4" />}
-                    <span>{isEditing ? 'Cancelar' : 'Editar'}</span>
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={formData.firstName}
-                        onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                        disabled={!isEditing}
-                        className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          !isEditing ? 'bg-gray-50 text-gray-500' : ''
-                        }`}
-                      />
-                      <User className="absolute right-3 top-2.5 w-4 h-4 text-gray-400" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Apellido
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                        disabled={!isEditing}
-                        className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          !isEditing ? 'bg-gray-50 text-gray-500' : ''
-                        }`}
-                      />
-                      <User className="absolute right-3 top-2.5 w-4 h-4 text-gray-400" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="email"
-                        value={formData.email}
-                        disabled={true} // Email no se puede editar
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">El email no se puede modificar</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Teléfono
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="tel"
-                        value={formData.phoneNumber}
-                        onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
-                        placeholder="+54 9 11 1234-5678"
-                        disabled={!isEditing}
-                        className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          !isEditing ? 'bg-gray-50 text-gray-500' : ''
-                        }`}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Biografía
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={formData.bio}
-                    onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                    placeholder="Cuéntanos algo sobre ti..."
-                    disabled={!isEditing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      !isEditing ? 'bg-gray-50 text-gray-500' : ''
-                    }`}
-                  />
-                </div>
-              </div>
-
-              {/* MercadoPago Marketplace Section */}
-              <div className="space-y-6 pt-8 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                      <CreditCard className="w-5 h-5" />
-                      MercadoPago Marketplace
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Conecta tu cuenta para recibir pagos directamente cuando alguien alquile tus objetos
-                    </p>
-                  </div>
-                  {isConnectedToMP && (
-                    <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                      <CheckCircle className="w-4 h-4" />
-                      Conectado
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-6">
-                  {isConnectedToMP ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-gray-900">Cuenta conectada</p>
-                          <p className="text-sm text-gray-600">
-                            Conectada el {user.marketplaceConnectedAt ? new Date(user.marketplaceConnectedAt).toLocaleDateString('es-ES') : 'Fecha no disponible'}
-                          </p>
-                          {user.marketplaceUserId && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              ID: {user.marketplaceUserId}
-                            </p>
-                          )}
-                        </div>
-                        <button
-                          onClick={handleDisconnectMP}
-                          disabled={mpLoading}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
-                        >
-                          {mpLoading ? (
-                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                          ) : (
-                            <X className="w-4 h-4" />
-                          )}
-                          {mpLoading ? 'Desconectando...' : 'Desconectar'}
-                        </button>
-                      </div>
-                      
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div className="flex items-start gap-3">
-                          <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium text-blue-900">
-                              ¡Todo listo para recibir pagos!
-                            </p>
-                            <p className="text-sm text-blue-700 mt-1">
-                              Cuando alguien alquile tus objetos, recibirás el pago directamente en tu cuenta de MercadoPago (menos la comisión del 2% de PRESTAR).
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Test de Pagos */}
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-start gap-3">
-                            <TestTube className="w-5 h-5 text-yellow-600 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium text-yellow-900">
-                                Prueba la integración de pagos
-                              </p>
-                              <p className="text-sm text-yellow-700 mt-1">
-                                Verifica que todo funcione correctamente con tarjetas de prueba
-                              </p>
-                            </div>
-                          </div>
-                          <Link 
-                            href="/test/payments"
-                            className="flex items-center gap-2 px-3 py-1.5 text-sm text-yellow-700 border border-yellow-300 rounded-lg hover:bg-yellow-100 transition-colors"
-                          >
-                            <TestTube className="w-4 h-4" />
-                            Probar Pagos
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                        <div>
-                          <p className="font-medium text-gray-900">Cuenta no conectada</p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            Para recibir pagos directamente cuando alguien alquile tus objetos, necesitas conectar tu cuenta de MercadoPago.
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-white border border-gray-200 rounded-lg p-4">
-                        <h4 className="font-medium text-gray-900 mb-2">Beneficios de conectar tu cuenta:</h4>
-                        <ul className="text-sm text-gray-600 space-y-1">
-                          <li>• Recibe pagos automáticamente</li>
-                          <li>• Sin transferencias manuales</li>
-                          <li>• Comisión transparente del 2%</li>
-                          <li>• Historial de pagos detallado</li>
-                        </ul>
-                      </div>
-                      
-                      <button
-                        onClick={handleConnectMP}
-                        disabled={mpLoading}
-                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 w-full sm:w-auto justify-center sm:justify-start"
-                      >
-                        {mpLoading ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <ExternalLink className="w-4 h-4" />
-                        )}
-                        {mpLoading ? 'Conectando...' : 'Conectar con MercadoPago'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Save button */}
-              {isEditing && (
-                <div className="flex justify-end pt-6 border-t border-gray-200">
-                  <button 
-                    onClick={handleSave}
-                    disabled={loading}
-                    className={`flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
-                      loading ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {loading ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                    <span>{loading ? 'Guardando...' : 'Guardar cambios'}</span>
-                  </button>
-                </div>
-              )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Información Personal</CardTitle>
+          <CardDescription>Actualiza tus datos de perfil</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="firstName">Nombre</Label>
+              <Input
+                id="firstName"
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                disabled={!isEditing}
+              />
+            </div>
+            <div>
+              <Label htmlFor="lastName">Apellido</Label>
+              <Input
+                id="lastName"
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                disabled={!isEditing}
+              />
             </div>
           </div>
-        </div>
-      </div>
+
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              disabled
+              className="bg-gray-50"
+            />
+            <p className="text-xs text-gray-500 mt-1">El email no se puede cambiar</p>
+          </div>
+
+          <div>
+            <Label htmlFor="phoneNumber">Teléfono</Label>
+            <Input
+              id="phoneNumber"
+              value={formData.phoneNumber || ''}
+              onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+              disabled={!isEditing}
+              placeholder="+52 55 1234 5678"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="bio">Biografía</Label>
+            <Textarea
+              id="bio"
+              value={formData.bio || ''}
+              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              disabled={!isEditing}
+              placeholder="Cuéntanos sobre ti..."
+              rows={4}
+            />
+          </div>
+
+          <div className="flex gap-2">
+            {!isEditing ? (
+              <Button onClick={() => setIsEditing(true)}>
+                Editar Información
+              </Button>
+            ) : (
+              <>
+                <Button onClick={handleSave} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Guardar Cambios
+                    </>
+                  )}
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setIsEditing(false)
+                  setFormData({
+                    firstName: user?.firstName || '',
+                    lastName: user?.lastName || '',
+                    email: user?.email || '',
+                    phoneNumber: user?.phoneNumber || '',
+                    bio: user?.bio || ''
+                  })
+                }}>
+                  <X className="mr-2 h-4 w-4" />
+                  Cancelar
+                </Button>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-emerald-600" />
+            Configuración de Pagos
+          </CardTitle>
+          <CardDescription>
+            Configura cómo recibes pagos cuando alquilas tus artículos
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {user.stripeAccountId ? (
+            <>
+              {stripeAccountComplete ? (
+                <Card className="border-green-200 bg-green-50">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+                      <div>
+                        <h3 className="font-semibold text-green-900">
+                          Cuenta de pagos configurada
+                        </h3>
+                        <p className="text-sm text-green-800 mt-1">
+                          Tu cuenta está lista para recibir pagos.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  <Card className="border-yellow-200 bg-yellow-50">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-6 w-6 text-yellow-600 flex-shrink-0" />
+                        <div className="w-full">
+                          <h3 className="font-semibold text-yellow-900">
+                            Configuración pendiente
+                          </h3>
+                          <p className="text-sm text-yellow-800 mt-1">
+                            Completa tu configuración de pagos
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <StripeAccountStatus stripeAccountId={user.stripeAccountId} />
+                </>
+              )}
+            </>
+          ) : (
+            <StripeConnectOnboarding />
+          )}
+
+          <div className="space-y-4 pt-4 border-t">
+            <div>
+              <h4 className="font-semibold mb-2">Stripe - Pago con Garantía</h4>
+              <p className="text-sm text-gray-600">
+                Con Stripe, el pago se retiene hasta que confirmes la entrega del artículo.
+                Esto protege a ambas partes. Recibes el <strong>95% del precio</strong>.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* MercadoPago Payment Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-blue-600" />
+            MercadoPago - Pago Directo
+          </CardTitle>
+          <CardDescription>
+            Recibe pagos directos sin retención (sin garantía de escrow)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {user.mercadopagoConnected ? (
+            <MercadoPagoStatus
+              isConnected={user.mercadopagoConnected}
+              mercadopagoUserId={user.mercadopagoUserId}
+              connectedAt={user.mercadopagoConnectedAt}
+            />
+          ) : (
+            <MercadoPagoConnect />
+          )}
+
+          <div className="space-y-4 pt-4 border-t">
+            <div>
+              <h4 className="font-semibold mb-2">MercadoPago - Pago Inmediato</h4>
+              <p className="text-sm text-gray-600">
+                Con MercadoPago, el dinero llega directamente a tu cuenta sin retención.
+                No hay garantía de escrow. Recibes el <strong>95% del precio</strong>.
+              </p>
+              <p className="text-sm text-yellow-700 mt-2 bg-yellow-50 p-2 rounded">
+                ⚠️ El comprador paga de inmediato y tú recibes el dinero sin esperar confirmación
+                de entrega.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -1,86 +1,76 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { ExternalLink, Loader2 } from "lucide-react"
 
-interface MercadoPagoConnectProps {
-  user: {
-    id: string
-    marketplaceAccessToken?: string | null
-    marketplaceConnectedAt?: Date | null
-  }
-}
-
-export default function MercadoPagoConnect({ user }: MercadoPagoConnectProps) {
+export default function MercadoPagoConnect() {
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   const handleConnect = async () => {
-    setLoading(true)
     try {
-      const response = await fetch('/api/mercadopago/connect')
-      const data = await response.json()
+      setLoading(true)
       
-      if (data.authUrl) {
-        window.location.href = data.authUrl
+      // Obtener la URL de autorización de MercadoPago
+      const response = await fetch('/api/mercadopago/auth-url')
+      const data = await response.json()
+
+      if (data.url) {
+        // Redirigir al usuario a MercadoPago para autorizar
+        window.location.href = data.url
       } else {
-        console.error('No authorization URL received')
+        throw new Error('No se pudo obtener la URL de autorización')
       }
     } catch (error) {
       console.error('Error connecting to MercadoPago:', error)
-    } finally {
+      alert('Error al conectar con MercadoPago. Por favor, intenta de nuevo.')
       setLoading(false)
     }
   }
 
-  const isConnected = !!user.marketplaceAccessToken
-
   return (
-    <Card>
+    <Card className="border-blue-200 bg-blue-50">
       <CardHeader>
-        <CardTitle>Conexión con MercadoPago</CardTitle>
-        <CardDescription>
-          Conecta tu cuenta de MercadoPago para recibir pagos directamente cuando alguien alquile tus items.
-          PRESTAR se queda con una comisión del 2% por cada transacción.
+        <CardTitle className="text-blue-900">Conectar MercadoPago</CardTitle>
+        <CardDescription className="text-blue-700">
+          Conecta tu cuenta de MercadoPago para recibir pagos directos (sin retención)
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {isConnected ? (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-green-600">Conectado a MercadoPago</span>
-            </div>
-            {user.marketplaceConnectedAt && (
-              <p className="text-sm text-gray-500">
-                Conectado el {new Date(user.marketplaceConnectedAt).toLocaleDateString()}
-              </p>
+        <div className="space-y-4">
+          <div className="text-sm text-blue-800 space-y-2">
+            <p>
+              <strong>⚠️ Pago Directo:</strong> Con MercadoPago, recibirás el dinero de inmediato.
+              No hay retención de pago como garantía.
+            </p>
+            <p>
+              La plataforma cobrará una comisión del <strong>5%</strong> sobre cada transacción.
+            </p>
+          </div>
+          
+          <Button
+            onClick={handleConnect}
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Redirigiendo...
+              </>
+            ) : (
+              <>
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Conectar Cuenta de MercadoPago
+              </>
             )}
-            <p className="text-sm text-gray-600">
-              Cuando alguien alquile uno de tus items, recibirás el pago directamente en tu cuenta de MercadoPago 
-              (menos la comisión del 2% de PRESTAR).
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-              <span className="text-sm text-gray-600">No conectado a MercadoPago</span>
-            </div>
-            <p className="text-sm text-gray-600">
-              Para recibir pagos cuando alguien alquile tus items, necesitas conectar tu cuenta de MercadoPago.
-            </p>
-            <Button 
-              onClick={handleConnect} 
-              disabled={loading}
-              className="w-full"
-            >
-              {loading ? 'Conectando...' : 'Conectar con MercadoPago'}
-            </Button>
-          </div>
-        )}
+          </Button>
+
+          <p className="text-xs text-blue-600">
+            Serás redirigido a MercadoPago para autorizar el acceso a tu cuenta.
+          </p>
+        </div>
       </CardContent>
     </Card>
   )

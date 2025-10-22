@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import PaymentButton from "@/components/payment-button"
+import CompleteBookingButton from "@/components/complete-booking-button"
 
 export const dynamic = "force-dynamic"
 
@@ -406,6 +407,20 @@ export default async function BookingDetailsPage({ params }: { params: Promise<{
                         ✅ Reserva confirmada. El pago ha sido procesado exitosamente.
                       </p>
                     </div>
+                    
+                    {/* Botón para que el OWNER marque como completado */}
+                    <CompleteBookingButton bookingId={booking.id} isOwner={isOwner} />
+                    
+                    {/* Mensaje para el comprador */}
+                    {isBorrower && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm text-blue-800">
+                          ⏳ El pago está retenido de forma segura. Se liberará cuando el vendedor confirme la entrega.
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Botón de contactar */}
                     <Button variant="outline" className="w-full">
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Contactar al {isOwner ? 'inquilino' : 'propietario'}
