@@ -61,6 +61,8 @@
     "@vercel/blob": "^0.27.3",
     "@wagmi/connectors": "^5.11.1",
     "@wagmi/core": "^2.21.1",
+    "@zxing/browser": "^0.1.5",
+    "@zxing/library": "^0.21.3",
     "autoprefixer": "^10.4.20",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",

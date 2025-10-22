@@ -19,6 +19,7 @@ model User {
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   isVerified        Boolean        @default(false)
+  verifiedIdentity  Boolean        @default(false) // Verificación de identidad con DNI
   verificationToken String?
   resetToken        String?
   resetTokenExpiry  DateTime?
@@ -41,6 +42,7 @@ model User {
   notifications     Notification[]
   receivedReviews   Review[]       @relation("Reviewee")
   reviews           Review[]       @relation("Reviewer")
+  verifications     Verification[]
 }
 
 model Item {
@@ -198,5 +200,55 @@ enum NotificationType {
   REVIEW_RECEIVED
   MESSAGE_RECEIVED
 }
+
+enum VerificationType {
+  IDENTITY
+  DNI
+  EMAIL
+  PHONE
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+model Verification {
+  id                String             @id @default(uuid())
+  userId            String
+  type              VerificationType
+  status            VerificationStatus @default(PENDING)
+  // Datos del documento
+  documentType      String?            // DNI, Pasaporte, etc
+  documentNumber    String?
+  firstName         String?
+  lastName          String?
+  birthDate         String?
+  gender            String?
+  expirationDate    String?
+  // URLs de imágenes
+  selfieUrl         String?
+  documentFrontUrl  String?
+  documentBackUrl   String?
+  // Datos del PDF417
+  pdf417Data        String?            @db.Text
+  // Resultados de verificación
+  faceMatchScore    Float?             // Score de coincidencia facial (0-1)
+  livenessScore     Float?             // Score de liveness detection (0-1)
+  // Metadata
+  verifiedAt        DateTime?
+  rejectedAt        DateTime?
+  rejectionReason   String?
+  metadata          Json?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  user              User               @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
 
 

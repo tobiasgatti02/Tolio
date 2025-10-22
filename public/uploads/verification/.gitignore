@@ -1,0 +1,3 @@
+# Ignore all uploaded verification files for privacy
+*
+!.gitignore
