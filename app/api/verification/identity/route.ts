@@ -4,6 +4,7 @@ import { authOptions } from '../../auth/[...nextauth]/route';
 import { PrismaClient } from '@prisma/client';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { compareFacesForBackend } from '@/lib/face-matching';
 
 const prisma = new PrismaClient();
 
@@ -107,10 +108,20 @@ export async function POST(req: NextRequest) {
     console.log('  - Selfie:', selfieUrl);
     console.log('  - DNI:', dniUrl);
 
-    // TODO: Aquí iría la lógica de face matching
-    // Por ahora, simulamos una verificación exitosa
-    const faceMatchScore = 0.95; // Simulado
-    console.log('🎭 [IDENTITY-VERIFICATION] Face match score (simulado):', faceMatchScore);
+    // Convertir imágenes a base64 para comparación facial
+    const dniBase64 = `data:image/jpeg;base64,${dniBuffer.toString('base64')}`;
+    const selfieBase64 = `data:image/jpeg;base64,${selfieBuffer.toString('base64')}`;
+
+    console.log('🎭 [IDENTITY-VERIFICATION] Iniciando comparación facial real...');
+
+    // Comparación facial usando face-api.js
+    const faceMatchResult = await compareFacesForBackend(dniBase64, selfieBase64);
+    const faceMatchScore = faceMatchResult.score;
+
+    console.log('📊 [IDENTITY-VERIFICATION] Resultado comparación facial:', {
+      score: (faceMatchScore * 100).toFixed(1) + '%',
+      isMatch: faceMatchResult.isMatch
+    });
 
     // Guardar verificación en la base de datos
     console.log('💾 [IDENTITY-VERIFICATION] Guardando en base de datos...');
@@ -119,7 +130,7 @@ export async function POST(req: NextRequest) {
       data: {
         userId: session.user.id,
         type: 'IDENTITY',
-        status: 'PENDING', // Cambiar a 'APPROVED' cuando tengamos face matching real
+        status: faceMatchResult.isMatch ? 'APPROVED' : 'REJECTED', // Cambiar a 'APPROVED' si hay match, 'REJECTED' si no
         documentType: 'DNI',
         documentNumber: parsedPDF417.documentNumber,
         firstName: parsedPDF417.firstName,
@@ -133,7 +144,11 @@ export async function POST(req: NextRequest) {
         faceMatchScore: faceMatchScore,
         metadata: {
           verifiedAt: new Date().toISOString(),
-          userAgent: req.headers.get('user-agent') || 'unknown'
+          userAgent: req.headers.get('user-agent') || 'unknown',
+          faceMatchDetails: {
+            isMatch: faceMatchResult.isMatch,
+            confidence: faceMatchScore
+          }
         }
       }
     });
@@ -141,9 +156,9 @@ export async function POST(req: NextRequest) {
     console.log('✅ [IDENTITY-VERIFICATION] Verificación guardada, ID:', verification.id);
 
     // Actualizar usuario si la verificación es exitosa
-    if (faceMatchScore > 0.8) {
+    if (faceMatchResult.isMatch) {
       console.log('✅ [IDENTITY-VERIFICATION] Score suficiente, actualizando usuario...');
-      
+
       await prisma.user.update({
         where: { id: session.user.id },
         data: {
