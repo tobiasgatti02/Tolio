@@ -82,17 +82,30 @@ export async function compareFaces(
 ): Promise<FaceMatchResult> {
   try {
     console.log('🔍 [FACE-MATCHING] Iniciando comparación facial mejorada...')
+    console.log('🔍 [FACE-MATCHING-DEBUG] Datos de entrada:')
+    console.log('  - face1Data length:', face1Data.length)
+    console.log('  - face2Data length:', face2Data.length)
+    console.log('  - face1Data type:', face1Data.substring(0, 20) + '...')
+    console.log('  - face2Data type:', face2Data.substring(0, 20) + '...')
 
     // Asegurar que los modelos estén cargados
+    console.log('🤖 [FACE-MATCHING-DEBUG] Cargando modelos...')
     await loadFaceModels()
+    console.log('✅ [FACE-MATCHING-DEBUG] Modelos cargados')
 
     // Extraer descriptores de ambos rostros con múltiples intentos
+    console.log('🔍 [FACE-MATCHING-DEBUG] Extrayendo descriptores...')
     const [descriptor1, descriptor2] = await Promise.all([
       getFaceDescriptorWithRetry(face1Data, 3),
       getFaceDescriptorWithRetry(face2Data, 3)
     ])
 
+    console.log('🔍 [FACE-MATCHING-DEBUG] Descriptores extraídos:')
+    console.log('  - descriptor1:', descriptor1 ? `Array(${descriptor1.length})` : 'null')
+    console.log('  - descriptor2:', descriptor2 ? `Array(${descriptor2.length})` : 'null')
+
     if (!descriptor1 || !descriptor2) {
+      console.log('❌ [FACE-MATCHING-DEBUG] Error: No se pudieron extraer descriptores')
       return {
         isMatch: false,
         confidence: 0,
@@ -101,35 +114,61 @@ export async function compareFaces(
     }
 
     // Calcular distancia euclidiana entre descriptores
+    console.log('🔍 [FACE-MATCHING-DEBUG] Calculando distancia euclidiana...')
     const distance = faceapi.euclideanDistance(descriptor1, descriptor2)
+    console.log('🔍 [FACE-MATCHING-DEBUG] Distancia euclidiana:', distance.toFixed(6))
 
     // Validaciones adicionales de calidad
+    console.log('🔍 [FACE-MATCHING-DEBUG] Realizando verificaciones de calidad...')
     const qualityChecks = await performQualityChecks(face1Data, face2Data)
+    console.log('🔍 [FACE-MATCHING-DEBUG] Verificaciones de calidad:', qualityChecks)
     
     // Convertir distancia a similitud con umbrales adaptativos
     let confidence: number
     let isMatch: boolean
 
+    console.log('🔍 [FACE-MATCHING-DEBUG] Aplicando umbrales adaptativos...')
+    console.log('  - distance:', distance.toFixed(6))
+    console.log('  - distance < 0.4:', distance < 0.4)
+    console.log('  - distance < 0.6:', distance < 0.6)
+
     if (distance < 0.4) {
       // Muy similar
       confidence = Math.max(0.9, 1 - (distance / 0.4))
       isMatch = true
+      console.log('  - Categoría: Muy similar')
     } else if (distance < 0.6) {
       // Similar pero requiere validación adicional
       confidence = Math.max(0.6, 1 - (distance / 0.6))
       isMatch = qualityChecks.pass && confidence > 0.7
+      console.log('  - Categoría: Similar (requiere validación adicional)')
+      console.log('  - qualityChecks.pass:', qualityChecks.pass)
+      console.log('  - confidence > 0.7:', confidence > 0.7)
     } else {
       // Diferente
       confidence = Math.max(0, 1 - (distance / 0.8))
       isMatch = false
+      console.log('  - Categoría: Diferente')
     }
+
+    console.log('🔍 [FACE-MATCHING-DEBUG] Confianza inicial:', confidence.toFixed(6))
 
     // Ajustar confianza basado en calidad de imagen
     if (qualityChecks.pass) {
+      const oldConfidence = confidence
       confidence = Math.min(1, confidence * 1.1) // Bonus por buena calidad
+      console.log('  - Bonus por calidad:', oldConfidence.toFixed(6), '->', confidence.toFixed(6))
     } else {
+      const oldConfidence = confidence
       confidence = Math.max(0, confidence * 0.8) // Penalización por mala calidad
+      console.log('  - Penalización por calidad:', oldConfidence.toFixed(6), '->', confidence.toFixed(6))
     }
+
+    console.log('🔍 [FACE-MATCHING-DEBUG] Resultado final:')
+    console.log('  - distance:', distance.toFixed(6))
+    console.log('  - confidence:', confidence.toFixed(6))
+    console.log('  - isMatch:', isMatch)
+    console.log('  - qualityChecks.pass:', qualityChecks.pass)
 
     console.log('📊 [FACE-MATCHING] Resultado mejorado:', {
       distance: distance.toFixed(4),
@@ -145,6 +184,10 @@ export async function compareFaces(
 
   } catch (error) {
     console.error('❌ [FACE-MATCHING] Error en comparación:', error)
+    console.error('❌ [FACE-MATCHING-DEBUG] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
     return {
       isMatch: false,
       confidence: 0,

@@ -24,18 +24,34 @@ export async function detectLiveness(
 ): Promise<LivenessResult> {
   try {
     console.log('👁️ [LIVENESS] Iniciando detección de liveness...')
+    console.log('🔍 [LIVENESS-DEBUG] Datos de entrada:')
+    console.log('  - imageData length:', imageData.length)
+    console.log('  - imageData type:', imageData.substring(0, 20) + '...')
+    console.log('  - previousFrame:', previousFrame ? 'provided' : 'not provided')
 
     const img = await base64ToImage(imageData)
+    console.log('🔍 [LIVENESS-DEBUG] Imagen cargada:')
+    console.log('  - width:', img.width)
+    console.log('  - height:', img.height)
+    console.log('  - naturalWidth:', img.naturalWidth)
+    console.log('  - naturalHeight:', img.naturalHeight)
     
     // Cargar modelos si no están cargados
+    console.log('🤖 [LIVENESS-DEBUG] Cargando modelos...')
     await loadFaceModels()
+    console.log('✅ [LIVENESS-DEBUG] Modelos cargados')
 
     // Detectar rostro con landmarks
+    console.log('🔍 [LIVENESS-DEBUG] Detectando rostro...')
     const detection = await faceapi
       .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
       .withFaceLandmarks()
 
+    console.log('🔍 [LIVENESS-DEBUG] Detección de rostro:')
+    console.log('  - detection:', detection ? 'found' : 'not found')
+    
     if (!detection) {
+      console.log('❌ [LIVENESS-DEBUG] No se detectó rostro')
       return {
         isLive: false,
         confidence: 0,
@@ -50,15 +66,33 @@ export async function detectLiveness(
     }
 
     const landmarks = detection.landmarks
+    console.log('🔍 [LIVENESS-DEBUG] Landmarks detectados:')
+    console.log('  - landmarks count:', landmarks.positions.length)
+    console.log('  - landmarks positions:', landmarks.positions.slice(0, 5).map(p => `(${p.x.toFixed(2)}, ${p.y.toFixed(2)})`))
+    
     const checks = await performLivenessChecks(img, landmarks, previousFrame)
+    console.log('🔍 [LIVENESS-DEBUG] Verificaciones de liveness:')
+    console.log('  - eyeBlink:', checks.eyeBlink)
+    console.log('  - headMovement:', checks.headMovement)
+    console.log('  - imageQuality:', checks.imageQuality)
+    console.log('  - antiSpoofing:', checks.antiSpoofing)
     
     // Calcular confianza general
     const passedChecks = Object.values(checks).filter(Boolean).length
     const totalChecks = Object.keys(checks).length
     const confidence = passedChecks / totalChecks
 
+    console.log('🔍 [LIVENESS-DEBUG] Cálculo de confianza:')
+    console.log('  - passedChecks:', passedChecks)
+    console.log('  - totalChecks:', totalChecks)
+    console.log('  - confidence:', confidence.toFixed(6))
+
     // Considerar "live" si pasa al menos 3 de 4 verificaciones
     const isLive = passedChecks >= 3 && confidence > 0.6
+    console.log('🔍 [LIVENESS-DEBUG] Cálculo de isLive:')
+    console.log('  - passedChecks >= 3:', passedChecks >= 3)
+    console.log('  - confidence > 0.6:', confidence > 0.6)
+    console.log('  - isLive:', isLive)
 
     console.log('📊 [LIVENESS] Resultado:', {
       isLive,
@@ -78,6 +112,10 @@ export async function detectLiveness(
 
   } catch (error) {
     console.error('❌ [LIVENESS] Error en detección:', error)
+    console.error('❌ [LIVENESS-DEBUG] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
     return {
       isLive: false,
       confidence: 0,

@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Tolio",
   description: "La plataforma de alquiler de productos más grande de Latinoamérica",
-    generator: 'v0.dev'
+    
 }
 
 export default function RootLayout({
