@@ -74,45 +74,68 @@ async function getFaceDescriptor(imageData: string): Promise<Float32Array | null
 }
 
 /**
- * Compara dos rostros usando sus descriptores
+ * Compara dos rostros usando sus descriptores con validaciones mejoradas
  */
 export async function compareFaces(
   face1Data: string,
   face2Data: string
 ): Promise<FaceMatchResult> {
   try {
-    console.log('🔍 [FACE-MATCHING] Iniciando comparación facial...')
+    console.log('🔍 [FACE-MATCHING] Iniciando comparación facial mejorada...')
 
     // Asegurar que los modelos estén cargados
     await loadFaceModels()
 
-    // Extraer descriptores de ambos rostros
+    // Extraer descriptores de ambos rostros con múltiples intentos
     const [descriptor1, descriptor2] = await Promise.all([
-      getFaceDescriptor(face1Data),
-      getFaceDescriptor(face2Data)
+      getFaceDescriptorWithRetry(face1Data, 3),
+      getFaceDescriptorWithRetry(face2Data, 3)
     ])
 
     if (!descriptor1 || !descriptor2) {
       return {
         isMatch: false,
         confidence: 0,
-        error: 'No se pudo detectar uno o ambos rostros'
+        error: 'No se pudo detectar uno o ambos rostros después de múltiples intentos'
       }
     }
 
     // Calcular distancia euclidiana entre descriptores
     const distance = faceapi.euclideanDistance(descriptor1, descriptor2)
 
-    // Convertir distancia a similitud (0 = diferente, 1 = igual)
-    // Umbral típico: distancia < 0.6 = match, > 0.6 = no match
-    const confidence = Math.max(0, Math.min(1, 1 - distance / 0.6))
+    // Validaciones adicionales de calidad
+    const qualityChecks = await performQualityChecks(face1Data, face2Data)
+    
+    // Convertir distancia a similitud con umbrales adaptativos
+    let confidence: number
+    let isMatch: boolean
 
-    const isMatch = confidence > 0.8 // 80% de confianza mínima
+    if (distance < 0.4) {
+      // Muy similar
+      confidence = Math.max(0.9, 1 - (distance / 0.4))
+      isMatch = true
+    } else if (distance < 0.6) {
+      // Similar pero requiere validación adicional
+      confidence = Math.max(0.6, 1 - (distance / 0.6))
+      isMatch = qualityChecks.pass && confidence > 0.7
+    } else {
+      // Diferente
+      confidence = Math.max(0, 1 - (distance / 0.8))
+      isMatch = false
+    }
 
-    console.log('📊 [FACE-MATCHING] Resultado:', {
+    // Ajustar confianza basado en calidad de imagen
+    if (qualityChecks.pass) {
+      confidence = Math.min(1, confidence * 1.1) // Bonus por buena calidad
+    } else {
+      confidence = Math.max(0, confidence * 0.8) // Penalización por mala calidad
+    }
+
+    console.log('📊 [FACE-MATCHING] Resultado mejorado:', {
       distance: distance.toFixed(4),
       confidence: (confidence * 100).toFixed(1) + '%',
-      isMatch
+      isMatch,
+      qualityChecks: qualityChecks
     })
 
     return {
@@ -127,6 +150,79 @@ export async function compareFaces(
       confidence: 0,
       error: error instanceof Error ? error.message : 'Error desconocido'
     }
+  }
+}
+
+/**
+ * Intenta obtener descriptor facial con reintentos
+ */
+async function getFaceDescriptorWithRetry(
+  imageData: string, 
+  maxRetries: number = 3
+): Promise<Float32Array | null> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 [FACE-MATCHING] Intento ${attempt}/${maxRetries} para extraer descriptor`)
+      
+      const descriptor = await getFaceDescriptor(imageData)
+      if (descriptor) {
+        console.log(`✅ [FACE-MATCHING] Descriptor extraído exitosamente en intento ${attempt}`)
+        return descriptor
+      }
+    } catch (error) {
+      console.warn(`⚠️ [FACE-MATCHING] Intento ${attempt} falló:`, error)
+    }
+    
+    // Esperar un poco antes del siguiente intento
+    if (attempt < maxRetries) {
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+  }
+  
+  console.error('❌ [FACE-MATCHING] Todos los intentos fallaron')
+  return null
+}
+
+/**
+ * Realiza verificaciones de calidad de imagen
+ */
+async function performQualityChecks(
+  image1Data: string, 
+  image2Data: string
+): Promise<{ pass: boolean; details: any }> {
+  try {
+    const [img1, img2] = await Promise.all([
+      base64ToImage(image1Data),
+      base64ToImage(image2Data)
+    ])
+
+    // Verificar resolución mínima
+    const minResolution = 200
+    const resolution1 = Math.min(img1.width, img1.height)
+    const resolution2 = Math.min(img2.width, img2.height)
+    
+    const hasMinResolution = resolution1 >= minResolution && resolution2 >= minResolution
+
+    // Verificar que las imágenes no sean demasiado pequeñas
+    const hasReasonableSize = img1.width > 100 && img1.height > 100 && 
+                             img2.width > 100 && img2.height > 100
+
+    const qualityChecks = {
+      hasMinResolution,
+      hasReasonableSize,
+      resolution1,
+      resolution2
+    }
+
+    const pass = hasMinResolution && hasReasonableSize
+
+    console.log('🔍 [FACE-MATCHING] Verificaciones de calidad:', qualityChecks)
+
+    return { pass, details: qualityChecks }
+
+  } catch (error) {
+    console.warn('⚠️ [FACE-MATCHING] Error en verificaciones de calidad:', error)
+    return { pass: false, details: { error: error instanceof Error ? error.message : 'Unknown' } }
   }
 }
 

@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { compareFacesForBackend } from '@/lib/face-matching';
+import { detectLiveness } from '@/lib/liveness-detection';
 
 const prisma = new PrismaClient();
 
@@ -112,15 +113,36 @@ export async function POST(req: NextRequest) {
     const dniBase64 = `data:image/jpeg;base64,${dniBuffer.toString('base64')}`;
     const selfieBase64 = `data:image/jpeg;base64,${selfieBuffer.toString('base64')}`;
 
-    console.log('🎭 [IDENTITY-VERIFICATION] Iniciando comparación facial real...');
+    console.log('🎭 [IDENTITY-VERIFICATION] Iniciando comparación facial mejorada...');
 
-    // Comparación facial usando face-api.js
+    // Detección de liveness en la selfie
+    console.log('👁️ [IDENTITY-VERIFICATION] Verificando liveness...');
+    const livenessResult = await detectLiveness(selfieBase64);
+    
+    console.log('📊 [IDENTITY-VERIFICATION] Resultado liveness:', {
+      isLive: livenessResult.isLive,
+      confidence: (livenessResult.confidence * 100).toFixed(1) + '%',
+      checks: livenessResult.checks
+    });
+
+    // Comparación facial usando face-api.js mejorado
     const faceMatchResult = await compareFacesForBackend(dniBase64, selfieBase64);
     const faceMatchScore = faceMatchResult.score;
 
     console.log('📊 [IDENTITY-VERIFICATION] Resultado comparación facial:', {
       score: (faceMatchScore * 100).toFixed(1) + '%',
       isMatch: faceMatchResult.isMatch
+    });
+
+    // Combinar resultados: debe pasar tanto face match como liveness
+    const finalMatch = faceMatchResult.isMatch && livenessResult.isLive;
+    const combinedScore = (faceMatchScore + livenessResult.confidence) / 2;
+
+    console.log('🎯 [IDENTITY-VERIFICATION] Resultado final combinado:', {
+      faceMatch: faceMatchResult.isMatch,
+      liveness: livenessResult.isLive,
+      finalMatch,
+      combinedScore: (combinedScore * 100).toFixed(1) + '%'
     });
 
     // Guardar verificación en la base de datos
@@ -130,7 +152,7 @@ export async function POST(req: NextRequest) {
       data: {
         userId: session.user.id,
         type: 'IDENTITY',
-        status: faceMatchResult.isMatch ? 'APPROVED' : 'REJECTED', // Cambiar a 'APPROVED' si hay match, 'REJECTED' si no
+        status: finalMatch ? 'APPROVED' : 'REJECTED',
         documentType: 'DNI',
         documentNumber: parsedPDF417.documentNumber,
         firstName: parsedPDF417.firstName,
@@ -141,13 +163,18 @@ export async function POST(req: NextRequest) {
         selfieUrl: selfieUrl,
         documentFrontUrl: dniUrl,
         pdf417Data: pdf417Data,
-        faceMatchScore: faceMatchScore,
+        faceMatchScore: combinedScore,
         metadata: {
           verifiedAt: new Date().toISOString(),
           userAgent: req.headers.get('user-agent') || 'unknown',
           faceMatchDetails: {
             isMatch: faceMatchResult.isMatch,
-            confidence: faceMatchScore
+            confidence: faceMatchScore,
+            liveness: livenessResult.isLive,
+            livenessConfidence: livenessResult.confidence,
+            livenessChecks: livenessResult.checks,
+            finalMatch: finalMatch,
+            combinedScore: combinedScore
           }
         }
       }
@@ -156,8 +183,8 @@ export async function POST(req: NextRequest) {
     console.log('✅ [IDENTITY-VERIFICATION] Verificación guardada, ID:', verification.id);
 
     // Actualizar usuario si la verificación es exitosa
-    if (faceMatchResult.isMatch) {
-      console.log('✅ [IDENTITY-VERIFICATION] Score suficiente, actualizando usuario...');
+    if (finalMatch) {
+      console.log('✅ [IDENTITY-VERIFICATION] Verificación exitosa, actualizando usuario...');
 
       await prisma.user.update({
         where: { id: session.user.id },
@@ -170,7 +197,11 @@ export async function POST(req: NextRequest) {
 
       console.log('✅ [IDENTITY-VERIFICATION] Usuario actualizado');
     } else {
-      console.log('⚠️ [IDENTITY-VERIFICATION] Score insuficiente, requiere revisión manual');
+      console.log('⚠️ [IDENTITY-VERIFICATION] Verificación fallida:', {
+        faceMatch: faceMatchResult.isMatch,
+        liveness: livenessResult.isLive,
+        reason: !faceMatchResult.isMatch ? 'Face match falló' : 'Liveness falló'
+      });
     }
 
     console.log('🎉 [IDENTITY-VERIFICATION] Proceso completado exitosamente');
@@ -179,7 +210,19 @@ export async function POST(req: NextRequest) {
       success: true,
       verificationId: verification.id,
       status: verification.status,
-      faceMatchScore: faceMatchScore,
+      faceMatch: {
+        isMatch: faceMatchResult.isMatch,
+        confidence: faceMatchScore
+      },
+      liveness: {
+        isLive: livenessResult.isLive,
+        confidence: livenessResult.confidence,
+        checks: livenessResult.checks
+      },
+      finalResult: {
+        isMatch: finalMatch,
+        combinedScore: combinedScore
+      },
       documentData: {
         documentNumber: parsedPDF417.documentNumber,
         fullName: `${parsedPDF417.firstName} ${parsedPDF417.lastName}`,
