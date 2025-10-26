@@ -47,15 +47,19 @@ export class DNIService {
    * Carga modelos necesarios para procesamiento de DNI
    */
   private async loadModels(): Promise<void> {
-    if (this.modelsLoaded) return
+    if (this.modelsLoaded) {
+      console.log('✅ [DNI-SERVICE] Modelos ya estaban cargados')
+      return
+    }
 
     try {
-      console.log('🤖 [DNI-SERVICE] Cargando modelos...')
+      console.log('🤖 [DNI-SERVICE] Cargando modelos de face-api.js...')
+      console.log('🤖 [DNI-SERVICE] URL:', 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights/')
 
       await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights/')
 
       this.modelsLoaded = true
-      console.log('✅ [DNI-SERVICE] Modelos cargados')
+      console.log('✅ [DNI-SERVICE] Modelos cargados exitosamente')
     } catch (error) {
       console.error('❌ [DNI-SERVICE] Error cargando modelos:', error)
       throw error
@@ -66,29 +70,38 @@ export class DNIService {
    * Procesa imagen del frente del DNI para extraer la cara
    */
   async processFrontImage(imageData: string): Promise<{ faceImage?: string; error?: string }> {
+    console.log('🖼️ [DNI-SERVICE] Iniciando processFrontImage...')
     await this.loadModels()
+    console.log('🖼️ [DNI-SERVICE] Modelos cargados, procesando imagen...')
 
     try {
-      console.log('🖼️ [DNI-SERVICE] Procesando frente del DNI...')
-
+      console.log('🖼️ [DNI-SERVICE] Convirtiendo base64 a imagen...')
       const img = await this.base64ToImage(imageData)
+      console.log('🖼️ [DNI-SERVICE] Imagen convertida:', { width: img.width, height: img.height })
+
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')!
       canvas.width = img.width
       canvas.height = img.height
       ctx.drawImage(img, 0, 0)
+      console.log('🖼️ [DNI-SERVICE] Canvas creado y imagen dibujada')
 
       // Detectar rostro en la imagen del DNI
+      console.log('🖼️ [DNI-SERVICE] Detectando rostro...')
       const detection = await faceapi.detectSingleFace(
         canvas,
         new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 })
       )
+      console.log('🖼️ [DNI-SERVICE] Resultado de detección:', detection)
 
       if (!detection) {
+        console.log('⚠️ [DNI-SERVICE] No se detectó rostro en la imagen')
         return {
           error: 'No se detectó rostro en la imagen del frente del DNI'
         }
       }
+
+      console.log('✅ [DNI-SERVICE] Rostro detectado, extrayendo región...')
 
       // Extraer la región del rostro con padding
       const padding = 20

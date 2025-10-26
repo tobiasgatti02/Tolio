@@ -379,13 +379,25 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
 
   // Capturar frente del DNI
   const handleCaptureDNIFront = useCallback(async () => {
-    if (!fileInputRef.current) return
+    console.log('📸 [IDENTITY-VERIFICATION] handleCaptureDNIFront llamado')
+    console.log('📸 [IDENTITY-VERIFICATION] fileInputRef existe:', !!fileInputRef.current)
 
+    if (!fileInputRef.current) {
+      console.error('❌ [IDENTITY-VERIFICATION] fileInputRef no existe')
+      setError('Error: Elemento de input no encontrado')
+      return
+    }
+
+    console.log('📸 [IDENTITY-VERIFICATION] Haciendo click en input file...')
     fileInputRef.current.click()
   }, [])
 
   // Procesar imagen del frente del DNI
   const handleDNIFrontFile = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('📁 [IDENTITY-VERIFICATION] handleDNIFrontFile llamado')
+    console.log('📁 [IDENTITY-VERIFICATION] Event target:', event.target)
+    console.log('📁 [IDENTITY-VERIFICATION] Files:', event.target.files)
+
     const file = event.target.files?.[0]
     if (!file) {
       console.log('⚠️ [IDENTITY-VERIFICATION] No se seleccionó ningún archivo')
@@ -395,7 +407,8 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
     console.log('📁 [IDENTITY-VERIFICATION] Archivo seleccionado:', {
       name: file.name,
       size: file.size,
-      type: file.type
+      type: file.type,
+      lastModified: file.lastModified
     })
 
     setIsLoading(true)
@@ -408,9 +421,10 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
       reader.onload = async (e) => {
         console.log('📖 [IDENTITY-VERIFICATION] FileReader onload triggered')
         const imageData = e.target?.result as string
-        console.log('🖼️ [IDENTITY-VERIFICATION] Imagen cargada, tamaño:', imageData.length)
+        console.log('🖼️ [IDENTITY-VERIFICATION] Imagen cargada, tamaño:', imageData.length, 'caracteres')
 
         setDniFrontImage(imageData)
+        console.log('🖼️ [IDENTITY-VERIFICATION] Imagen asignada al estado')
 
         // Procesar imagen para extraer la cara
         console.log('🔄 [IDENTITY-VERIFICATION] Llamando a verificationService.processDNIFrontImage...')
@@ -425,7 +439,9 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
         if (result.faceImage) {
           setExtractedFaceImage(result.faceImage)
           console.log('✅ [IDENTITY-VERIFICATION] Cara extraída del frente del DNI')
+          console.log('🔄 [IDENTITY-VERIFICATION] Cambiando paso a dni-back...')
           setStep("dni-back")
+          console.log('✅ [IDENTITY-VERIFICATION] Paso cambiado exitosamente')
         } else {
           console.error('❌ [IDENTITY-VERIFICATION] No se pudo extraer la cara')
           throw new Error('No se pudo extraer la cara de la imagen')
@@ -797,7 +813,6 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               onChange={handleDNIFrontFile}
               className="hidden"
             />
