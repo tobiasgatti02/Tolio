@@ -32,6 +32,7 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileBackInputRef = useRef<HTMLInputElement>(null)
 
   // Estado de verificación
   const [stream, setStream] = useState<MediaStream | null>(null)
@@ -465,25 +466,6 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
     }
   }, [verificationService])
 
-  // Capturar dorso del DNI (simulado - en producción usaría escáner PDF417)
-  const handleCaptureDNIBack = useCallback(async () => {
-    // Simular datos PDF417 para testing
-    const mockPDF417Data = {
-      documentNumber: "12345678",
-      firstName: "Juan",
-      lastName: "Pérez",
-      birthDate: "1990-01-01",
-      gender: "M",
-      expirationDate: "2030-01-01"
-    }
-
-    setDniBackData(mockPDF417Data)
-    setStep("processing")
-
-    // Iniciar procesamiento final
-    await handleFinalProcessing(mockPDF417Data)
-  }, [])
-
   // Procesamiento final
   const handleFinalProcessing = useCallback(async (pdf417Data: any) => {
     setIsLoading(true)
@@ -533,6 +515,67 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
       setIsLoading(false)
     }
   }, [verificationService, extractedFaceImage, onComplete])
+
+  // Capturar dorso del DNI (abre cámara/selector de archivos para que el usuario tome la foto)
+  const handleCaptureDNIBack = useCallback(async () => {
+    if (!fileBackInputRef.current) return
+    console.log('📸 [IDENTITY-VERIFICATION] Abriendo selector para dorso del DNI...')
+    fileBackInputRef.current.click()
+  }, [])
+
+  // Procesar imagen del dorso del DNI (leer imagen y luego extraer/decodificar PDF417)
+  const handleDNIBackFile = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      console.log('⚠️ [IDENTITY-VERIFICATION] No se seleccionó archivo para el dorso')
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      console.log('📁 [IDENTITY-VERIFICATION] Archivo dorso seleccionado:', { name: file.name, size: file.size, type: file.type })
+
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const imageData = e.target?.result as string
+        // Aquí podríamos integrar un decodificador de PDF417; por ahora simulamos la extracción
+        console.log('🔍 [IDENTITY-VERIFICATION] Procesando imagen del dorso para extraer datos (simulado)')
+
+        // Simular extracción de PDF417 a partir de la imagen
+        const mockPDF417Data = {
+          documentNumber: "12345678",
+          firstName: "Juan",
+          lastName: "Pérez",
+          birthDate: "1990-01-01",
+          gender: "M",
+          expirationDate: "2030-01-01"
+        }
+
+        setDniBackData(mockPDF417Data)
+        console.log('✅ [IDENTITY-VERIFICATION] Datos del dorso obtenidos (simulado)')
+
+        // Avanzar a procesamiento final
+        setStep('processing')
+        await handleFinalProcessing(mockPDF417Data)
+      }
+
+      reader.onerror = (error) => {
+        console.error('❌ [IDENTITY-VERIFICATION] Error leyendo imagen del dorso:', error)
+        setError('Error al leer la imagen del dorso')
+        setIsLoading(false)
+      }
+
+      reader.readAsDataURL(file)
+
+    } catch (err) {
+      console.error('❌ [IDENTITY-VERIFICATION] Error procesando dorso del DNI:', err)
+      setError(err instanceof Error ? err.message : 'Error procesando dorso del DNI')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [handleFinalProcessing])
 
   // Reset completo
   const handleReset = useCallback(() => {
@@ -850,6 +893,15 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
                 Toma una foto del dorso de tu DNI para leer los datos
               </p>
             </div>
+
+            <input
+              ref={fileBackInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleDNIBackFile}
+              className="hidden"
+            />
 
             <div className="space-y-3">
               <button
