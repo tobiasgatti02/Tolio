@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react"
 import { Camera, CheckCircle, AlertTriangle, ArrowLeft, RotateCcw, Play, Square, Shield } from "lucide-react"
-import { CameraService } from "@/lib/services/camera.service"
+import { CameraService, CameraDevice } from "@/lib/services/camera.service"
 import { LivenessService } from "@/lib/services/liveness.service"
 import { FaceMatchingService } from "@/lib/services/face-matching.service"
 import { VerificationService } from "@/lib/services/verification.service"
@@ -40,6 +40,10 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
   const [extractedFaceImage, setExtractedFaceImage] = useState<string | null>(null)
   const [verificationResult, setVerificationResult] = useState<any>(null)
 
+  // Estado de cámaras
+  const [availableCameras, setAvailableCameras] = useState<CameraDevice[]>([])
+  const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null)
+
   // Estado de liveness
   const [isRecordingLiveness, setIsRecordingLiveness] = useState(false)
   const [livenessProgress, setLivenessProgress] = useState(0)
@@ -62,8 +66,50 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
     }
   }, [stream, cameraService])
 
-  // Verificar acceso a cámara
-  const handleCameraCheck = useCallback(async () => {
+  // Actualizar video cuando cambie el stream
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream
+      videoRef.current.play().catch(console.error)
+    }
+  }, [stream])
+
+  // Cargar cámaras disponibles al montar
+  useEffect(() => {
+    const loadCameras = async () => {
+      try {
+        const cameras = await cameraService.getAvailableCameras()
+        setAvailableCameras(cameras)
+        console.log('📹 [IDENTITY-VERIFICATION] Cámaras disponibles:', cameras)
+      } catch (error) {
+        console.error('❌ [IDENTITY-VERIFICATION] Error cargando cámaras:', error)
+      }
+    }
+
+    loadCameras()
+  }, [cameraService])
+
+  // Cambiar de cámara
+  const handleCameraChange = useCallback(async (deviceId: string) => {
+    if (!deviceId) return
+
+    try {
+      // Detener stream actual
+      if (stream) {
+        cameraService.stopStream(stream)
+      }
+
+      // Solicitar nuevo stream
+      const newStream = await cameraService.requestCameraAccessById(deviceId)
+      setStream(newStream)
+      setSelectedCameraId(deviceId)
+
+      console.log('✅ [IDENTITY-VERIFICATION] Cámara cambiada exitosamente')
+    } catch (error) {
+      console.error('❌ [IDENTITY-VERIFICATION] Error cambiando cámara:', error)
+      setError('Error cambiando de cámara')
+    }
+  }, [stream, cameraService])
     setIsLoading(true)
     setError(null)
 
@@ -77,7 +123,14 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
         throw new Error('No se detectaron cámaras disponibles en este dispositivo')
       }
 
-      const cameraStream = await cameraService.requestCameraAccess()
+      // Si no hay cámara seleccionada, usar la recomendada
+      let cameraStream: MediaStream
+      if (selectedCameraId) {
+        cameraStream = await cameraService.requestCameraAccessById(selectedCameraId)
+      } else {
+        cameraStream = await cameraService.requestCameraAccess()
+      }
+
       setStream(cameraStream)
 
       if (videoRef.current) {
@@ -94,7 +147,29 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
     } finally {
       setIsLoading(false)
     }
-  }, [cameraService])
+  }, [cameraService, selectedCameraId])
+
+  // Cambiar de cámara
+  const handleCameraChange = useCallback(async (deviceId: string) => {
+    if (!deviceId) return
+
+    try {
+      // Detener stream actual
+      if (stream) {
+        cameraService.stopStream(stream)
+      }
+
+      // Solicitar nuevo stream
+      const newStream = await cameraService.requestCameraAccessById(deviceId)
+      setStream(newStream)
+      setSelectedCameraId(deviceId)
+
+      console.log('✅ [IDENTITY-VERIFICATION] Cámara cambiada exitosamente')
+    } catch (error) {
+      console.error('❌ [IDENTITY-VERIFICATION] Error cambiando cámara:', error)
+      setError('Error cambiando de cámara')
+    }
+  }, [stream, cameraService])
 
   // Iniciar detección de liveness
   const handleStartLiveness = useCallback(async () => {
@@ -336,11 +411,10 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
             </div>
 
             <button
-              onClick={handleCameraCheck}
-              disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => setStep("camera-check")}
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700"
             >
-              {isLoading ? 'Verificando...' : 'Comenzar Verificación'}
+              Comenzar Verificación
             </button>
           </div>
         )
@@ -353,11 +427,48 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Verificando Cámara
+                Seleccionar Cámara
               </h2>
-              <p className="text-gray-600">
-                Estamos verificando el acceso a tu cámara...
+              <p className="text-gray-600 mb-4">
+                Elige la cámara que deseas usar para la verificación
               </p>
+            </div>
+
+            {availableCameras.length > 0 && (
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cámaras disponibles:
+                </label>
+                <select
+                  value={selectedCameraId || ''}
+                  onChange={(e) => setSelectedCameraId(e.target.value || null)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Seleccionar cámara...</option>
+                  {availableCameras.map((camera) => (
+                    <option key={camera.deviceId} value={camera.deviceId}>
+                      {camera.label} ({camera.facingMode === 'user' ? 'Frontal' : 'Trasera'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <button
+                onClick={handleCameraCheck}
+                disabled={isLoading || (availableCameras.length > 0 && !selectedCameraId)}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Verificando...' : 'Continuar con Verificación'}
+              </button>
+
+              <button
+                onClick={() => setStep("intro")}
+                className="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300"
+              >
+                Volver
+              </button>
             </div>
           </div>
         )

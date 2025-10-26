@@ -141,6 +141,32 @@ export class CameraService {
   }
 
   /**
+   * Solicita acceso a una cámara específica por deviceId
+   */
+  async requestCameraAccessById(deviceId: string): Promise<MediaStream> {
+    try {
+      const constraints: MediaStreamConstraints = {
+        video: {
+          deviceId: { exact: deviceId },
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
+          frameRate: { ideal: 30, min: 15 }
+        },
+        audio: false
+      }
+
+      console.log('📹 [CAMERA-SERVICE] Solicitando acceso a cámara específica:', deviceId)
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
+      console.log('✅ [CAMERA-SERVICE] Acceso concedido a cámara específica')
+
+      return stream
+    } catch (error) {
+      console.error('❌ [CAMERA-SERVICE] Error accediendo a cámara específica:', error)
+      throw new Error('No se pudo acceder a la cámara seleccionada')
+    }
+  }
+
+  /**
    * Libera el stream de la cámara
    */
   stopStream(stream: MediaStream): void {
