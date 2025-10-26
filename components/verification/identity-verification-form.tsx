@@ -110,6 +110,9 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
       setError('Error cambiando de cámara')
     }
   }, [stream, cameraService])
+
+  // Verificar acceso a cámara
+  const handleCameraCheck = useCallback(async () => {
     setIsLoading(true)
     setError(null)
 
@@ -148,28 +151,6 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
       setIsLoading(false)
     }
   }, [cameraService, selectedCameraId])
-
-  // Cambiar de cámara
-  const handleCameraChange = useCallback(async (deviceId: string) => {
-    if (!deviceId) return
-
-    try {
-      // Detener stream actual
-      if (stream) {
-        cameraService.stopStream(stream)
-      }
-
-      // Solicitar nuevo stream
-      const newStream = await cameraService.requestCameraAccessById(deviceId)
-      setStream(newStream)
-      setSelectedCameraId(deviceId)
-
-      console.log('✅ [IDENTITY-VERIFICATION] Cámara cambiada exitosamente')
-    } catch (error) {
-      console.error('❌ [IDENTITY-VERIFICATION] Error cambiando cámara:', error)
-      setError('Error cambiando de cámara')
-    }
-  }, [stream, cameraService])
 
   // Iniciar detección de liveness
   const handleStartLiveness = useCallback(async () => {
@@ -486,6 +467,26 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
               <p className="text-gray-600 mb-4">
                 Gira tu cabeza lentamente hacia la izquierda y derecha para verificar que eres una persona real
               </p>
+
+              {availableCameras.length > 1 && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cambiar cámara:
+                  </label>
+                  <select
+                    value={selectedCameraId || ''}
+                    onChange={(e) => handleCameraChange(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    disabled={isRecordingLiveness}
+                  >
+                    {availableCameras.map((camera) => (
+                      <option key={camera.deviceId} value={camera.deviceId}>
+                        {camera.label} ({camera.facingMode === 'user' ? 'Frontal' : 'Trasera'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div className="relative">
