@@ -40,9 +40,9 @@ export class FaceMatchingService {
     try {
       console.log('🤖 [FACE-MATCHING-SERVICE] Cargando modelos...')
 
-      await faceapi.nets.tinyFaceDetector.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights/')
-      await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights/')
-      await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights/')
+      await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/')
+      await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/')
+      await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/')
 
       this.modelsLoaded = true
       console.log('✅ [FACE-MATCHING-SERVICE] Modelos cargados')

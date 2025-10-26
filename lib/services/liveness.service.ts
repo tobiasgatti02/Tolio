@@ -40,8 +40,8 @@ export class LivenessService {
     try {
       console.log('🤖 [LIVENESS-SERVICE] Cargando modelos...')
 
-      await faceapi.nets.tinyFaceDetector.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights/')
-      await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights/')
+      await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/')
+      await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/')
 
       this.modelsLoaded = true
       console.log('✅ [LIVENESS-SERVICE] Modelos cargados')

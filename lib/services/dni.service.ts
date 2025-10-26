@@ -54,9 +54,9 @@ export class DNIService {
 
     try {
       console.log('🤖 [DNI-SERVICE] Cargando modelos de face-api.js...')
-      console.log('🤖 [DNI-SERVICE] URL:', 'https://unpkg.com/face-api.js@0.22.2/weights/')
+      console.log('🤖 [DNI-SERVICE] URL:', 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/')
 
-      await faceapi.nets.tinyFaceDetector.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights/')
+      await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/')
 
       this.modelsLoaded = true
       console.log('✅ [DNI-SERVICE] Modelos cargados exitosamente')
