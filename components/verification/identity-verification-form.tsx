@@ -45,6 +45,7 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
   // Estado de cámaras
   const [availableCameras, setAvailableCameras] = useState<CameraDevice[]>([])
   const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null)
+  const [isFrontCamera, setIsFrontCamera] = useState(false)
 
   // Estado de liveness
   const [isRecordingLiveness, setIsRecordingLiveness] = useState(false)
@@ -152,12 +153,21 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
       setStream(newStream)
       setSelectedCameraId(deviceId)
 
-      console.log('✅ [IDENTITY-VERIFICATION] Cámara cambiada exitosamente')
+      // Determinar si es cámara frontal
+      const selectedCamera = availableCameras.find(cam => cam.deviceId === deviceId)
+      const isFront = selectedCamera?.facingMode === 'user'
+      setIsFrontCamera(isFront)
+
+      console.log('✅ [IDENTITY-VERIFICATION] Cámara cambiada exitosamente', {
+        deviceId,
+        isFrontCamera: isFront,
+        facingMode: selectedCamera?.facingMode
+      })
     } catch (error) {
       console.error('❌ [IDENTITY-VERIFICATION] Error cambiando cámara:', error)
       setError('Error cambiando de cámara')
     }
-  }, [stream, cameraService])
+  }, [stream, cameraService, availableCameras])
 
   // Verificar acceso a cámara
   const handleCameraCheck = useCallback(async () => {
@@ -176,13 +186,21 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
 
       // Si no hay cámara seleccionada, usar la recomendada
       let cameraStream: MediaStream
+      let isFrontCameraSelected = false
+
       if (selectedCameraId) {
         cameraStream = await cameraService.requestCameraAccessById(selectedCameraId)
+        // Determinar si la cámara seleccionada es frontal
+        const selectedCamera = availableCameras.find(cam => cam.deviceId === selectedCameraId)
+        isFrontCameraSelected = selectedCamera?.facingMode === 'user'
       } else {
         cameraStream = await cameraService.requestCameraAccess()
+        // La cámara recomendada depende del dispositivo
+        isFrontCameraSelected = cameraService.isMobileDevice() ? true : false
       }
 
       setStream(cameraStream)
+      setIsFrontCamera(isFrontCameraSelected)
 
       if (videoRef.current) {
         videoRef.current.srcObject = cameraStream

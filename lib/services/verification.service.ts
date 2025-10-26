@@ -270,8 +270,29 @@ export class VerificationService {
    * Método público para comparar rostro del video con cara del DNI
    */
   async compareLiveFaceWithDNI(videoImage: string, dniFaceImage: string): Promise<{ isMatch: boolean; score: number }> {
+    console.log('🔍 [VERIFICATION-SERVICE] Iniciando comparación facial entre video y DNI')
+    console.log('📊 [VERIFICATION-SERVICE] Datos de entrada:', {
+      hasVideoImage: !!videoImage,
+      videoImageLength: videoImage?.length || 0,
+      hasDniFaceImage: !!dniFaceImage,
+      dniFaceImageLength: dniFaceImage?.length || 0,
+      threshold: this.config.faceMatchThreshold
+    })
+
     try {
       const result = await this.faceMatchingService.compareImages(videoImage, dniFaceImage, this.config.faceMatchThreshold)
+
+      console.log('📊 [VERIFICATION-SERVICE] Resultado de comparación facial:', {
+        isMatch: result.isMatch,
+        confidence: result.confidence,
+        similarity: result.similarity,
+        hasError: !!result.error,
+        error: result.error
+      })
+
+      if (result.error) {
+        console.error('❌ [VERIFICATION-SERVICE] Error en comparación facial:', result.error)
+      }
 
       return {
         isMatch: result.isMatch,
@@ -279,6 +300,10 @@ export class VerificationService {
       }
     } catch (error) {
       console.error('❌ [VERIFICATION-SERVICE] Error en comparación live:', error)
+      console.error('❌ [VERIFICATION-SERVICE] Detalles del error:', {
+        message: error instanceof Error ? error.message : 'Error desconocido',
+        stack: error instanceof Error ? error.stack : undefined
+      })
       return {
         isMatch: false,
         score: 0
