@@ -802,7 +802,7 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
                 autoPlay
                 playsInline
                 muted
-                className="w-full max-w-md mx-auto rounded-lg border-2 border-gray-200"
+                className={`w-full max-w-md mx-auto rounded-lg border-2 border-gray-200 ${isFrontCamera ? 'transform scale-x-[-1]' : ''}`}
               />
               <canvas ref={canvasRef} className="hidden" />
 
