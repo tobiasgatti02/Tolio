@@ -78,8 +78,32 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
   useEffect(() => {
     const loadCameras = async () => {
       try {
+        // En móviles, necesitamos solicitar permiso primero para obtener las etiquetas correctas
+        if (cameraService.isMobileDevice()) {
+          try {
+            // Solicitar permiso temporal para poblar las etiquetas
+            const tempStream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: 'user' },
+              audio: false
+            })
+            // Liberar el stream inmediatamente
+            tempStream.getTracks().forEach(track => track.stop())
+
+            // Esperar un poco para que las etiquetas se actualicen
+            await new Promise(resolve => setTimeout(resolve, 100))
+          } catch (error) {
+            console.warn('⚠️ [IDENTITY-VERIFICATION] No se pudo obtener permiso temporal para etiquetas')
+          }
+        }
+
         const cameras = await cameraService.getAvailableCameras()
         setAvailableCameras(cameras)
+
+        // Si estamos en móvil y solo hay una cámara, seleccionarla automáticamente
+        if (cameraService.isMobileDevice() && cameras.length === 1) {
+          setSelectedCameraId(cameras[0].deviceId)
+        }
+
         console.log('📹 [IDENTITY-VERIFICATION] Cámaras disponibles:', cameras)
       } catch (error) {
         console.error('❌ [IDENTITY-VERIFICATION] Error cargando cámaras:', error)
@@ -87,6 +111,18 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
     }
 
     loadCameras()
+  }, [cameraService])
+
+  // Refrescar lista de cámaras
+  const refreshCameras = useCallback(async () => {
+    try {
+      console.log('🔄 [IDENTITY-VERIFICATION] Refrescando cámaras...')
+      const cameras = await cameraService.getAvailableCameras()
+      setAvailableCameras(cameras)
+      console.log('📹 [IDENTITY-VERIFICATION] Cámaras refrescadas:', cameras)
+    } catch (error) {
+      console.error('❌ [IDENTITY-VERIFICATION] Error refrescando cámaras:', error)
+    }
   }, [cameraService])
 
   // Cambiar de cámara
@@ -415,29 +451,63 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
               </p>
             </div>
 
-            {availableCameras.length > 0 && (
+            {availableCameras.length > 0 ? (
               <div className="space-y-3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cámaras disponibles:
+                  Cámaras disponibles ({availableCameras.length}):
                 </label>
                 <select
                   value={selectedCameraId || ''}
-                  onChange={(e) => setSelectedCameraId(e.target.value || null)}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setSelectedCameraId(value || null)
+                    console.log('📹 [IDENTITY-VERIFICATION] Cámara seleccionada:', value)
+                  }}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Seleccionar cámara...</option>
-                  {availableCameras.map((camera) => (
+                  {availableCameras.map((camera, index) => (
                     <option key={camera.deviceId} value={camera.deviceId}>
-                      {camera.label} ({camera.facingMode === 'user' ? 'Frontal' : 'Trasera'})
+                      {camera.label || `Cámara ${index + 1}`}
+                      {camera.facingMode === 'user' ? ' (Frontal)' :
+                       camera.facingMode === 'environment' ? ' (Trasera)' :
+                       ' (Desconocida)'}
                     </option>
                   ))}
                 </select>
+                {selectedCameraId && (
+                  <p className="text-sm text-green-600">
+                    ✓ Cámara seleccionada: {availableCameras.find(c => c.deviceId === selectedCameraId)?.label || 'Cámara seleccionada'}
+                  </p>
+                )}
+                <button
+                  onClick={refreshCameras}
+                  className="text-sm text-blue-600 hover:text-blue-800 underline"
+                  type="button"
+                >
+                  🔄 Refrescar cámaras
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-600">Cargando cámaras disponibles...</p>
+                </div>
               </div>
             )}
 
             <div className="space-y-3">
               <button
-                onClick={handleCameraCheck}
+                onClick={() => {
+                  console.log('🔘 [IDENTITY-VERIFICATION] Botón clickeado:', {
+                    isLoading,
+                    availableCamerasCount: availableCameras.length,
+                    selectedCameraId,
+                    shouldBeDisabled: isLoading || (availableCameras.length > 0 && !selectedCameraId)
+                  })
+                  handleCameraCheck()
+                }}
                 disabled={isLoading || (availableCameras.length > 0 && !selectedCameraId)}
                 className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
