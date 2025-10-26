@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react"
 import { Camera, CheckCircle, AlertTriangle, ArrowLeft, RotateCcw, Play, Square, Shield } from "lucide-react"
+import * as faceapi from 'face-api.js'
 import { CameraService, CameraDevice } from "@/lib/services/camera.service"
 import { LivenessService } from "@/lib/services/liveness.service"
 import { FaceMatchingService } from "@/lib/services/face-matching.service"
@@ -233,43 +234,145 @@ export default function IdentityVerificationForm({ onComplete, onBack }: Identit
     setError(null)
 
     try {
-      console.log('🎭 [IDENTITY-VERIFICATION] Iniciando detección de liveness...')
+      console.log('🎭 [IDENTITY-VERIFICATION] Iniciando detección de liveness real...')
 
-      // Simular progreso
-      const progressInterval = setInterval(() => {
-        setLivenessProgress(prev => Math.min(prev + 10, 90))
-      }, 200)
+      // Cargar modelos de face-api.js si no están cargados
+      if (!faceapi.nets.tinyFaceDetector.isLoaded || !faceapi.nets.faceLandmark68Net.isLoaded) {
+        console.log('🔄 [IDENTITY-VERIFICATION] Cargando modelos de face-api.js...')
+        setLivenessProgress(10)
 
-      // Simular liveness por ahora (para testing)
-      await new Promise(resolve => setTimeout(resolve, 2000))
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/'),
+          faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/')
+        ])
 
-      clearInterval(progressInterval)
-      setLivenessProgress(100)
-
-      // Simular resultado exitoso
-      setLivenessCompleted(true)
-      console.log('✅ [IDENTITY-VERIFICATION] Liveness completado exitosamente (simulado)')
-
-      // Capturar frame del video para comparación facial
-      if (canvasRef.current && videoRef.current) {
-        const canvas = canvasRef.current
-        const ctx = canvas.getContext('2d')!
-        canvas.width = videoRef.current.videoWidth
-        canvas.height = videoRef.current.videoHeight
-        ctx.drawImage(videoRef.current, 0, 0)
-
-        const liveFaceImage = canvas.toDataURL('image/jpeg', 0.9)
-        // Guardar para comparación posterior
-        localStorage.setItem('liveFaceImage', liveFaceImage)
-        console.log('📸 [IDENTITY-VERIFICATION] Frame capturado del video')
+        console.log('✅ [IDENTITY-VERIFICATION] Modelos cargados exitosamente')
+        setLivenessProgress(20)
       }
 
-      setStep("dni-front")
+      // Variables para tracking de movimiento
+      let movementDetected = false
+      let leftTurnDetected = false
+      let rightTurnDetected = false
+      let centerPositionDetected = false
+      let lastYawAngle = 0
+      let movementStartTime = Date.now()
+      const maxDuration = 15000 // 15 segundos máximo
+      const requiredMovements = ['center', 'left', 'right']
+
+      // Función para calcular ángulo yaw desde landmarks
+      const calculateYawAngle = (landmarks: faceapi.FaceLandmarks68) => {
+        const nose = landmarks.getNose()
+        const leftEye = landmarks.getLeftEye()
+        const rightEye = landmarks.getRightEye()
+
+        // Calcular ángulo basado en la posición relativa de los ojos y nariz
+        const eyeCenterX = (leftEye[0].x + rightEye[0].x) / 2
+        const noseX = nose[0].x
+
+        // Ángulo yaw aproximado (positivo = mirando a la derecha, negativo = izquierda)
+        const yawAngle = (noseX - eyeCenterX) / (rightEye[0].x - leftEye[0].x) * 30 // Escalar para grados
+        return yawAngle
+      }
+
+      // Función para detectar movimiento de cabeza
+      const detectHeadMovement = async () => {
+        if (!videoRef.current) return false
+
+        try {
+          const detection = await faceapi.detectSingleFace(
+            videoRef.current,
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.5 })
+          ).withFaceLandmarks()
+
+          if (!detection) {
+            console.log('⚠️ [IDENTITY-VERIFICATION] No se detectó cara')
+            return false
+          }
+
+          const currentYawAngle = calculateYawAngle(detection.landmarks)
+          console.log('📊 [IDENTITY-VERIFICATION] Ángulo yaw detectado:', currentYawAngle)
+
+          // Detectar posiciones
+          const isCenter = Math.abs(currentYawAngle) < 5
+          const isLeft = currentYawAngle < -10
+          const isRight = currentYawAngle > 10
+
+          // Actualizar estado de movimientos detectados
+          if (isCenter && !centerPositionDetected) {
+            centerPositionDetected = true
+            console.log('✅ [IDENTITY-VERIFICATION] Posición central detectada')
+          }
+          if (isLeft && !leftTurnDetected) {
+            leftTurnDetected = true
+            console.log('✅ [IDENTITY-VERIFICATION] Giro a la izquierda detectado')
+          }
+          if (isRight && !rightTurnDetected) {
+            rightTurnDetected = true
+            console.log('✅ [IDENTITY-VERIFICATION] Giro a la derecha detectado')
+          }
+
+          // Calcular progreso basado en movimientos completados
+          const completedMovements = [centerPositionDetected, leftTurnDetected, rightTurnDetected].filter(Boolean).length
+          const progress = Math.min(20 + (completedMovements / requiredMovements.length) * 70, 90)
+          setLivenessProgress(progress)
+
+          // Verificar si se completaron todos los movimientos requeridos
+          movementDetected = centerPositionDetected && leftTurnDetected && rightTurnDetected
+
+          return movementDetected
+
+        } catch (err) {
+          console.error('❌ [IDENTITY-VERIFICATION] Error en detección facial:', err)
+          return false
+        }
+      }
+
+      // Loop de detección
+      const detectionInterval = setInterval(async () => {
+        const elapsed = Date.now() - movementStartTime
+
+        // Timeout
+        if (elapsed > maxDuration) {
+          clearInterval(detectionInterval)
+          setError('Tiempo agotado. Por favor, intenta de nuevo moviendo la cabeza más claramente.')
+          setIsRecordingLiveness(false)
+          return
+        }
+
+        // Detectar movimiento
+        const movementCompleted = await detectHeadMovement()
+
+        if (movementCompleted) {
+          clearInterval(detectionInterval)
+          setLivenessProgress(100)
+
+          // Resultado exitoso
+          setLivenessCompleted(true)
+          console.log('✅ [IDENTITY-VERIFICATION] Liveness completado exitosamente con movimiento real')
+
+          // Capturar frame del video para comparación facial
+          if (canvasRef.current && videoRef.current) {
+            const canvas = canvasRef.current
+            const ctx = canvas.getContext('2d')!
+            canvas.width = videoRef.current.videoWidth
+            canvas.height = videoRef.current.videoHeight
+            ctx.drawImage(videoRef.current, 0, 0)
+
+            const liveFaceImage = canvas.toDataURL('image/jpeg', 0.9)
+            // Guardar para comparación posterior
+            localStorage.setItem('liveFaceImage', liveFaceImage)
+            console.log('📸 [IDENTITY-VERIFICATION] Frame capturado del video')
+          }
+
+          setStep("dni-front")
+          setIsRecordingLiveness(false)
+        }
+      }, 200) // Detectar cada 200ms
 
     } catch (err) {
       console.error('❌ [IDENTITY-VERIFICATION] Error en liveness:', err)
       setError(err instanceof Error ? err.message : 'Error en detección de liveness')
-    } finally {
       setIsRecordingLiveness(false)
     }
   }, [stream])
