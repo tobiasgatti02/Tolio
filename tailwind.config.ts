@@ -10,6 +10,12 @@ const config: Config = {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+  			heading: ['var(--font-manrope)', 'system-ui', 'sans-serif'],
+  			mono: ['var(--font-mono)', 'monospace'],
+  			serif: ['var(--font-playfair)', 'serif'],
+  		},
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -67,6 +73,16 @@ const config: Config = {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
+  		backgroundImage: {
+  			'gradient-hero': 'linear-gradient(135deg, hsl(25, 95%, 53%), hsl(15, 90%, 48%))',
+  			'gradient-card': 'linear-gradient(to bottom, hsl(0, 0%, 100%), hsl(220, 15%, 95%))',
+  			'gradient-accent': 'linear-gradient(135deg, hsl(221, 83%, 53%), hsl(221, 83%, 43%))',
+  		},
+  		boxShadow: {
+  			'elegant': '0 4px 12px hsla(25, 95%, 53%, 0.15)',
+  			'card-shadow': '0 2px 8px hsla(0, 0%, 0%, 0.08)',
+  			'hover-glow': '0 8px 24px hsla(25, 95%, 53%, 0.25)',
+  		},
   		keyframes: {
   			'accordion-down': {
   				from: {
@@ -83,11 +99,20 @@ const config: Config = {
   				to: {
   					height: '0'
   				}
-  			}
+  			},
+  			'glow': {
+  				'0%, 100%': {
+  					boxShadow: 'var(--shadow-elegant)',
+  				},
+  				'50%': {
+  					boxShadow: 'var(--shadow-hover)',
+  				},
+  			},
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'glow': 'glow 2s ease-in-out infinite',
   		}
   	}
   },

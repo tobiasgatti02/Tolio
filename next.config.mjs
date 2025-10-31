@@ -14,12 +14,41 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    unoptimized: false,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      }
+    ],
+    formats: ['image/avif', 'image/webp'],
   },
   experimental: {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
+  },
+  // Deshabilitar warnings de módulos faltantes
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      }
+    }
+    // Ignorar módulos opcionales que causan warnings
+    config.externals.push({
+      'pino-pretty': 'commonjs pino-pretty',
+      '@react-native-async-storage/async-storage': 'commonjs @react-native-async-storage/async-storage',
+      'encoding': 'commonjs encoding',
+    })
+    return config
   },
 }
 

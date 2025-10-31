@@ -15,27 +15,27 @@ export default function Navbar() {
   const Router = useRouter();
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
+    <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <span className="text-2xl font-bold text-emerald-600">
+              <span className="text-2xl font-bold text-orange-600 hover:text-orange-700 transition-colors">
                 Tolio
               </span>
             </Link>
             <nav className="hidden md:ml-10 md:flex md:space-x-8">
               <Link
                 href="/items"
-                className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium"
+                className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
               >
-                Buscar Objetos
+                Servicios y Herramientas
               </Link>
               <Link
                 href="/how-it-works"
-                className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium"
+                className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
               >
-                ¿Cómo funciona?
+                Como funciona
               </Link>
 
             </nav>
@@ -51,7 +51,7 @@ export default function Navbar() {
             {session && (
               <Link
                 href="/dashboard"
-                className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium"
+                className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
               >
                 Mi panel
               </Link>
@@ -59,9 +59,9 @@ export default function Navbar() {
             {session && (
               <Link
                 href="/items/nuevo"
-                className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium"
+                className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all text-sm font-medium"
               >
-                Crear publicación
+                Publicar
               </Link>
             )}
             {session ? (
@@ -70,7 +70,7 @@ export default function Navbar() {
                   signOut();
                   setIsMenuOpen(false);
                 }}
-                className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium"
+                className="text-gray-700 hover:text-red-600 px-3 py-2 text-sm font-medium transition-colors"
               >
                 Salir
               </button>
@@ -78,17 +78,17 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+                  className="border-2 border-orange-600 text-orange-600 hover:bg-orange-50 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Log in
+                  Ingresar
                 </Link>
                 <Link
                   href="/signup"
-                  className="block bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2 rounded-lg text-base font-medium"
+                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all text-sm font-semibold"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Sign up
+                  Registrarse
                 </Link>
               </>
             )}
@@ -96,7 +96,7 @@ export default function Navbar() {
           <div className="flex items-center md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-700 hover:text-emerald-600 p-2"
+              className="text-gray-700 hover:text-orange-600 p-2"
             >
               {isMenuOpen ? (
                 <X className="h-6 w-6" />
@@ -110,18 +110,18 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="md:hidden">
+        <div className="md:hidden bg-white border-t border-gray-200">
           <div className="pt-2 pb-4 space-y-1 px-4 sm:px-6 lg:px-8">
             <Link
               href="/items"
-              className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+              className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
-              Buscar Objetos
+              Servicios y Herramientas
             </Link>
             <Link
               href="/how-it-works"
-              className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+              className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               ¿Cómo funciona?
@@ -130,9 +130,9 @@ export default function Navbar() {
             {session && (
               <Link
                 href="/items/nuevo"
-                className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+                className="block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all text-base font-medium mt-2"
               >
-                Crear publicación
+                Publicar
               </Link>
             )}
             {session ? (
@@ -142,7 +142,7 @@ export default function Navbar() {
                     signOut();
                     setIsMenuOpen(false);
                   }}
-                  className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+                  className="block text-gray-700 hover:text-red-600 px-3 py-2 text-base font-medium transition-colors w-full text-left"
                 >
                   Salir
                 </button>
@@ -151,17 +151,17 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="block text-gray-700 hover:text-emerald-600 px-3 py-2 text-base font-medium"
+                  className="block border-2 border-orange-600 text-orange-600 hover:bg-orange-50 px-4 py-2 rounded-lg text-base font-semibold transition-all text-center mt-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Log in
+                  Ingresar
                 </Link>
                 <Link
                   href="/signup"
-                  className="block bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2 rounded-lg text-base font-medium"
+                  className="block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all text-base font-semibold mt-2 text-center"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Sign up
+                  Registrarse
                 </Link>
               </>
             )}

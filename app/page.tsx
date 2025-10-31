@@ -9,17 +9,20 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-emerald-600 to-teal-500 py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Alquilá lo que necesitás, ofrecé lo que no usás!
+      <section className="relative bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto text-center">
+          <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6 drop-shadow-lg">
+            Conecta con Oficios y Herramientas
           </h1>
-          <p className="text-xl text-white/90 mb-8 max-w-3xl mx-auto">
-            Accedé a miles de herramientas y artículos en tu comunidad con Tolio, 
-            la plataforma de confianza para alquileres entre personas.
+          <p className="text-xl md:text-2xl text-white mb-4 max-w-3xl mx-auto font-medium">
+            La plataforma donde encontrás <span className="font-bold underline decoration-2">profesionales para changas</span> y{" "}
+            <span className="font-bold underline decoration-2">herramientas en tu zona</span>
+          </p>
+          <p className="text-lg md:text-xl text-white mb-10 max-w-2xl mx-auto">
+            Publicá tu servicio, ofrecé herramientas o encontrá lo que necesitás en tu comunidad
           </p>
 
-          <Suspense fallback={<div className="h-16 bg-white/20 rounded-lg animate-pulse" />}>
+          <Suspense fallback={<div className="h-16 bg-white/20 rounded-xl animate-pulse" />}>
             <HeroSearch />
           </Suspense>
 
@@ -28,25 +31,25 @@ export default function Home() {
               <div className="bg-white/20 p-3 rounded-full mb-3">
                 <Search className="h-6 w-6" />
               </div>
-              <span className="text-sm">Encontrá lo que querés</span>
+              <span className="text-sm">Busca oficios</span>
             </div>
             <div className="flex flex-col items-center">
               <div className="bg-white/20 p-3 rounded-full mb-3">
                 <Clock className="h-6 w-6" />
               </div>
-              <span className="text-sm">Tiempo flexible</span>
+              <span className="text-sm">Conecta directo</span>
             </div>
             <div className="flex flex-col items-center">
               <div className="bg-white/20 p-3 rounded-full mb-3">
                 <Shield className="h-6 w-6" />
               </div>
-              <span className="text-sm">Transacciones seguras</span>
+              <span className="text-sm">Comunidad confiable</span>
             </div>
             <div className="flex flex-col items-center">
               <div className="bg-white/20 p-3 rounded-full mb-3">
                 <TrendingUp className="h-6 w-6" />
               </div>
-              <span className="text-sm">Ganá alquilando</span>
+              <span className="text-sm">Publica gratis</span>
             </div>
           </div>
         </div>
@@ -55,10 +58,11 @@ export default function Home() {
       {/* Categories Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Categorías populares</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-3 text-center">Categorias de servicios</h2>
+          <p className="text-center text-gray-600 mb-8">Encuentra el oficio que necesitas</p>
           <Suspense fallback={<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[1,2,3,4,5,6,7,8].map((i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded-lg animate-pulse" />
+              <div key={i} className="h-20 bg-gray-200 rounded-xl animate-pulse" />
             ))}
           </div>}>
             <CategoryList />
@@ -70,8 +74,11 @@ export default function Home() {
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Artículos destacados</h2>
-            <Link href="/items" className="text-emerald-600 hover:text-emerald-700 font-medium">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">Publicaciones destacadas</h2>
+              <p className="text-gray-600 mt-1">Servicios y herramientas disponibles</p>
+            </div>
+            <Link href="/items" className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors font-medium">
               Ver Todos
             </Link>
           </div>

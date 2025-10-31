@@ -33,11 +33,11 @@ export async function GET() {
         id: item.id,
         title: item.title,
         category: item.category || "Sin categoría",
-        price: item.price,
+   
         rating: rating,
         reviewCount: reviews.length > 0 ? reviews.length : undefined,
         location: item.location,
-        image: item.images[0] || "/placeholder.svg",
+        image: item.images && item.images.length > 0 ? item.images[0] : "/placeholder.svg",
         owner: {
           firstName: item.owner.firstName,
           lastName: item.owner.lastName,
@@ -46,8 +46,8 @@ export async function GET() {
     })
 
     return NextResponse.json(featuredItems)
-  } catch (error) {
-    console.error('Error fetching featured items:', error)
+  } catch (err) {
+    console.error('Error fetching featured items:', err instanceof Error ? err.message : String(err))
     return NextResponse.json(
       { error: 'Failed to fetch featured items' },
       { status: 500 }

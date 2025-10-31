@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 import { createBooking } from "@/app/api/booking/route"
 import PaymentButton from "@/components/payment-button"
-import { Web3PaymentForm } from "@/components/web3-payment-form"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
@@ -27,7 +26,7 @@ export default function BookingFormEnhanced({ itemId, itemTitle, ownerName, owne
   const [error, setError] = useState("")
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [createdBooking, setCreatedBooking] = useState<{ id: string; totalPrice: number } | null>(null)
-  const [paymentMethod, setPaymentMethod] = useState<'traditional' | 'crypto'>('traditional')
+  const [paymentMethod, setPaymentMethod] = useState<'traditional'>('traditional')
   
   const router = useRouter()
   const { toast } = useToast()
@@ -108,24 +107,6 @@ export default function BookingFormEnhanced({ itemId, itemTitle, ownerName, owne
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const handleCryptoPayment = () => {
-    // For crypto payments, we don't need to create a traditional booking
-    // We'll create the escrow deal directly
-    setShowPaymentModal(true)
-    setPaymentMethod('crypto')
-  }
-
-  const handleCryptoSuccess = (dealId: string) => {
-    toast({
-      title: "Escrow Deal Created!",
-      description: "Your crypto payment has been secured in escrow.",
-      variant: "default",
-    })
-    
-    setShowPaymentModal(false)
-    router.push('/dashboard/bookings')
   }
 
   const totalPrice = price * totalDays
@@ -224,23 +205,6 @@ export default function BookingFormEnhanced({ itemId, itemTitle, ownerName, owne
                 <Loader2 className="ml-2 h-4 w-4 animate-spin" />
               )}
             </button>
-
-            {/* Crypto Payment */}
-            <button
-              type="button"
-              onClick={handleCryptoPayment}
-              disabled={!!error}
-              className="flex items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors disabled:opacity-50"
-            >
-              <div className="text-center">
-                <Wallet className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-                <p className="font-medium">Crypto Payment</p>
-                <p className="text-xs text-gray-500">USDT via Smart Contract</p>
-                <Badge variant="secondary" className="mt-2 bg-purple-100 text-purple-800">
-                  Secure Escrow
-                </Badge>
-              </div>
-            </button>
           </div>
         </div>
       </form>
@@ -250,37 +214,13 @@ export default function BookingFormEnhanced({ itemId, itemTitle, ownerName, owne
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center">
-              {paymentMethod === 'crypto' ? (
-                <>
-                  <Wallet className="h-5 w-5 mr-2 text-purple-600" />
-                  Crypto Payment
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-5 w-5 mr-2 text-emerald-600" />
-                  Booking Created!
-                </>
-              )}
+              <CheckCircle className="h-5 w-5 mr-2 text-emerald-600" />
+              Booking Created!
             </DialogTitle>
           </DialogHeader>
-          
-          {paymentMethod === 'crypto' ? (
-            // Crypto payment flow
-            <div className="space-y-4">
-              <Web3PaymentForm
-                itemId={itemId}
-                itemTitle={itemTitle}
-                ownerName={ownerName}
-                ownerAddress={ownerAddress}
-                pricePerDay={price}
-                durationDays={totalDays}
-                onSuccess={handleCryptoSuccess}
-                onCancel={() => setShowPaymentModal(false)}
-              />
-            </div>
-          ) : (
-            // Traditional payment flow
-            <div className="space-y-4">
+
+          {/* Traditional payment flow */}
+          <div className="space-y-4">
               <div className="text-center">
                 <p className="text-gray-600 mb-4">
                   Your booking has been created successfully. Now proceed with payment to confirm it.
@@ -350,7 +290,6 @@ export default function BookingFormEnhanced({ itemId, itemTitle, ownerName, owne
                 💡 You can complete payment later from your bookings dashboard
               </div>
             </div>
-          )}
         </DialogContent>
       </Dialog>
     </div>

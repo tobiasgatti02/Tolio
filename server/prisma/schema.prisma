@@ -49,8 +49,10 @@ model Item {
   id          String    @id @default(uuid())
   title       String
   description String
+  type        ItemType  @default(SERVICE) // Tipo de publicación: SERVICE o TOOL
   price       Float
-  deposit     Float
+  priceType   String    @default("hour") // "hour" o "day"
+  deposit     Float     @default(0)
   category    String
   subcategory String?
   location    String
@@ -89,7 +91,7 @@ model Booking {
   id         String        @id @default(uuid())
   startDate  DateTime
   endDate    DateTime
-  totalPrice Float
+  // totalPrice Float   // Comentado - para futuras funcionalidades de pago
   status     BookingStatus @default(PENDING)
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
@@ -99,7 +101,7 @@ model Booking {
   borrower   User          @relation("Borrower", fields: [borrowerId], references: [id])
   item       Item          @relation(fields: [itemId], references: [id])
   owner      User          @relation("Owner", fields: [ownerId], references: [id])
-  payment    Payment?
+  // payment    Payment?   // Comentado - para futuras funcionalidades de pago
   review     Review?
 }
 
@@ -120,33 +122,34 @@ model Review {
   reviewer     User      @relation("Reviewer", fields: [reviewerId], references: [id])
 }
 
-model Payment {
-  id                    String        @id @default(uuid())
-  amount                Float         // Monto total del pago
-  status                PaymentStatus @default(PENDING)
-  // Stripe fields
-  stripePaymentIntentId String?       @unique // Stripe PaymentIntent ID
-  stripeTransferId      String?       // Stripe Transfer ID al owner
-  stripeChargeId        String?       // Stripe Charge ID
-  capturedAt            DateTime?     // Cuándo se capturó el pago
-  refundedAt            DateTime?     // Cuándo se hizo refund
-  refundAmount          Float?        // Monto reembolsado
-  // MercadoPago fields
-  mercadopagoPreferenceId String?     // ID de preferencia de MercadoPago
-  mercadopagoPaymentId    String?     @unique // ID del pago en MercadoPago
-  mercadopagoStatus       String?     // Estado del pago en MP (approved, pending, rejected, etc)
-  // Marketplace fields
-  marketplaceFee        Float?        // Comisión del marketplace (5%)
-  ownerAmount           Float?        // Monto que recibe el propietario
-  marketplaceAmount     Float?        // Monto que recibe el marketplace
-  // General fields
-  paymentProvider       String        @default("stripe") // "stripe" | "mercadopago"
-  paidAt                DateTime?
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  bookingId             String        @unique
-  booking               Booking       @relation(fields: [bookingId], references: [id])
-}
+// NOTA: Modelo Payment comentado - para futuras funcionalidades de pago integrado
+// model Payment {
+//   id                    String        @id @default(uuid())
+//   amount                Float         // Monto total del pago
+//   status                PaymentStatus @default(PENDING)
+//   // Stripe fields
+//   stripePaymentIntentId String?       @unique // Stripe PaymentIntent ID
+//   stripeTransferId      String?       // Stripe Transfer ID al owner
+//   stripeChargeId        String?       // Stripe Charge ID
+//   capturedAt            DateTime?     // Cuándo se capturó el pago
+//   refundedAt            DateTime?     // Cuándo se hizo refund
+//   refundAmount          Float?        // Monto reembolsado
+//   // MercadoPago fields
+//   mercadopagoPreferenceId String?     // ID de preferencia de MercadoPago
+//   mercadopagoPaymentId    String?     @unique // ID del pago en MercadoPago
+//   mercadopagoStatus       String?     // Estado del pago en MP (approved, pending, rejected, etc)
+//   // Marketplace fields
+//   marketplaceFee        Float?        // Comisión del marketplace (5%)
+//   ownerAmount           Float?        // Monto que recibe el propietario
+//   marketplaceAmount     Float?        // Monto que recibe el marketplace
+//   // General fields
+//   paymentProvider       String        @default("stripe") // "stripe" | "mercadopago"
+//   paidAt                DateTime?
+//   createdAt             DateTime      @default(now())
+//   updatedAt             DateTime      @updatedAt
+//   bookingId             String        @unique
+//   booking               Booking       @relation(fields: [bookingId], references: [id])
+// }
 
 model Notification {
   id        String           @id @default(uuid())
@@ -182,6 +185,11 @@ enum BookingStatus {
   CONFIRMED
   CANCELLED
   COMPLETED
+}
+
+enum ItemType {
+  SERVICE   // Servicios/Oficios/Changas
+  TOOL      // Herramientas para alquilar
 }
 
 enum PaymentStatus {

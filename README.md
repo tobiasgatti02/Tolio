@@ -1,15 +1,15 @@
-# 🏠 Prestar - Marketplace con Escrow de Stripe
+# 🔧 Tolio - Plataforma de Servicios y Herramientas
 
-Marketplace peer-to-peer para alquilar artículos con sistema de pagos seguros usando Stripe Connect y escrow.
+**Tolio** es la plataforma donde conectás con profesionales para changas y encontrás herramientas en tu zona.
 
 ## ✨ **Características Principales**
 
-- 💳 **Pagos con Escrow**: El dinero se retiene hasta que el owner confirma la entrega
-- 🔐 **Stripe Connect**: Pagos directos a los propietarios
-- 💰 **Fee del Marketplace**: 5% automático en cada transacción
-- 🎨 **UI Moderna**: Diseño limpio con shadcn/ui y Tailwind CSS
-- 📱 **Responsive**: Funciona perfectamente en móvil y desktop
-- 🌙 **Dark Mode**: Soporte completo para modo oscuro
+- �️ **Publicación de Servicios**: Plomeros, electricistas, y todo tipo de oficios
+- � **Préstamo de Herramientas**: Compartí y pedí herramientas en tu comunidad
+- 🎨 **Diseño Moderno**: UI cálida y amigable con Tailwind CSS
+- 📱 **100% Responsive**: Funciona perfectamente en móvil y desktop
+- � **Paleta Vibrante**: Colores naranja-melón, azul y verde natural
+- 🔒 **Autenticación Segura**: NextAuth con verificación de identidad
 
 ---
 

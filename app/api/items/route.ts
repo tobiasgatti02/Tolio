@@ -14,8 +14,9 @@ export async function GET(request: Request) {
     const search = searchParams.get("search")
     const location = searchParams.get("location")
     const category = searchParams.get("category")
-    const minPrice = searchParams.get("minPrice") ? parseFloat(searchParams.get("minPrice")!) : undefined
-    const maxPrice = searchParams.get("maxPrice") ? parseFloat(searchParams.get("maxPrice")!) : undefined
+    const type = searchParams.get("type") // Filter by SERVICE or TOOL
+    // const minPrice = searchParams.get("minPrice") ? parseFloat(searchParams.get("minPrice")!) : undefined  // Comentado
+    // const maxPrice = searchParams.get("maxPrice") ? parseFloat(searchParams.get("maxPrice")!) : undefined  // Comentado
     const sort = searchParams.get("sort") || "relevance"
     
     // Build the Prisma query conditions
@@ -42,14 +43,18 @@ export async function GET(request: Request) {
       where.category = { contains: category, mode: 'insensitive' }
     }
     
-    // Apply price filters
-    if (minPrice !== undefined) {
-      where.price = { ...where.price, gte: minPrice }
+    // Apply type filter (SERVICE or TOOL)
+    if (type) {
+      where.type = type
     }
     
-    if (maxPrice !== undefined) {
-      where.price = { ...where.price, lte: maxPrice }
-    }
+    // Apply price filters - Comentado para futuras funcionalidades
+    // if (minPrice !== undefined) {
+    //   where.price = { ...where.price, gte: minPrice }
+    // }
+    // if (maxPrice !== undefined) {
+    //   where.price = { ...where.price, lte: maxPrice }
+    // }
     
     // Determine the sort order
     let orderBy: any = {}
@@ -98,7 +103,8 @@ export async function GET(request: Request) {
         id: item.id,
         title: item.title,
         description: item.description,
-        price: item.price,
+        type: (item as any).type || 'SERVICE', // SERVICE or TOOL
+        // price: item.price,   // Comentado - para futuras funcionalidades
         location: item.location,
         category: item.category, // Return the category string directly
         rating: parseFloat(averageRating.toFixed(1)),
@@ -110,8 +116,8 @@ export async function GET(request: Request) {
     })
     
     return NextResponse.json(formattedItems)
-  } catch (error) {
-    console.error("Error fetching items:", error)
+  } catch (err) {
+    console.error("Error fetching items:", err instanceof Error ? err.message : String(err))
     return NextResponse.json({ error: "Failed to fetch items" }, { status: 500 })
   }
 }
@@ -163,17 +169,19 @@ export async function POST(request: Request) {
     // Extract text fields
     const title = formData.get('title') as string
     const description = formData.get('description') as string
+    const type = (formData.get('type') as string) || 'SERVICE'
     const category = formData.get('category') as string
     const price = parseFloat(formData.get('price') as string)
-    const deposit = parseFloat(formData.get('deposit') as string)
+    const priceType = (formData.get('priceType') as string) || 'hour'
+    const deposit = parseFloat(formData.get('deposit') as string) || 0
     const location = formData.get('location') as string
     const featuresRaw = formData.get('features') as string
     const features = featuresRaw ? JSON.parse(featuresRaw) : []
 
-    console.log("Form data extracted:", { title, description, category, price, deposit, location, features })
+    console.log("Form data extracted:", { title, description, type, category, location, features })
 
     // Basic validation
-    if (!title || !description || !category || isNaN(price) || isNaN(deposit) || !location) {
+    if (!title || !description || !category || isNaN(price) || price <= 0 || !location) {
       console.log("Validation failed: Missing required fields")
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
@@ -207,7 +215,9 @@ export async function POST(request: Request) {
     console.log("Creating item with data:", {
       title,
       description,
+      type,
       price,
+      priceType,
       deposit,
       location,
       features,
@@ -220,7 +230,9 @@ export async function POST(request: Request) {
       data: {
         title,
         description,
+        type: type as any, // SERVICE or TOOL
         price,
+        priceType,
         deposit,
         location,
         features,
@@ -233,11 +245,11 @@ export async function POST(request: Request) {
 
     console.log("Item created successfully:", newItem.id)
     return NextResponse.json(newItem, { status: 201 })
-  } catch (error) {
-    console.error("Error creating item:", error)
+  } catch (err) {
+    console.error("Error creating item:", err instanceof Error ? err.message : String(err))
     return NextResponse.json({ 
       error: "Failed to create item", 
-      details: error instanceof Error ? error.message : "Unknown error" 
+      details: err instanceof Error ? err.message : "Unknown error" 
     }, { status: 500 })
   }
 }
@@ -307,12 +319,11 @@ export async function PUT(request: Request) {
     })
 
     return NextResponse.json(newItem, { status: 201 })
-    return NextResponse.json(newItem, { status: 201 })
-  } catch (error) {
-    console.error("Error creating item:", error)
+  } catch (err) {
+    console.error("Error creating item:", err instanceof Error ? err.message : String(err))
     return NextResponse.json({ 
       error: "Failed to create item", 
-      details: error instanceof Error ? error.message : "Unknown error" 
+      details: err instanceof Error ? err.message : "Unknown error" 
     }, { status: 500 })
   }
 }

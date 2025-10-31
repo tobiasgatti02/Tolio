@@ -15,8 +15,10 @@ import {
 interface FormData {
   title: string
   description: string
+  type: 'SERVICE' | 'TOOL'
   category: string
   price: string
+  priceType: 'hour' | 'day'  // Nuevo campo para tipo de precio
   deposit: string
   location: string
   features: string[]
@@ -41,8 +43,10 @@ export default function EnhancedCreateItemForm() {
   const [formData, setFormData] = useState<FormData>({
     title: "",
     description: "",
+    type: "SERVICE",
     category: "",
     price: "",
+    priceType: "hour",
     deposit: "",
     location: "",
     features: [],
@@ -231,18 +235,18 @@ export default function EnhancedCreateItemForm() {
       {[1, 2, 3].map((step) => (
         <div key={step} className="flex items-center">
           <div className={`
-            w-10 h-10 rounded-full flex items-center justify-center font-semibold
+            w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all
             ${currentStep >= step 
-              ? 'bg-emerald-500 text-white' 
-              : 'bg-gray-200 text-gray-500'
+              ? 'bg-orange-500 text-white shadow-elegant' 
+              : 'bg-muted text-muted-foreground'
             }
           `}>
             {currentStep > step ? <CheckCircle className="w-5 h-5" /> : step}
           </div>
           {step < 3 && (
             <div className={`
-              w-16 h-1 mx-2
-              ${currentStep > step ? 'bg-emerald-500' : 'bg-gray-200'}
+              w-16 h-1 mx-2 transition-all
+              ${currentStep > step ? 'bg-orange-500' : 'bg-border'}
             `} />
           )}
         </div>
@@ -253,25 +257,84 @@ export default function EnhancedCreateItemForm() {
   const renderStep1 = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <Sparkles className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Información básica</h2>
-        <p className="text-gray-600">Cuéntanos sobre tu objeto</p>
+        <Sparkles className="w-12 h-12 text-orange-600 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Informacion basica</h2>
+        <p className="text-gray-600">Cuentanos que queres publicar</p>
       </div>
 
       <div className="space-y-4">
+        {/* Selector de tipo de publicación */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Que queres publicar? *
+          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, type: 'SERVICE' }))}
+              className={`
+                p-6 rounded-xl border-2 transition-all duration-200 hover:scale-105
+                ${formData.type === 'SERVICE'
+                  ? 'border-orange-500 bg-orange-600 hover:bg-orange-700 text-white shadow-lg'
+                  : 'border-gray-200 hover:border-orange-400'
+                }
+              `}
+            >
+              <PenTool className="w-8 h-8 mx-auto mb-2" />
+              <span className="text-base font-semibold">Servicio/Oficio</span>
+              <p className={`text-xs mt-1 ${formData.type === 'SERVICE' ? 'text-white/90' : 'text-gray-500'}`}>
+                Plomería, electricidad, etc.
+              </p>
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, type: 'TOOL' }))}
+              className={`
+                p-6 rounded-xl border-2 transition-all duration-200 hover:scale-105
+                ${formData.type === 'TOOL'
+                  ? 'border-blue-500 bg-blue-600 hover:bg-blue-700 text-white shadow-lg'
+                  : 'border-gray-200 hover:border-blue-400'
+                }
+              `}
+            >
+              <Home className="w-8 h-8 mx-auto mb-2" />
+              <span className="text-base font-semibold">Herramienta</span>
+              <p className={`text-xs mt-1 ${formData.type === 'TOOL' ? 'text-white/90' : 'text-gray-500'}`}>
+                Taladro, escalera, etc.
+              </p>
+            </button>
+          </div>
+          
+          {/* Disclaimer para herramientas */}
+          {formData.type === 'TOOL' && (
+            <div className="mt-4 p-4 bg-amber-50 border-l-4 border-amber-400 rounded-lg">
+              <div className="flex items-start">
+                <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 mr-2 flex-shrink-0" />
+                <div className="text-sm text-amber-800">
+                  <p className="font-semibold mb-1">Importante</p>
+                  <p>Al publicar una herramienta, lo haces bajo tu propia responsabilidad. 
+                  Tolio no se hace responsable por danos, perdidas o cualquier situacion que 
+                  pueda ocurrir con la herramienta prestada.</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Título del artículo *
+            Título *
           </label>
           <input
             type="text"
             name="title"
             value={formData.title}
             onChange={handleChange}
-            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors ${
+            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
               errors.title ? 'border-red-300' : 'border-gray-200'
             }`}
-            placeholder="Ej: iPhone 14 Pro Max 128GB"
+            placeholder={formData.type === 'SERVICE' ? 'Ej: Plomero con 10 años de experiencia' : 'Ej: Taladro inalámbrico 20V'}
           />
           {errors.title && (
             <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -296,8 +359,8 @@ export default function EnhancedCreateItemForm() {
                   className={`
                     p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105
                     ${formData.category === category.nombre
-                      ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                      : 'border-gray-200 hover:border-emerald-300'
+                      ? 'border-orange-500 bg-orange-500/10 text-orange-600'
+                      : 'border-gray-200 hover:border-orange-500/50'
                     }
                   `}
                 >
@@ -324,10 +387,12 @@ export default function EnhancedCreateItemForm() {
             value={formData.description}
             onChange={handleChange}
             rows={4}
-            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors resize-none ${
+            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-colors resize-none ${
               errors.description ? 'border-red-300' : 'border-gray-200'
             }`}
-            placeholder="Describe tu artículo: estado, características especiales, etc."
+            placeholder={formData.type === 'SERVICE' 
+              ? 'Describe tu servicio: experiencia, especialidades, disponibilidad, etc.' 
+              : 'Describe la herramienta: estado, características, accesorios incluidos, etc.'}
           />
           {errors.description && (
             <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -343,19 +408,23 @@ export default function EnhancedCreateItemForm() {
   const renderStep2 = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <Camera className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Agrega fotos</h2>
-        <p className="text-gray-600">Las buenas fotos aumentan las posibilidades de alquiler</p>
+        <Camera className="w-12 h-12 text-orange-600 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-gray-900 text-gray-900 mb-2">Agrega fotos</h2>
+        <p className="text-gray-600 text-gray-600">
+          {formData.type === 'SERVICE' 
+            ? 'Mostrá tu trabajo o espacio de trabajo' 
+            : 'Las buenas fotos aumentan el interés'}
+        </p>
       </div>
 
       <div 
         className={`
           border-3 border-dashed rounded-2xl p-8 text-center transition-all duration-300
           ${isDragging 
-            ? 'border-emerald-400 bg-emerald-50' 
+            ? 'border-orange-500 bg-orange-500/10' 
             : images.length > 0 
-              ? 'border-gray-300 bg-gray-50' 
-              : 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100'
+              ? 'border-border bg-muted' 
+              : 'border-orange-500/50 bg-orange-500/5 hover:bg-orange-500/10'
           }
           ${errors.images ? 'border-red-300 bg-red-50' : ''}
         `}
@@ -375,24 +444,24 @@ export default function EnhancedCreateItemForm() {
         
         {images.length === 0 ? (
           <div className="cursor-pointer">
-            <Upload className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
-            <p className="text-xl font-semibold text-gray-700 mb-2">
+            <Upload className="w-16 h-16 text-orange-600 mx-auto mb-4" />
+            <p className="text-xl font-semibold text-gray-700 text-gray-900 mb-2">
               Arrastra tus fotos aquí
             </p>
-            <p className="text-gray-500 mb-4">
+            <p className="text-gray-500 text-gray-600 mb-4">
               o haz clic para seleccionar archivos
             </p>
             <button
               type="button"
-              className="bg-emerald-500 text-white px-6 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
+              className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg hover:shadow-xl transition-all"
             >
               Seleccionar fotos
             </button>
           </div>
         ) : (
           <div className="cursor-pointer">
-            <Plus className="w-12 h-12 text-emerald-400 mx-auto mb-2" />
-            <p className="text-gray-600">Agregar más fotos</p>
+            <Plus className="w-12 h-12 text-orange-600 mx-auto mb-2" />
+            <p className="text-gray-600 text-gray-600">Agregar más fotos</p>
           </div>
         )}
       </div>
@@ -408,7 +477,7 @@ export default function EnhancedCreateItemForm() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {imagesPreviews.map((preview, index) => (
             <div key={index} className="relative group">
-              <div className="aspect-square rounded-xl overflow-hidden bg-gray-100">
+              <div className="aspect-square rounded-xl overflow-hidden bg-muted">
                 <Image
                   src={preview}
                   alt={`Preview ${index + 1}`}
@@ -423,12 +492,12 @@ export default function EnhancedCreateItemForm() {
                   e.stopPropagation()
                   removeImage(index)
                 }}
-                className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                className="absolute -top-2 -right-2 bg-destructive text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:shadow-lg"
               >
                 <X className="w-4 h-4" />
               </button>
               {index === 0 && (
-                <div className="absolute bottom-2 left-2 bg-emerald-500 text-white px-2 py-1 rounded text-xs font-medium">
+                <div className="absolute bottom-2 left-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-medium">
                   Principal
                 </div>
               )}
@@ -437,14 +506,14 @@ export default function EnhancedCreateItemForm() {
         </div>
       )}
 
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+      <div className="bg-secondary/10 border border-secondary/30 rounded-xl p-4">
         <div className="flex items-start">
-          <Info className="w-5 h-5 text-blue-500 mt-0.5 mr-3 flex-shrink-0" />
-          <div className="text-sm text-blue-700">
+          <Info className="w-5 h-5 text-secondary mt-0.5 mr-3 flex-shrink-0" />
+          <div className="text-sm text-secondary">
             <p className="font-medium mb-1">Consejos para mejores fotos:</p>
-            <ul className="space-y-1 text-blue-600">
+            <ul className="space-y-1 opacity-90">
               <li>• Usa buena iluminación natural</li>
-              <li>• Muestra el objeto desde diferentes ángulos</li>
+              <li>• Muestra {formData.type === 'SERVICE' ? 'tu trabajo' : 'el objeto'} desde diferentes ángulos</li>
               <li>• Incluye detalles importantes</li>
               <li>• La primera foto será la principal</li>
             </ul>
@@ -457,38 +526,99 @@ export default function EnhancedCreateItemForm() {
   const renderStep3 = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <DollarSign className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Precio y ubicación</h2>
-        <p className="text-gray-600">Establece el precio y dónde se encuentra tu objeto</p>
+        <MapPin className="w-12 h-12 text-orange-600 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Ubicación y detalles</h2>
+        <p className="text-gray-600">Completá los últimos detalles de tu publicación</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Precio por día *
-          </label>
-          <div className="relative">
-            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors ${
-                errors.price ? 'border-red-300' : 'border-gray-200'
-              }`}
-              placeholder="0.00"
-              min="0"
-              step="0.01"
-            />
+      {/* Campos de precio */}
+      <div className="space-y-6">
+        {formData.type === 'SERVICE' ? (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Precio por hora *
+            </label>
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleChange}
+                className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
+                  errors.price ? 'border-red-300' : 'border-gray-200'
+                }`}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            {errors.price && (
+              <p className="text-red-500 text-sm mt-1 flex items-center">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                {errors.price}
+              </p>
+            )}
           </div>
-          {errors.price && (
-            <p className="text-red-500 text-sm mt-1 flex items-center">
-              <AlertCircle className="w-4 h-4 mr-1" />
-              {errors.price}
-            </p>
-          )}
-        </div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tipo de precio *
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="priceType"
+                    value="hour"
+                    checked={formData.priceType === 'hour'}
+                    onChange={handleChange}
+                    className="mr-2"
+                  />
+                  Por hora
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="priceType"
+                    value="day"
+                    checked={formData.priceType === 'day'}
+                    onChange={handleChange}
+                    className="mr-2"
+                  />
+                  Por día
+                </label>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Precio por {formData.priceType === 'hour' ? 'hora' : 'día'} *
+              </label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
+                    errors.price ? 'border-red-300' : 'border-gray-200'
+                  }`}
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              {errors.price && (
+                <p className="text-red-500 text-sm mt-1 flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-1" />
+                  {errors.price}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -501,7 +631,7 @@ export default function EnhancedCreateItemForm() {
               name="deposit"
               value={formData.deposit}
               onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
               placeholder="0.00"
               min="0"
               step="0.01"
@@ -522,7 +652,7 @@ export default function EnhancedCreateItemForm() {
             name="location"
             value={formData.location}
             onChange={handleChange}
-            className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors ${
+            className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
               errors.location ? 'border-red-300' : 'border-gray-200'
             }`}
             placeholder="Ej: Palermo, CABA"
@@ -546,13 +676,13 @@ export default function EnhancedCreateItemForm() {
             value={newFeature}
             onChange={(e) => setNewFeature(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
-            className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            placeholder="Ej: Incluye cargador, Como nuevo, etc."
+            className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder={formData.type === 'SERVICE' ? 'Ej: Disponibilidad fines de semana, Trabajo en equipo' : 'Ej: Incluye cargador, Como nuevo, etc.'}
           />
           <button
             type="button"
             onClick={addFeature}
-            className="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
+            className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg hover:shadow-xl transition-all"
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -562,13 +692,13 @@ export default function EnhancedCreateItemForm() {
             {formData.features.map((feature, index) => (
               <span
                 key={index}
-                className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm flex items-center"
+                className="bg-orange-500/10 text-orange-600 px-3 py-1 rounded-full text-sm flex items-center"
               >
                 {feature}
                 <button
                   type="button"
                   onClick={() => removeFeature(feature)}
-                  className="ml-2 text-emerald-500 hover:text-emerald-700"
+                  className="ml-2 text-orange-600 hover:text-orange-600/70"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -582,9 +712,15 @@ export default function EnhancedCreateItemForm() {
 
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
-      <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-8 text-white">
-        <h1 className="text-3xl font-bold text-center">Publica tu objeto</h1>
-        <p className="text-center text-emerald-100 mt-2">Gana dinero alquilando tus objetos</p>
+      <div className="bg-orange-600 p-8 text-white">
+        <h1 className="text-3xl font-bold text-center">
+          {formData.type === 'SERVICE' ? 'Publica tu Servicio' : 'Publica tu Herramienta'}
+        </h1>
+        <p className="text-center text-white/90 mt-2">
+          {formData.type === 'SERVICE' 
+            ? 'Conecta con personas que necesitan tus habilidades' 
+            : 'Comparte tus herramientas con tu comunidad'}
+        </p>
       </div>
       
       <div className="p-8">
@@ -595,12 +731,12 @@ export default function EnhancedCreateItemForm() {
           {currentStep === 2 && renderStep2()}
           {currentStep === 3 && renderStep3()}
           
-          <div className="flex justify-between pt-8 border-t border-gray-200 mt-8">
+          <div className="flex justify-between pt-8 border-t border-border mt-8">
             {currentStep > 1 && (
               <button
                 type="button"
                 onClick={prevStep}
-                className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                className="px-6 py-3 border-2 border-border text-foreground rounded-xl hover:bg-muted transition-all font-medium"
               >
                 Anterior
               </button>
@@ -611,7 +747,7 @@ export default function EnhancedCreateItemForm() {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="px-8 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-medium"
+                  className="px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl transition-colors font-medium"
                 >
                   Siguiente
                 </button>
@@ -619,7 +755,7 @@ export default function EnhancedCreateItemForm() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-8 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  className="px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                 >
                   {isSubmitting ? (
                     <>
@@ -627,7 +763,7 @@ export default function EnhancedCreateItemForm() {
                       Publicando...
                     </>
                   ) : (
-                    'Publicar objeto'
+                    `Publicar ${formData.type === 'SERVICE' ? 'Servicio' : 'Herramienta'}`
                   )}
                 </button>
               )}
