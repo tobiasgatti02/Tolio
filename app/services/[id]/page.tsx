@@ -20,26 +20,15 @@ async function getService(id: string) {
       provider: {
         select: {
           id: true,
-          name: true,
+          firstName: true,
+          lastName: true,
           email: true,
-          phone: true,
-          image: true,
+          phoneNumber: true,
+          profileImage: true,
           createdAt: true,
         }
       },
-      category: {
-        select: {
-          id: true,
-          name: true,
-        }
-      },
-      subcategory: {
-        select: {
-          id: true,
-          name: true,
-        }
-      },
-      serviceReviews: {
+      reviews: {
         select: {
           id: true,
           rating: true,
@@ -47,8 +36,9 @@ async function getService(id: string) {
           createdAt: true,
           reviewer: {
             select: {
-              name: true,
-              image: true,
+              firstName: true,
+              lastName: true,
+              profileImage: true,
             }
           }
         },
@@ -62,14 +52,14 @@ async function getService(id: string) {
 
   if (!service) return null
 
-  const averageRating = service.serviceReviews.length > 0
-    ? service.serviceReviews.reduce((acc: number, review: any) => acc + review.rating, 0) / service.serviceReviews.length
+  const averageRating = service.reviews.length > 0
+    ? service.reviews.reduce((acc: number, review: any) => acc + review.rating, 0) / service.reviews.length
     : 0
 
   return {
     ...service,
     averageRating,
-    reviewCount: service.serviceReviews.length
+    reviewCount: service.reviews.length
   }
 }
 
@@ -160,11 +150,11 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                     <div className="flex items-center gap-2">
                       <span className="text-gray-500">•</span>
                       <span className="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
-                        {service.category.name}
+                        {service.category}
                       </span>
                       {service.subcategory && (
                         <span className="text-sm px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
-                          {service.subcategory.name}
+                          {service.subcategory}
                         </span>
                       )}
                     </div>
@@ -190,10 +180,10 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                   <div className="flex items-baseline gap-2">
                     <DollarSign className="w-6 h-6 text-blue-600" />
                     <span className="text-4xl font-bold text-gray-900">
-                      ${service.hourlyRate ? service.hourlyRate.toFixed(2) : service.customPrice?.toFixed(2) || '0.00'}
+                      ${service.pricePerHour ? service.pricePerHour.toFixed(2) : '0.00'}
                     </span>
                     <span className="text-xl text-gray-600">
-                      {service.hourlyRate ? '/ hora' : service.customPricingDescription ? `(${service.customPricingDescription})` : 'Precio personalizado'}
+                      {service.priceType === 'hour' ? '/ hora' : '/ servicio'}
                     </span>
                   </div>
                 </div>

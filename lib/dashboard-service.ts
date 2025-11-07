@@ -4,6 +4,15 @@ import { ERROR_MESSAGES, DASHBOARD_CONFIG } from './dashboard-constants'
 
 const prisma = new PrismaClient()
 
+// Helper function to calculate total price for a booking
+function calculateBookingPrice(dailyPrice: number, startDate: Date, endDate: Date): number {
+  const diffTime = Math.abs(new Date(endDate).getTime() - new Date(startDate).getTime())
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  const subtotal = dailyPrice * diffDays
+  const serviceFee = subtotal * 0.1 // 10% service fee
+  return subtotal + serviceFee
+}
+
 export class DashboardService {
   
   static async getUserStats(userId: string): Promise<DashboardStats> {
@@ -33,9 +42,15 @@ export class DashboardService {
           },
           select: {
             status: true,
-            totalPrice: true,
             borrowerId: true,
-            createdAt: true
+            createdAt: true,
+            startDate: true,
+            endDate: true,
+            item: {
+              select: {
+                price: true
+              }
+            }
           }
         }),
         
@@ -68,25 +83,25 @@ export class DashboardService {
       // Ganancias (como prestador)
       const totalEarnings = userBookings
         .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId)
-        .reduce((sum, b) => sum + (b.totalPrice || 0), 0)
+        .reduce((sum, b) => sum + calculateBookingPrice(b.item.price, b.startDate, b.endDate), 0)
       
       // Gastos (como prestatario)
       const totalSpent = userBookings
         .filter(b => b.status === 'COMPLETED' && b.borrowerId === userId)
-        .reduce((sum, b) => sum + (b.totalPrice || 0), 0)
+        .reduce((sum, b) => sum + calculateBookingPrice(b.item.price, b.startDate, b.endDate), 0)
 
       // Ganancias de hoy
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       const todayEarnings = userBookings
         .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && new Date(b.createdAt) >= today)
-        .reduce((sum, b) => sum + (b.totalPrice || 0), 0)
+        .reduce((sum, b) => sum + calculateBookingPrice(b.item.price, b.startDate, b.endDate), 0)
 
       // Ganancias del mes
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
       const monthlyEarnings = userBookings
         .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && new Date(b.createdAt) >= monthStart)
-        .reduce((sum, b) => sum + (b.totalPrice || 0), 0)
+        .reduce((sum, b) => sum + calculateBookingPrice(b.item.price, b.startDate, b.endDate), 0)
 
       const averageRating = userReviews.length > 0 
         ? userReviews.reduce((sum, r) => sum + r.rating, 0) / userReviews.length 
@@ -135,7 +150,8 @@ export class DashboardService {
           bookings: {
             select: {
               status: true,
-              totalPrice: true
+              startDate: true,
+              endDate: true
             }
           },
           reviews: {
@@ -225,6 +241,7 @@ export class DashboardService {
       return bookings.map(booking => {
         const isBorrower = booking.borrowerId === userId
         const hasReviewed = booking.review !== null
+        const totalPrice = calculateBookingPrice(booking.item.price, booking.startDate, booking.endDate)
         
         return {
           id: booking.id,
@@ -246,7 +263,7 @@ export class DashboardService {
           },
           fechaInicio: booking.startDate.toISOString(),
           fechaFin: booking.endDate.toISOString(),
-          total: booking.totalPrice,
+          total: totalPrice,
           status: booking.status as any,
           createdAt: booking.createdAt.toISOString(),
           canReview: booking.status === 'COMPLETED' && !hasReviewed,
