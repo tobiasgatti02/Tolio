@@ -11,8 +11,8 @@ model User {
   id                        String           @id @default(uuid())
   email                     String           @unique
   password                  String?          // Ahora es opcional para usuarios OAuth
-  firstName                 String
-  lastName                  String
+  firstName                 String?          // Opcional para OAuth
+  lastName                  String?          // Opcional para OAuth
   name                      String? // Para NextAuth
   emailVerified             DateTime? // Para NextAuth
   image                     String? // Para NextAuth

@@ -1,7 +1,6 @@
 import NextAuth, { DefaultSession, NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import FacebookProvider from "next-auth/providers/facebook";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
@@ -30,10 +29,6 @@ export const authOptions: NextAuthOptions = {
           response_type: "code"
         }
       }
-    }),
-    FacebookProvider({
-      clientId: process.env.FACEBOOK_CLIENT_ID || "",
-      clientSecret: process.env.FACEBOOK_CLIENT_SECRET || "",
     }),
     CredentialsProvider({
       name: "Credentials",
@@ -154,6 +149,30 @@ export const authOptions: NextAuthOptions = {
         }
       }
       return token;
+    },
+  },
+  events: {
+    async createUser({ user }) {
+      // Cuando se crea un usuario con OAuth, asegurarse de que tenga los campos necesarios
+      if (user.email && user.name) {
+        try {
+          // Separar el nombre en firstName y lastName si es posible
+          const nameParts = user.name.split(' ');
+          const firstName = nameParts[0] || user.name;
+          const lastName = nameParts.slice(1).join(' ') || nameParts[0];
+          
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              firstName,
+              lastName,
+              isVerified: true, // Los usuarios de OAuth se marcan como verificados automáticamente
+            },
+          });
+        } catch (error) {
+          console.error("Error updating OAuth user:", error);
+        }
+      }
     },
   },
   // Configuración adicional para producción
