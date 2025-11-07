@@ -140,13 +140,9 @@ export async function POST(request: Request) {
               continue
             }
             
-            const optimizedBuffer = await sharp(buffer)
-              .resize({ width: 800, withoutEnlargement: true })
-              .jpeg({ quality: 80 })
-              .toBuffer()
-            
-            const base64 = optimizedBuffer.toString('base64')
-            const mimeType = "image/jpeg"
+            // Guardar imagen original sin procesamiento (como la subió el usuario)
+            const base64 = buffer.toString('base64')
+            const mimeType = imageFile.type
             const dataUrl = `data:${mimeType};base64,${base64}`
             
             imageUrls.push(dataUrl)
