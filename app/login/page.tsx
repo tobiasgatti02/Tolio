@@ -8,7 +8,6 @@ import {
   Mail, Lock, Eye, EyeOff, ArrowRight, 
   Loader2, AlertCircle, Wrench, Briefcase
 } from "lucide-react"
-import { components } from "@/lib/design-system"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -44,9 +43,18 @@ export default function LoginPage() {
         return
       }
 
-      router.push("/dashboard")
-      router.refresh()
+      if (result?.ok) {
+        // Esperar un momento para que la sesión se establezca
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Usar window.location para forzar una recarga completa
+        window.location.href = "/dashboard"
+      } else {
+        setError("Error al iniciar sesión. Intenta de nuevo.")
+        setIsLoading(false)
+      }
     } catch (err) {
+      console.error("Login error:", err)
       setError("Ocurrió un error. Por favor, intenta de nuevo")
       setIsLoading(false)
     }
@@ -208,7 +216,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`${components.button.base} ${components.button.sizes.lg} ${components.button.variants.primary} w-full`}
+                  className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <>

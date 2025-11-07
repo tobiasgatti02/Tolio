@@ -201,129 +201,151 @@ export default function NotificationsClient({ userId }: NotificationsClientProps
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Notificaciones</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-4xl font-black text-gray-900 mb-2">Notificaciones</h1>
+            {unreadCount > 0 ? (
+              <p className="text-lg text-gray-600">
+                <span className="inline-flex items-center justify-center w-6 h-6 bg-orange-500 text-white text-sm font-bold rounded-full mr-2">
+                  {unreadCount}
+                </span>
+                notificación{unreadCount === 1 ? '' : 'es'} sin leer
+              </p>
+            ) : (
+              <p className="text-lg text-gray-600">Estás al día con todas tus notificaciones ✨</p>
+            )}
+          </div>
           {unreadCount > 0 && (
-            <p className="text-gray-600 mt-1">
-              {unreadCount} notificación{unreadCount === 1 ? '' : 'es'} sin leer
-            </p>
+            <button 
+              onClick={markAllAsRead} 
+              className="bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 hover:border-gray-300 px-6 py-3 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md flex items-center"
+            >
+              <Check className="h-5 w-5 mr-2" />
+              Marcar todas como leídas
+            </button>
           )}
         </div>
-        {unreadCount > 0 && (
-          <Button onClick={markAllAsRead} variant="outline">
-            <Check className="h-4 w-4 mr-2" />
-            Marcar todas como leídas
-          </Button>
-        )}
-      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="all">
-            Todas ({notifications.length})
-          </TabsTrigger>
-          <TabsTrigger value="unread">
-            No leídas ({unreadCount})
-          </TabsTrigger>
-        </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-white p-1 rounded-xl shadow-sm border border-gray-200 mb-6">
+            <TabsTrigger 
+              value="all"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white rounded-lg font-semibold transition-all"
+            >
+              Todas ({notifications.length})
+            </TabsTrigger>
+            <TabsTrigger 
+              value="unread"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white rounded-lg font-semibold transition-all"
+            >
+              No leídas ({unreadCount})
+            </TabsTrigger>
+          </TabsList>
 
         <TabsContent value={activeTab} className="mt-6">
           {filteredNotifications.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8">
-                  <Bell className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {activeTab === "unread" ? "No hay notificaciones sin leer" : "No tienes notificaciones"}
-                  </h3>
-                  <p className="text-gray-600">
-                    {activeTab === "unread" 
-                      ? "¡Perfecto! Estás al día con todas tus notificaciones."
-                      : "Las notificaciones sobre tus reservas y artículos aparecerán aquí."
-                    }
-                  </p>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12">
+              <div className="text-center">
+                <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Bell className="h-10 w-10 text-gray-400" />
                 </div>
-              </CardContent>
-            </Card>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {activeTab === "unread" ? "No hay notificaciones sin leer" : "No tienes notificaciones"}
+                </h3>
+                <p className="text-gray-600">
+                  {activeTab === "unread" 
+                    ? "¡Perfecto! Estás al día con todas tus notificaciones."
+                    : "Las notificaciones sobre tus reservas y artículos aparecerán aquí."
+                  }
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="space-y-4">
               {filteredNotifications.map((notification) => (
-                <Card 
+                <div 
                   key={notification.id} 
-                  className={`${!notification.read ? 'border-l-4 border-l-blue-500 bg-blue-50/30' : ''} transition-all hover:shadow-md`}
+                  className={`bg-white rounded-2xl border-2 transition-all hover:shadow-lg ${
+                    !notification.read 
+                      ? 'border-orange-300 shadow-md' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
                 >
-                  <CardContent className="pt-6">
+                  <div className="p-6">
                     <div className="flex items-start space-x-4">
-                      <div className={`p-2 rounded-full ${!notification.read ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                      <div className={`p-3 rounded-xl flex-shrink-0 ${
+                        !notification.read 
+                          ? 'bg-gradient-to-br from-orange-100 to-red-100' 
+                          : 'bg-gray-100'
+                      }`}>
                         {getNotificationIcon(notification.type)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
+                        <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <h3 className={`text-sm font-medium ${!notification.read ? 'text-gray-900' : 'text-gray-700'}`}>
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h3 className={`text-base font-bold ${
+                                !notification.read ? 'text-gray-900' : 'text-gray-700'
+                              }`}>
                                 {getNotificationTitle(notification.type)}
                               </h3>
-                              <Badge className={getNotificationColor(notification.type)} variant="secondary">
-                                {notification.type.replace(/_/g, ' ').toLowerCase()}
-                              </Badge>
                               {!notification.read && (
-                                <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                <div className="w-2.5 h-2.5 bg-orange-500 rounded-full animate-pulse"></div>
                               )}
                             </div>
-                            <p className={`text-sm ${!notification.read ? 'text-gray-800' : 'text-gray-600'} mb-2`}>
+                            <p className={`text-sm leading-relaxed mb-3 ${
+                              !notification.read ? 'text-gray-800' : 'text-gray-600'
+                            }`}>
                               {notification.message}
                             </p>
-                            <div className="flex items-center space-x-4 text-xs text-gray-500">
-                              <span className="flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {new Date(notification.createdAt).toLocaleDateString('es-ES', {
-                                  day: 'numeric',
-                                  month: 'short',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </span>
+                            <div className="flex items-center text-xs text-gray-500">
+                              <Clock className="h-3.5 w-3.5 mr-1.5" />
+                              {new Date(notification.createdAt).toLocaleDateString('es-ES', {
+                                day: 'numeric',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2 ml-4">
-                            {!notification.read && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => markAsRead(notification.id)}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {notification.relatedBookingId && (
-                              <Link href={`/dashboard/bookings/${notification.relatedBookingId}`}>
-                                <Button size="sm" variant="outline">
-                                  Ver reserva
-                                </Button>
-                              </Link>
-                            )}
-                            {notification.relatedItemId && (
-                              <Link href={`/items/${notification.relatedItemId}`}>
-                                <Button size="sm" variant="outline">
-                                  Ver artículo
-                                </Button>
-                              </Link>
-                            )}
-                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-4">
+                          {!notification.read && (
+                            <button
+                              onClick={() => markAsRead(notification.id)}
+                              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center"
+                            >
+                              <Check className="h-4 w-4 mr-1.5" />
+                              Marcar como leída
+                            </button>
+                          )}
+                          {notification.relatedBookingId && (
+                            <Link href={`/dashboard/bookings/${notification.relatedBookingId}`}>
+                              <button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md">
+                                Ver reserva
+                              </button>
+                            </Link>
+                          )}
+                          {notification.relatedItemId && (
+                            <Link href={`/items/${notification.relatedItemId}`}>
+                              <button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md">
+                                Ver artículo
+                              </button>
+                            </Link>
+                          )}
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
