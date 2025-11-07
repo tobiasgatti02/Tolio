@@ -1,5 +1,7 @@
 import NextAuth, { DefaultSession, NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
+import FacebookProvider from "next-auth/providers/facebook";
 import bcrypt from "bcryptjs";
 
 // Conditionally import PrismaAdapter and PrismaClient only on server
@@ -14,6 +16,7 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
+      isVerified?: boolean;
     } & DefaultSession["user"];
   }
 }
@@ -21,9 +24,24 @@ declare module "next-auth" {
 const prisma = typeof window === 'undefined' ? new PrismaClient() : null;
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET, // Asegúrate de definir esta variable en tu .env
+  secret: process.env.NEXTAUTH_SECRET,
   adapter: typeof window === 'undefined' ? PrismaAdapter(prisma) : undefined,
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
+    }),
+    FacebookProvider({
+      clientId: process.env.FACEBOOK_CLIENT_ID || "",
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET || "",
+    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -42,7 +60,12 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
-          return null;
+          throw new Error("No user found with this email");
+        }
+
+        // Verificar si el usuario tiene contraseña (no es OAuth)
+        if (!user.password) {
+          throw new Error("Please use social login (Google/Facebook) for this account");
         }
 
         const passwordMatch = await bcrypt.compare(
@@ -51,7 +74,12 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!passwordMatch) {
-          return null;
+          throw new Error("Invalid password");
+        }
+
+        // Verificar si el email está verificado
+        if (!user.isVerified) {
+          throw new Error("Please verify your email before logging in");
         }
 
         return {
@@ -71,6 +99,28 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Para OAuth providers (Google/Facebook), marcar como verificado automáticamente
+      if (account?.provider !== "credentials") {
+        if (user.email && typeof window === 'undefined') {
+          try {
+            const existingUser = await prisma.user.findUnique({
+              where: { email: user.email },
+            });
+
+            if (existingUser && !existingUser.isVerified) {
+              await prisma.user.update({
+                where: { email: user.email },
+                data: { isVerified: true },
+              });
+            }
+          } catch (error) {
+            console.error("Error updating user verification:", error);
+          }
+        }
+      }
+      return true;
+    },
     async session({ session, token }: { session: any; token: any }) {
       // Asegurarnos que el user.id siempre esté presente
       if (token?.id) {
@@ -85,15 +135,30 @@ export const authOptions: NextAuthOptions = {
       if (token?.picture) {
         session.user.image = token.picture;
       }
+      if (token?.isVerified !== undefined) {
+        session.user.isVerified = token.isVerified;
+      }
       return session;
     },
-    async jwt({ token, user, trigger }: { token: any; user: any; trigger?: string }) {
+    async jwt({ token, user, trigger, account }: { token: any; user: any; trigger?: string; account?: any }) {
       // Al hacer login, guardar el user.id en el token
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
         token.picture = user.image;
+        
+        // Para OAuth, marcar como verificado automáticamente
+        if (account?.provider !== "credentials") {
+          token.isVerified = true;
+        } else if (typeof window === 'undefined') {
+          // Para credenciales, verificar el estado en la base de datos
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { isVerified: true },
+          });
+          token.isVerified = dbUser?.isVerified || false;
+        }
       }
       return token;
     },

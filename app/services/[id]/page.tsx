@@ -183,7 +183,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                       ${service.pricePerHour ? service.pricePerHour.toFixed(2) : '0.00'}
                     </span>
                     <span className="text-xl text-gray-600">
-                      {service.priceType === 'hour' ? '/ hora' : '/ servicio'}
+                      {service.priceType === 'hour' ? '/ hora' : service.priceType === 'custom' ? '/ servicio' : ''}
                     </span>
                   </div>
                 </div>
@@ -213,30 +213,32 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
             </div>
 
             {/* Reviews */}
-            {service.serviceReviews.length > 0 && (
+            {service.reviews && service.reviews.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Reseñas de clientes</h2>
                 <div className="space-y-6">
-                  {service.serviceReviews.map((review: any) => (
+                  {service.reviews.map((review: any) => (
                     <div key={review.id} className="border-b border-gray-200 pb-6 last:border-0 last:pb-0">
                       <div className="flex items-start gap-4">
                         <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-indigo-400 flex-shrink-0">
-                          {review.reviewer.image ? (
+                          {review.reviewer.profileImage ? (
                             <Image
-                              src={review.reviewer.image}
-                              alt={review.reviewer.name || 'Usuario'}
+                              src={review.reviewer.profileImage}
+                              alt={`${review.reviewer.firstName} ${review.reviewer.lastName}` || 'Usuario'}
                               fill
                               className="object-cover"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-white font-semibold">
-                              {(review.reviewer.name || 'U')[0].toUpperCase()}
+                              {(review.reviewer.firstName || 'U')[0].toUpperCase()}
                             </div>
                           )}
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-semibold text-gray-900">{review.reviewer.name || 'Usuario'}</h3>
+                            <h3 className="font-semibold text-gray-900">
+                              {`${review.reviewer.firstName} ${review.reviewer.lastName}`.trim() || 'Usuario'}
+                            </h3>
                             <div className="flex items-center gap-1">
                               {[...Array(5)].map((_, i) => (
                                 <Star
@@ -278,21 +280,23 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Prestador del servicio</h3>
                 <div className="flex items-start gap-4 mb-6">
                   <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-indigo-400 flex-shrink-0">
-                    {service.provider.image ? (
+                    {service.provider.profileImage ? (
                       <Image
-                        src={service.provider.image}
-                        alt={service.provider.name || 'Prestador'}
+                        src={service.provider.profileImage}
+                        alt={`${service.provider.firstName} ${service.provider.lastName}` || 'Prestador'}
                         fill
                         className="object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
-                        {(service.provider.name || 'P')[0].toUpperCase()}
+                        {(service.provider.firstName || 'P')[0].toUpperCase()}
                       </div>
                     )}
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 text-lg">{service.provider.name}</h4>
+                    <h4 className="font-semibold text-gray-900 text-lg">
+                      {`${service.provider.firstName} ${service.provider.lastName}`.trim()}
+                    </h4>
                     <p className="text-sm text-gray-500">
                       Miembro desde {new Date(service.provider.createdAt).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}
                     </p>
@@ -311,14 +315,14 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                       </span>
                     </a>
                   )}
-                  {service.provider.phone && (
+                  {service.provider.phoneNumber && (
                     <a
-                      href={`tel:${service.provider.phone}`}
+                      href={`tel:${service.provider.phoneNumber}`}
                       className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
                     >
                       <Phone className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                       <span className="text-sm text-gray-700 group-hover:text-blue-600 transition-colors">
-                        {service.provider.phone}
+                        {service.provider.phoneNumber}
                       </span>
                     </a>
                   )}

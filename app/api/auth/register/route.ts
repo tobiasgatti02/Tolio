@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { PrismaClient } from '@prisma/client'
+import { sendVerificationEmail } from "@/lib/email"
+import crypto from "crypto"
 
 const prisma = new PrismaClient()
 
@@ -128,6 +130,9 @@ export async function POST(request: Request) {
     // Hashear la contraseña
     const hashedPassword = await bcrypt.hash(password, 12)
 
+    // Generar token de verificación
+    const verificationToken = crypto.randomBytes(32).toString('hex')
+
     // Crear el usuario
     const user = await prisma.user.create({
       data: {
@@ -136,13 +141,8 @@ export async function POST(request: Request) {
         firstName,
         lastName,
         phoneNumber: normalizedPhone,
-        // Campos opcionales
-        // birthDate: birthDate ? new Date(birthDate) : null,
-        // address: address || null,
-        // city: city || null,
-        // postalCode: postalCode || null,
-        isVerified: false, // Por defecto no verificado
-        verificationStatus: "PENDING"
+        isVerified: false,
+        verificationToken,
       },
       select: {
         id: true,
@@ -153,10 +153,23 @@ export async function POST(request: Request) {
       }
     })
 
+    // Enviar email de verificación
+    try {
+      await sendVerificationEmail({
+        email: user.email,
+        firstName: user.firstName,
+        verificationToken,
+      })
+    } catch (emailError) {
+      console.error('Error sending verification email:', emailError)
+      // No fallar el registro si el email falla
+    }
+
     return NextResponse.json(
       { 
-        message: "Usuario creado exitosamente",
-        user 
+        message: "Usuario creado exitosamente. Por favor verifica tu email.",
+        user,
+        requiresVerification: true
       },
       { status: 201 }
     )

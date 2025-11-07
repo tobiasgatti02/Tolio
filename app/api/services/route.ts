@@ -129,19 +129,32 @@ export async function POST(request: Request) {
 
     if (imageFiles && imageFiles.length > 0) {
       for (const imageFile of imageFiles) {
-        if (imageFile.size > 0) {
-          const buffer = Buffer.from(await imageFile.arrayBuffer())
-          
-          const optimizedBuffer = await sharp(buffer)
-            .resize({ width: 800, withoutEnlargement: true })
-            .jpeg({ quality: 80 })
-            .toBuffer()
-          
-          const base64 = optimizedBuffer.toString('base64')
-          const mimeType = "image/jpeg"
-          const dataUrl = `data:${mimeType};base64,${base64}`
-          
-          imageUrls.push(dataUrl)
+        if (imageFile.size > 0 && imageFile.type.startsWith('image/')) {
+          try {
+            const buffer = Buffer.from(await imageFile.arrayBuffer())
+            
+            // Validar formatos soportados
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+            if (!allowedTypes.includes(imageFile.type.toLowerCase())) {
+              console.warn(`Formato no soportado: ${imageFile.type}. Saltando...`)
+              continue
+            }
+            
+            const optimizedBuffer = await sharp(buffer)
+              .resize({ width: 800, withoutEnlargement: true })
+              .jpeg({ quality: 80 })
+              .toBuffer()
+            
+            const base64 = optimizedBuffer.toString('base64')
+            const mimeType = "image/jpeg"
+            const dataUrl = `data:${mimeType};base64,${base64}`
+            
+            imageUrls.push(dataUrl)
+          } catch (imageError) {
+            console.error('Error procesando imagen:', imageError)
+            // Continuar con las otras imágenes
+            continue
+          }
         }
       }
     }

@@ -1,23 +1,43 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { 
   Mail, Lock, Eye, EyeOff, ArrowRight, 
-  Loader2, AlertCircle, Wrench, Briefcase
+  Loader2, AlertCircle, Wrench, Briefcase, CheckCircle
 } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   })
   const [error, setError] = useState("")
+  const [successMessage, setSuccessMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+
+  // Verificar mensajes en la URL
+  useEffect(() => {
+    const message = searchParams.get("message")
+    const errorParam = searchParams.get("error")
+    
+    if (message === "EmailVerified") {
+      setSuccessMessage("✅ ¡Email verificado exitosamente! Ahora puedes iniciar sesión")
+    } else if (message === "AlreadyVerified") {
+      setSuccessMessage("✅ Tu email ya está verificado. Puedes iniciar sesión")
+    } else if (errorParam === "InvalidToken") {
+      setError("❌ Token de verificación inválido o expirado")
+    } else if (errorParam === "TokenNotFound") {
+      setError("❌ Token de verificación no encontrado")
+    } else if (errorParam === "VerificationFailed") {
+      setError("❌ Error al verificar el email. Por favor intenta nuevamente")
+    }
+  }, [searchParams])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -142,8 +162,17 @@ export default function LoginPage() {
                 </p>
               </div>
 
+              {/* Mensaje de éxito */}
+              {successMessage && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start animate-in fade-in slide-in-from-top-2">
+                  <CheckCircle className="h-5 w-5 text-green-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-green-800 font-medium">{successMessage}</p>
+                </div>
+              )}
+
+              {/* Mensaje de error */}
               {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start">
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start animate-in fade-in slide-in-from-top-2">
                   <AlertCircle className="h-5 w-5 text-red-600 mr-3 flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-red-800">{error}</p>
                 </div>

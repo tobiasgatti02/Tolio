@@ -14,6 +14,8 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [registrationSuccess, setRegistrationSuccess] = useState(false)
+  const [userEmail, setUserEmail] = useState("")
   
   const [formData, setFormData] = useState({
     email: "",
@@ -80,13 +82,116 @@ export default function SignupPage() {
         throw new Error(data.error || "Error al crear la cuenta")
       }
 
-      // Redirigir al login después del registro exitoso
-      router.push("/login?registered=true")
+      // Mostrar mensaje de éxito y verificación
+      setUserEmail(formData.email)
+      setRegistrationSuccess(true)
     } catch (err: any) {
       setError(err.message)
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Si el registro fue exitoso, mostrar mensaje de verificación
+  if (registrationSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-red-50 p-4">
+        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden">
+          {/* Header con gradiente */}
+          <div className="bg-gradient-to-r from-orange-500 to-red-500 p-8 text-white">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
+                <Mail className="w-10 h-10 text-orange-500" />
+              </div>
+            </div>
+            <h1 className="text-3xl font-black text-center mb-2">
+              ¡Revisa tu email!
+            </h1>
+            <p className="text-center text-orange-100 text-lg">
+              Te enviamos un link de verificación
+            </p>
+          </div>
+
+          {/* Contenido */}
+          <div className="p-8 space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Mail className="w-6 h-6 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-base text-gray-700 mb-3">
+                    Hemos enviado un email de verificación a:
+                  </p>
+                  <p className="text-lg font-bold text-gray-900 mb-4">
+                    {userEmail}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Por favor revisa tu bandeja de entrada y haz click en el link de verificación para activar tu cuenta.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Instrucciones paso a paso */}
+            <div className="space-y-4">
+              <h3 className="font-bold text-gray-900">Próximos pasos:</h3>
+              
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold">
+                  1
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Abre tu email</p>
+                  <p className="text-sm text-gray-600">Busca el email de verificación de Tolio</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold">
+                  2
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Haz click en el link</p>
+                  <p className="text-sm text-gray-600">El link expira en 24 horas</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold">
+                  3
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">¡Listo para empezar!</p>
+                  <p className="text-sm text-gray-600">Inicia sesión y comienza a usar Tolio</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Aviso */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+              <p className="text-sm text-yellow-800">
+                <span className="font-semibold">💡 ¿No ves el email?</span> Revisa tu carpeta de spam o correo no deseado.
+              </p>
+            </div>
+
+            {/* Botones */}
+            <div className="flex gap-3">
+              <Link href="/login" className="flex-1">
+                <button className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl">
+                  Ir al inicio de sesión
+                </button>
+              </Link>
+              <Link href="/" className="flex-1">
+                <button className="w-full py-3 px-4 border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-semibold rounded-xl transition-all">
+                  Volver al inicio
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
