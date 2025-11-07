@@ -63,3 +63,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch calendar data" }, { status: 500 })
   }
 }
+
+// Forzar Node.js runtime en lugar de Edge runtime
+export const runtime = 'nodejs';

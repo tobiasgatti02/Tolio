@@ -27,3 +27,6 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+// Forzar Node.js runtime en lugar de Edge runtime
+export const runtime = 'nodejs';

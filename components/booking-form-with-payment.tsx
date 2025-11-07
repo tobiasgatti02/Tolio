@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Calendar, Loader2, CreditCard, Shield, AlertCircle, Zap } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
-import { createBooking } from "@/app/api/booking/route"
 import { TermsModal } from "@/components/terms-modal"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -118,7 +117,13 @@ export default function BookingFormWithPayment({
     formData.append("endDate", pendingBooking.endDate)
     
     try {
-      const result = await createBooking(formData)
+      // Llamar a la API usando fetch en lugar de importar directamente
+      const response = await fetch('/api/booking', {
+        method: 'POST',
+        body: formData,
+      })
+      
+      const result = await response.json()
       
       if (result.success && result.bookingId) {
         toast({

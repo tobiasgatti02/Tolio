@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Calendar, Loader2, CreditCard, X, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
-import { createBooking } from "@/app/api/booking/route"
 import PaymentButton from "@/components/payment-button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
@@ -63,7 +62,13 @@ export default function BookingForm({ itemId, price }: BookingFormProps) {
     formData.append("itemId", itemId)
     
     try {
-      const result = await createBooking(formData)
+      // Llamar a la API usando fetch
+      const response = await fetch('/api/booking', {
+        method: 'POST',
+        body: formData,
+      })
+      
+      const result = await response.json()
       
       if (result.success && result.bookingId) {
         // Calcular el precio total

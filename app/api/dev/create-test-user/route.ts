@@ -42,3 +42,6 @@ export async function GET(request: NextRequest) {
     await prisma.$disconnect()
   }
 }
+
+// Forzar Node.js runtime en lugar de Edge runtime
+export const runtime = 'nodejs';

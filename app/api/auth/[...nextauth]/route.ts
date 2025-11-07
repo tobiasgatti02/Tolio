@@ -182,3 +182,6 @@ export const authOptions: NextAuthOptions = {
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
+
+// Forzar Node.js runtime en lugar de Edge runtime
+export const runtime = 'nodejs';

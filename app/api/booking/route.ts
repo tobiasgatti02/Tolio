@@ -426,3 +426,6 @@ export async function POST(request: Request) {
     }, { status: 500 })
   }
 }
+
+// Forzar Node.js runtime en lugar de Edge runtime
+export const runtime = 'nodejs';

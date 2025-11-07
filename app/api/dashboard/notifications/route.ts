@@ -116,3 +116,6 @@ function getNotificationActionUrl(type: string, notificationId: string): string 
       return undefined
   }
 }
+
+// Forzar Node.js runtime en lugar de Edge runtime
+export const runtime = 'nodejs';

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { handleReservationStatus } from "@/app/api/booking/route"
 import { BookingStatus } from "@prisma/client"
 import { useRouter } from "next/navigation"
 import { XCircle } from "lucide-react"
@@ -20,13 +19,22 @@ export default function CancelBookingButton({ bookingId }: CancelBookingButtonPr
     setIsLoading(true)
     setError(null)
     try {
-      const response = await handleReservationStatus(bookingId, "CANCELLED" as BookingStatus)
+      // Llamar a la API usando fetch
+      const response = await fetch(`/api/booking/${bookingId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'CANCELLED' as BookingStatus }),
+      })
       
-      if (response.success) {
+      const data = await response.json()
+      
+      if (data.success) {
         setShowModal(false)
         router.refresh()
       } else {
-        setError(response.error || "Error al cancelar la reserva")
+        setError(data.error || "Error al cancelar la reserva")
       }
     } catch (err) {
       setError("Ocurrió un error al cancelar la reserva")
