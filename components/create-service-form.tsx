@@ -3,6 +3,7 @@
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
+import ImageCropper from "./image-cropper"
 import { 
   X, Upload, Loader2, Plus, Trash2, MapPin, DollarSign, 
   Camera, Sparkles, CheckCircle, AlertCircle, Info, Award, Map
