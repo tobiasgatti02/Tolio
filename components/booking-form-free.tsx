@@ -1,29 +1,32 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import { Calendar, Loader2, CheckCircle, AlertCircle, Clock } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 
 interface BookingFormProps {
-  itemId: string
+  itemId?: string
+  serviceId?: string
   itemTitle: string
   ownerName: string
   ownerAddress: string
-  price: number
-  type?: 'item' | 'service'
+  price: number | null
+  type: 'item' | 'service'
 }
 
 export default function BookingFormFree({ 
-  itemId, 
+  itemId,
+  serviceId,
   itemTitle, 
   ownerName, 
   ownerAddress, 
   price,
-  type = 'item'
+  type
 }: BookingFormProps) {
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
+  const [hours, setHours] = useState("1")
   const [totalDays, setTotalDays] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
@@ -32,41 +35,53 @@ export default function BookingFormFree({
   const router = useRouter()
   const { toast } = useToast()
 
-  // Calculate total days when dates change
+  // Calculate total days when dates change (for items)
   useEffect(() => {
-    if (startDate && endDate) {
+    if (type === 'item' && startDate && endDate) {
       const start = new Date(startDate)
       const end = new Date(endDate)
       const diffTime = Math.abs(end.getTime() - start.getTime())
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
       setTotalDays(diffDays || 1)
     }
-  }, [startDate, endDate])
+  }, [startDate, endDate, type])
 
   // Validate dates when they change
   useEffect(() => {
-    if (startDate && endDate) {
+    if (startDate && (type === 'item' ? endDate : true)) {
       const start = new Date(startDate)
-      const end = new Date(endDate)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
       setError("")
       
       if (start < today) {
-        setError("La fecha de inicio no puede ser en el pasado")
-      } else if (start >= end) {
-        setError("La fecha de fin debe ser posterior a la fecha de inicio")
+        setError("La fecha no puede ser en el pasado")
+      }
+      
+      if (type === 'item' && endDate) {
+        const end = new Date(endDate)
+        if (start >= end) {
+          setError("La fecha de fin debe ser posterior a la fecha de inicio")
+        }
       }
     }
-  }, [startDate, endDate])
+  }, [startDate, endDate, type])
 
-  async function handleSubmit(e: React.FormEvent) {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!startDate || !endDate) {
-      setError("Por favor selecciona las fechas")
-      return
+    // Validate required fields
+    if (type === 'item') {
+      if (!startDate || !endDate) {
+        setError("Por favor completa todas las fechas")
+        return
+      }
+    } else {
+      if (!startDate || !hours) {
+        setError("Por favor completa la fecha y las horas")
+        return
+      }
     }
 
     if (error) {
@@ -75,49 +90,56 @@ export default function BookingFormFree({
 
     setIsSubmitting(true)
     setError("")
-    
-    try {
-      const response = await fetch('/api/booking', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          itemId,
-          startDate,
-          endDate,
-          skipPayment: true // Flag para indicar que no se requiere pago
-        }),
-      })
-      
-      const result = await response.json()
-      
-      if (result.success && result.bookingId) {
-        setSuccess(true)
-        
-        toast({
-          title: "¡Reserva Creada!",
-          description: "Tu solicitud de reserva ha sido enviada al propietario.",
-          variant: "default",
-        })
 
-        // Redirigir después de 2 segundos
-        setTimeout(() => {
-          router.push(`/dashboard/bookings/${result.bookingId}`)
-        }, 2000)
-      } else {
-        setError(result.error || "Hubo un error al crear la reserva")
-        toast({
-          title: "Error",
-          description: result.error || "Hubo un error al crear la reserva",
-          variant: "destructive",
-        })
+    try {
+      const endpoint = type === 'item' ? "/api/booking" : "/api/service-booking"
+      const body = type === 'item' 
+        ? {
+            itemId,
+            startDate: new Date(startDate).toISOString(),
+            endDate: new Date(endDate!).toISOString(),
+            totalDays,
+            skipPayment: true
+          }
+        : {
+            serviceId,
+            startDate: new Date(startDate).toISOString(),
+            hours: parseInt(hours),
+            skipPayment: true
+          }
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al crear la reserva")
       }
-    } catch (error) {
-      setError("Error inesperado. Por favor, intenta de nuevo.")
+
+      setSuccess(true)
+      toast({
+        title: "¡Reserva creada!",
+        description: "Tu reserva fue creada exitosamente. El propietario te contactará pronto.",
+      })
+
+      // Redirect after success
+      setTimeout(() => {
+        router.push('/dashboard/bookings')
+        router.refresh()
+      }, 1500)
+
+    } catch (error: any) {
+      console.error("Error creating booking:", error)
+      setError(error.message || "Hubo un error al crear la reserva")
       toast({
         title: "Error",
-        description: "Error inesperado. Por favor, intenta de nuevo.",
+        description: error.message || "No se pudo crear la reserva",
         variant: "destructive",
       })
     } finally {
@@ -125,7 +147,8 @@ export default function BookingFormFree({
     }
   }
 
-  const totalPrice = price * totalDays
+  const calculatedQuantity = type === 'item' ? totalDays : parseInt(hours)
+  const totalPrice = price ? price * calculatedQuantity : 0
   const serviceFee = Math.round(totalPrice * 0.1)
   const grandTotal = totalPrice + serviceFee
 
@@ -170,11 +193,11 @@ export default function BookingFormFree({
           </p>
         </div>
 
-        {/* Dates */}
+        {/* Dates and Hours */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha de Inicio *
+              {type === 'service' ? 'Fecha del Servicio *' : 'Fecha de Inicio *'}
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -193,34 +216,58 @@ export default function BookingFormFree({
             </div>
           </div>
 
-          <div>
-            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha de Fin *
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Calendar className="h-5 w-5 text-gray-400" />
+          {type === 'item' ? (
+            <div>
+              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
+                Fecha de Fin *
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Calendar className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="date"
+                  id="endDate"
+                  name="endDate"
+                  className="pl-10 block w-full rounded-xl border-2 border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-colors py-3 text-sm"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate || new Date().toISOString().split('T')[0]}
+                  required
+                />
               </div>
-              <input
-                type="date"
-                id="endDate"
-                name="endDate"
-                className="pl-10 block w-full rounded-xl border-2 border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-colors py-3 text-sm"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                min={startDate || new Date().toISOString().split('T')[0]}
-                required
-              />
             </div>
-          </div>
+          ) : (
+            <div>
+              <label htmlFor="hours" className="block text-sm font-medium text-gray-700 mb-2">
+                Horas de Servicio *
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Clock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="number"
+                  id="hours"
+                  name="hours"
+                  min="1"
+                  max="24"
+                  className="pl-10 block w-full rounded-xl border-2 border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-colors py-3 text-sm"
+                  value={hours}
+                  onChange={(e) => setHours(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Price Summary */}
-        {startDate && endDate && !error && (
+        {startDate && (type === 'item' ? endDate : hours) && !error && price && (
           <div className="bg-gray-50 rounded-xl p-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">
-                ${price.toLocaleString()} x {totalDays} {totalDays === 1 ? type === 'service' ? 'hora' : 'día' : type === 'service' ? 'horas' : 'días'}
+                ${price.toLocaleString()} x {calculatedQuantity} {calculatedQuantity === 1 ? (type === 'service' ? 'hora' : 'día') : (type === 'service' ? 'horas' : 'días')}
               </span>
               <span className="font-medium text-gray-900">${totalPrice.toLocaleString()}</span>
             </div>

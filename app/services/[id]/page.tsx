@@ -2,10 +2,11 @@ import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { PrismaClient } from '@prisma/client'
-import { Mail, Phone, MapPin, Award, Clock, DollarSign, Star, Calendar, Shield } from 'lucide-react'
+import { Mail, Phone, MapPin, Award, Clock, DollarSign, Star, Calendar, Shield, MessageCircle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import ReportButton from '@/components/report-button'
+import BookingFormFree from '@/components/booking-form-free'
 import { typography } from '@/lib/design-system'
 
 const prisma = new PrismaClient()
@@ -329,39 +330,57 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                     </a>
                   )}
                   {service.provider.phoneNumber && (
-                    <a
-                      href={`tel:${service.provider.phoneNumber}`}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
-                    >
-                      <Phone className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                      <span className="text-sm text-gray-700 group-hover:text-blue-600 transition-colors">
-                        {service.provider.phoneNumber}
-                      </span>
-                    </a>
+                    <>
+                      <a
+                        href={`tel:${service.provider.phoneNumber}`}
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                      >
+                        <Phone className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                        <span className="text-sm text-gray-700 group-hover:text-blue-600 transition-colors">
+                          {service.provider.phoneNumber}
+                        </span>
+                      </a>
+                      <a
+                        href={`https://wa.me/${service.provider.phoneNumber.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola! Me interesa tu servicio "${service.title}" que vi en Tolio.`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-green-50 transition-colors group"
+                      >
+                        <MessageCircle className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors" />
+                        <span className="text-sm text-gray-700 group-hover:text-green-600 transition-colors font-medium">
+                          Contactar por WhatsApp
+                        </span>
+                      </a>
+                    </>
                   )}
                 </div>
               </div>
 
               {/* Contact/Booking CTA */}
               {!isOwnService && session && (
-                <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg p-6 text-white">
-                  <h3 className="text-xl font-bold mb-3">¿Interesado en este servicio?</h3>
-                  <p className="text-blue-100 mb-6 text-sm">
-                    Contacta al prestador para coordinar detalles y reservar
-                  </p>
-                  <Link
-                    href={`/messages?userId=${service.provider.id}`}
-                    className="block w-full py-3 px-4 bg-white text-blue-600 rounded-xl font-semibold text-center hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 shadow-md"
-                  >
-                    Enviar mensaje
-                  </Link>
-                  <button
-                    className="mt-3 w-full py-3 px-4 bg-blue-500 hover:bg-blue-400 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Calendar className="w-5 h-5" />
-                    Reservar ahora
-                  </button>
-                </div>
+                <>
+                  <BookingFormFree
+                    serviceId={service.id}
+                    itemTitle={service.title}
+                    ownerName={`${service.provider.firstName} ${service.provider.lastName}`.trim()}
+                    ownerAddress={service.location}
+                    price={service.pricePerHour}
+                    type="service"
+                  />
+                  
+                  <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg p-6 text-white">
+                    <h3 className="text-xl font-bold mb-3">¿Tienes dudas?</h3>
+                    <p className="text-blue-100 mb-6 text-sm">
+                      Contacta al prestador antes de reservar
+                    </p>
+                    <Link
+                      href={`/messages/${service.provider.id}`}
+                      className="block w-full py-3 px-4 bg-white text-blue-600 rounded-xl font-semibold text-center hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 shadow-md"
+                    >
+                      Enviar mensaje
+                    </Link>
+                  </div>
+                </>
               )}
 
               {isOwnService && (

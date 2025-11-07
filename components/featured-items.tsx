@@ -1,6 +1,4 @@
-import { Suspense } from "react"
 import FeaturedItemsClient, { FeaturedItem } from './featured-items-client'
-import FeaturedItemsSkeleton from "./featured-items-skeleton"
 
 // Función del servidor para obtener items destacados
 async function getFeaturedItems(): Promise<FeaturedItem[]> {
@@ -23,9 +21,5 @@ async function getFeaturedItems(): Promise<FeaturedItem[]> {
 export default async function FeaturedItems() {
   const formattedItems: FeaturedItem[] = await getFeaturedItems()
 
-  return (
-    <Suspense fallback={<FeaturedItemsSkeleton />}>
-      <FeaturedItemsClient items={formattedItems} />
-    </Suspense>
-  )
+  return <FeaturedItemsClient items={formattedItems} />
 }

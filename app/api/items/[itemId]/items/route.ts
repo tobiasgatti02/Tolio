@@ -43,6 +43,7 @@ export const getItemById = cache(async (itemId: string) => {
             firstName: true,
             lastName: true,
             profileImage: true,
+            phoneNumber: true,
             createdAt: true,
           }
         }

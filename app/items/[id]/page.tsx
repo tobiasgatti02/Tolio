@@ -111,6 +111,7 @@ export default async function ItemPage({ params }: { params: { id: string } }) {
                 id: item.owner.id,
                 name: `${item.owner.firstName} ${item.owner.lastName}`,
                 image: item.owner.profileImage || '',
+                phoneNumber: item.owner.phoneNumber || undefined,
                 rating: item.owner.reviews && item.owner.reviews.length > 0
                   ? item.owner.reviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0) / item.owner.reviews.length
                   : 0,

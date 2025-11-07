@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { Star, MessageCircle } from "lucide-react"
+import { Star, MessageCircle, Phone } from "lucide-react"
 
 interface OwnerProfileProps {
   owner: {
@@ -11,6 +11,7 @@ interface OwnerProfileProps {
     memberSince: Date
     responseRate: number
     image: string
+    phoneNumber?: string
   }
 }
 
@@ -38,13 +39,27 @@ export default function OwnerProfile({ owner }: OwnerProfileProps) {
         <div>{owner.responseRate}% Tiempo de respuesta</div>
       </div>
 
-      <Link
-        href={`/messages/${owner.id}`}
-        className="w-full flex items-center justify-center bg-white border border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-lg font-medium"
-      >
-        <MessageCircle className="h-5 w-5 mr-2" />
-        Contacta al dueño
-      </Link>
+      <div className="space-y-2">
+        <Link
+          href={`/messages/${owner.id}`}
+          className="w-full flex items-center justify-center bg-white border border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-lg font-medium transition-colors"
+        >
+          <MessageCircle className="h-5 w-5 mr-2" />
+          Contacta al dueño
+        </Link>
+        
+        {owner.phoneNumber && (
+          <a
+            href={`https://wa.me/${owner.phoneNumber.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola! Me interesa un item que vi en Tolio.`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-center bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            <Phone className="h-5 w-5 mr-2" />
+            WhatsApp
+          </a>
+        )}
+      </div>
     </div>
   )
 }
