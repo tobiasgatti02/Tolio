@@ -65,6 +65,8 @@ export default function CreateServiceForm() {
   const [errors, setErrors] = useState<Partial<FormData & { images: string }>>({})
   const [newFeature, setNewFeature] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [cropImage, setCropImage] = useState<string | null>(null)
+  const [currentImageIndex, setCurrentImageIndex] = useState<number | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -106,16 +108,39 @@ export default function CreateServiceForm() {
         return
       }
 
-      setImages((prev) => [...prev, ...validFiles])
-
-      validFiles.forEach((file) => {
+      // Abrir cropper para cada imagen
+      validFiles.forEach((file, index) => {
         const reader = new FileReader()
         reader.onloadend = () => {
-          setImagePreviews((prev) => [...prev, reader.result as string])
+          setCropImage(reader.result as string)
+          setCurrentImageIndex(images.length + index)
         }
         reader.readAsDataURL(file)
       })
     }
+  }
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    // Convertir blob a File
+    const file = new File([croppedBlob], `cropped-image-${Date.now()}.jpg`, { type: 'image/jpeg' })
+    
+    setImages((prev) => [...prev, file])
+    
+    // Crear preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreviews((prev) => [...prev, reader.result as string])
+    }
+    reader.readAsDataURL(file)
+    
+    // Cerrar cropper
+    setCropImage(null)
+    setCurrentImageIndex(null)
+  }
+
+  const handleCropCancel = () => {
+    setCropImage(null)
+    setCurrentImageIndex(null)
   }
 
   const removeImage = (index: number) => {
