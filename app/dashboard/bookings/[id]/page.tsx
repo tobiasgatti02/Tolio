@@ -130,7 +130,8 @@ export default async function BookingDetailsPage({ params }: PageProps) {
   // Calculate price breakdown
   const dailyRate = booking.item.price
   const subtotal = dailyRate * diffDays
-  const serviceFee = booking.totalPrice - subtotal
+  const serviceFee = subtotal * 0.1 // 10% service fee
+  const totalPrice = subtotal + serviceFee
   
   // Get other user info
   const otherUser = isOwner ? booking.borrower : booking.owner
@@ -368,7 +369,7 @@ export default async function BookingDetailsPage({ params }: PageProps) {
                   
                   <div className="flex justify-between font-semibold">
                     <span>Total</span>
-                    <span className="text-blue-600">${booking.totalPrice.toFixed(2)}</span>
+                    <span className="text-blue-600">${totalPrice.toFixed(2)}</span>
                   </div>
                   
                   <div className="mt-4 p-3 bg-blue-50 rounded-lg">

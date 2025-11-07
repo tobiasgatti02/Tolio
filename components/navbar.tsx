@@ -7,10 +7,12 @@ import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import NotificationBadge from "./ui/notification-badge";
 import NotificationsPanel from "./ui/notifications-panel";
+import PublishModal from "./ui/publish-modal";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const { data: session } = useSession();
   const Router = useRouter();
 
@@ -29,7 +31,13 @@ export default function Navbar() {
                 href="/items"
                 className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
               >
-                Servicios y Herramientas
+                Herramientas
+              </Link>
+              <Link
+                href="/services"
+                className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
+              >
+                Servicios
               </Link>
               <Link
                 href="/how-it-works"
@@ -57,12 +65,12 @@ export default function Navbar() {
               </Link>
             )}
             {session && (
-              <Link
-                href="/items/nuevo"
+              <button
+                onClick={() => setIsPublishModalOpen(true)}
                 className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all text-sm font-medium"
               >
                 Publicar
-              </Link>
+              </button>
             )}
             {session ? (
               <button
@@ -117,7 +125,14 @@ export default function Navbar() {
               className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
-              Servicios y Herramientas
+              Herramientas
+            </Link>
+            <Link
+              href="/services"
+              className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Servicios
             </Link>
             <Link
               href="/how-it-works"
@@ -128,12 +143,15 @@ export default function Navbar() {
             </Link>
 
             {session && (
-              <Link
-                href="/items/nuevo"
-                className="block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all text-base font-medium mt-2"
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setIsPublishModalOpen(true);
+                }}
+                className="block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all text-base font-medium mt-2 w-full text-center"
               >
                 Publicar
-              </Link>
+              </button>
             )}
             {session ? (
               <>
@@ -177,6 +195,12 @@ export default function Navbar() {
           userId={session.user.id}
         />
       )}
+
+      {/* Modal de publicar */}
+      <PublishModal
+        isOpen={isPublishModalOpen}
+        onClose={() => setIsPublishModalOpen(false)}
+      />
     </header>
   );
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ChevronLeft, ChevronRight, Calendar, Package, Briefcase, Filter } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Package, Briefcase, Filter } from "lucide-react"
 
 interface BookingEvent {
   id: string
@@ -84,11 +84,15 @@ export default function CalendarPage() {
     const daysInMonth = getDaysInMonth(currentDate)
     const firstDay = getFirstDayOfMonth(currentDate)
     const days = []
+    const today = new Date()
+    const isCurrentMonth =
+      currentDate.getMonth() === today.getMonth() &&
+      currentDate.getFullYear() === today.getFullYear()
 
     // Empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
       days.push(
-        <div key={`empty-${i}`} className="h-32 bg-gray-50 rounded-xl border border-gray-100" />
+        <div key={`empty-${i}`} className="min-h-[100px] bg-gray-50/50" />
       )
     }
 
@@ -96,44 +100,52 @@ export default function CalendarPage() {
     for (let day = 1; day <= daysInMonth; day++) {
       const dayBookings = getBookingsForDay(day)
       const filtered = filteredBookings(dayBookings)
-      const isToday =
-        day === new Date().getDate() &&
-        currentDate.getMonth() === new Date().getMonth() &&
-        currentDate.getFullYear() === new Date().getFullYear()
+      const isToday = isCurrentMonth && day === today.getDate()
 
       days.push(
         <div
           key={day}
-          className={`h-32 bg-white rounded-xl border-2 transition-all hover:shadow-lg p-3 ${
-            isToday ? "border-orange-500 shadow-md" : "border-gray-200"
+          className={`min-h-[100px] p-3 border-r border-b transition-all ${
+            isToday 
+              ? "bg-orange-50 border-orange-300" 
+              : "bg-white hover:bg-gray-50"
           }`}
         >
           <div className="flex items-center justify-between mb-2">
             <span
-              className={`font-black text-lg ${isToday ? "text-orange-600" : "text-gray-900"}`}
+              className={`text-sm font-bold ${
+                isToday 
+                  ? "text-orange-600 bg-orange-100 px-2 py-1 rounded-full" 
+                  : "text-gray-700"
+              }`}
             >
               {day}
             </span>
             {filtered.length > 0 && (
-              <span className="text-xs font-bold bg-gradient-to-r from-purple-500 to-pink-600 text-white px-2 py-1 rounded-full">
+              <span className="text-xs font-semibold bg-gradient-to-r from-purple-500 to-pink-600 text-white px-2 py-0.5 rounded-full">
                 {filtered.length}
               </span>
             )}
           </div>
-          <div className="space-y-1 overflow-y-auto max-h-16">
-            {filtered.map((booking) => (
+          <div className="space-y-1">
+            {filtered.slice(0, 3).map((booking) => (
               <div
                 key={booking.id}
-                className={`text-xs font-semibold px-2 py-1 rounded-lg truncate ${
+                className={`text-xs font-medium px-2 py-1 rounded truncate ${
                   booking.type === "item"
-                    ? "bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700"
-                    : "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700"
+                    ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                    : "bg-blue-100 text-blue-700 border border-blue-200"
                 }`}
                 title={booking.title}
               >
                 {booking.title}
               </div>
             ))}
+            {filtered.length > 3 && (
+              <div className="text-xs text-gray-500 font-medium px-2">
+                +{filtered.length - 3} más
+              </div>
+            )}
           </div>
         </div>
       )
@@ -143,12 +155,12 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-black text-gray-900 mb-2">Calendario de Disponibilidad</h1>
-          <p className="text-lg text-gray-600">Visualiza tus reservas y disponibilidad</p>
+          <h1 className="text-4xl font-black text-gray-900 mb-2">Calendario de Reservas</h1>
+          <p className="text-lg text-gray-600">Visualiza todas tus reservas y disponibilidad</p>
         </div>
 
         {/* Filter */}
@@ -189,35 +201,35 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Calendar Navigation */}
-      <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-8">
-        <div className="flex items-center justify-between mb-8">
+      {/* Calendar */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        {/* Calendar Navigation */}
+        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
           <button
             onClick={previousMonth}
-            className="p-3 rounded-xl bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 transition-all"
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <ChevronLeft className="w-6 h-6 text-gray-700" />
+            <ChevronLeft className="w-5 h-5 text-gray-700" />
           </button>
           
           <div className="text-center">
-            <h2 className="text-3xl font-black text-gray-900">
-              {currentDate.toLocaleDateString("es-AR", { month: "long" })}
+            <h2 className="text-2xl font-black text-gray-900 capitalize">
+              {currentDate.toLocaleDateString("es-AR", { month: "long", year: "numeric" })}
             </h2>
-            <p className="text-lg text-gray-600 font-semibold">{currentDate.getFullYear()}</p>
           </div>
 
           <button
             onClick={nextMonth}
-            className="p-3 rounded-xl bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 transition-all"
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <ChevronRight className="w-6 h-6 text-gray-700" />
+            <ChevronRight className="w-5 h-5 text-gray-700" />
           </button>
         </div>
 
         {/* Days of Week */}
-        <div className="grid grid-cols-7 gap-4 mb-4">
-          {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map((day) => (
-            <div key={day} className="text-center font-black text-gray-700 text-sm">
+        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+          {["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"].map((day) => (
+            <div key={day} className="px-3 py-3 text-center font-black text-gray-700 text-sm border-r last:border-r-0">
               {day}
             </div>
           ))}
@@ -225,30 +237,32 @@ export default function CalendarPage() {
 
         {/* Calendar Grid */}
         {loading ? (
-          <div className="grid grid-cols-7 gap-4 animate-pulse">
+          <div className="grid grid-cols-7">
             {Array.from({ length: 35 }).map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded-xl" />
+              <div key={i} className="min-h-[100px] bg-gray-100 animate-pulse border-r border-b" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-7 gap-4">{renderCalendar()}</div>
+          <div className="grid grid-cols-7 border-l border-t">
+            {renderCalendar()}
+          </div>
         )}
       </div>
 
       {/* Legend */}
-      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl shadow-lg border border-purple-200 p-8">
-        <h3 className="text-xl font-black text-gray-900 mb-4">Leyenda</h3>
+      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl shadow-sm border border-purple-200 p-6">
+        <h3 className="text-lg font-black text-gray-900 mb-4">Leyenda</h3>
         <div className="flex flex-wrap gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-emerald-100 to-emerald-200 rounded-lg" />
+            <div className="w-6 h-6 bg-emerald-100 border-2 border-emerald-200 rounded" />
             <span className="font-semibold text-gray-700">Alquiler de Herramientas</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg" />
+            <div className="w-6 h-6 bg-blue-100 border-2 border-blue-200 rounded" />
             <span className="font-semibold text-gray-700">Servicios Contratados</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 border-2 border-orange-500 rounded-lg" />
+            <div className="w-6 h-6 bg-orange-100 border-2 border-orange-300 rounded" />
             <span className="font-semibold text-gray-700">Día Actual</span>
           </div>
         </div>
