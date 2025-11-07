@@ -5,12 +5,10 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { 
-  Home, Package, Calendar, Star, Settings, Bell, 
-  Plus, TrendingUp, Users, MessageCircle, 
-  DollarSign, Clock, CheckCircle, AlertCircle,
-  Eye, Edit, Trash2, Search, Filter, MoreVertical,
-  User, CreditCard, MapPin, Phone, Mail, Shield,
-  Wallet, ArrowUpRight, ArrowDownRight, Menu, X,
+  Home, Package, Calendar, Star, Settings, 
+  Plus, 
+  DollarSign, TrendingUp, CreditCard, Clock,
+ Menu, X,
   ChevronDown, ChevronRight
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -74,6 +72,9 @@ export default function CleanDashboard({
     if (pathname === '/dashboard') return 'overview'
     if (pathname.includes('/my-items')) return 'items'
     if (pathname.includes('/booking')) return 'bookings'
+    if (pathname.includes('/sales')) return 'sales'
+    if (pathname.includes('/expenses')) return 'expenses'
+    if (pathname.includes('/calendar')) return 'calendar'
     if (pathname.includes('/reviews')) return 'reviews'
     if (pathname.includes('/settings')) return 'settings'
     return 'overview'
@@ -168,10 +169,22 @@ export default function CleanDashboard({
       count: (stats.activeBookings || 0) + (stats.pendingBookings || 0),
     },
     { 
-      id: 'crypto-deals', 
-      label: 'Crypto Escrow', 
-      icon: Wallet, 
-      path: '/dashboard/crypto-deals',
+      id: 'sales', 
+      label: 'Ventas', 
+      icon: TrendingUp, 
+      path: '/dashboard/sales'
+    },
+    { 
+      id: 'expenses', 
+      label: 'Gastos', 
+      icon: CreditCard, 
+      path: '/dashboard/expenses'
+    },
+    { 
+      id: 'calendar', 
+      label: 'Calendario', 
+      icon: Clock, 
+      path: '/dashboard/calendar'
     },
     { 
       id: 'reviews', 

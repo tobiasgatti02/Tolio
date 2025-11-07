@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Star, MapPin, Filter, Search, X, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
+import { Star, MapPin, Filter, Search, X, ChevronDown, ChevronUp, Loader2, Wrench, Plus } from "lucide-react"
 
 interface Category {
   id: string;
@@ -150,7 +150,29 @@ export default function ItemsPage(){
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">Herramientas en Alquiler</h1>
+              <p className="text-emerald-100 text-lg">
+                Encuentra las herramientas que necesitas para tu proyecto
+              </p>
+            </div>
+            <Link
+              href="/items/nuevo"
+              className="bg-white text-emerald-600 px-6 py-3 rounded-lg font-semibold hover:bg-emerald-50 transition-colors flex items-center gap-2"
+            >
+              <Plus className="h-5 w-5" />
+              Alquilar mi Herramienta
+            </Link>
+          </div>
+        </div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Search bar mejorado */}
       <div className="mb-6">
         <div className="flex flex-col md:flex-row gap-4 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -499,6 +521,7 @@ export default function ItemsPage(){
           )}
         </div>
       </div>
+    </div>
     </div>
   )
 }

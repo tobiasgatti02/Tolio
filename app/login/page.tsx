@@ -1,43 +1,14 @@
 "use client"
 
-import type React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { 
   Mail, Lock, Eye, EyeOff, ArrowRight, 
-  Loader2, AlertCircle, CheckCircle, Sparkles,
-  Shield, Users, Heart
+  Loader2, AlertCircle, Wrench, Briefcase
 } from "lucide-react"
-
-interface Stats {
-  totalUsers: number
-  totalItems: number
-  totalBookings: number
-  avgRating: number
-  activeUsers: number
-}
-
-interface Testimonial {
-  rating: number
-  comment: string
-  author: string
-  date: Date
-}
-
-interface Benefit {
-  icon: string
-  title: string
-  description: string
-}
-
-interface StatsData {
-  stats: Stats
-  testimonials: Testimonial[]
-  benefits: Benefit[]
-}
+import { components } from "@/lib/design-system"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -48,74 +19,11 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [statsData, setStatsData] = useState<StatsData | null>(null)
-  const [statsLoading, setStatsLoading] = useState(true)
-
-  // Cargar estadísticas al montar el componente
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch('/api/stats')
-        const data = await response.json()
-        setStatsData(data)
-      } catch (error) {
-        console.error('Error cargando estadísticas:', error)
-        // Datos de respaldo
-        setStatsData({
-          stats: {
-            totalUsers: 1250,
-            totalItems: 3400,
-            totalBookings: 890,
-            avgRating: 4.8,
-            activeUsers: 340
-          },
-          testimonials: [
-            {
-              rating: 5,
-              comment: "Tolio me ayudó a generar ingresos extra con cosas que tenía guardadas en casa",
-              author: "María G.",
-              date: new Date()
-            }
-          ],
-          benefits: [
-            {
-              icon: "sparkles",
-              title: "Gana dinero fácil",
-              description: "Presta objetos que no usas frecuentemente"
-            },
-            {
-              icon: "users",
-              title: "Conoce tu comunidad",
-              description: "Conecta con personas cerca de ti"
-            },
-            {
-              icon: "heart",
-              title: "Cuida el planeta",
-              description: "Reduce el consumo, aumenta el compartir"
-            }
-          ]
-        })
-      } finally {
-        setStatsLoading(false)
-      }
-    }
-
-    fetchStats()
-  }, [])
-
-  const getIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'sparkles': return <Sparkles className="w-6 h-6" />
-      case 'users': return <Users className="w-6 h-6" />
-      case 'heart': return <Heart className="w-6 h-6" />
-      default: return <Sparkles className="w-6 h-6" />
-    }
-  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
-    if (error) setError("") // Limpiar error al escribir
+    if (error) setError("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,276 +31,211 @@ export default function LoginPage() {
     setIsLoading(true)
     setError("")
 
-    // Validaciones básicas
-    if (!formData.email || !formData.password) {
-      setError("Por favor completa todos los campos")
-      setIsLoading(false)
-      return
-    }
-
     try {
       const result = await signIn("credentials", {
+        redirect: false,
         email: formData.email,
         password: formData.password,
-        redirect: false,
       })
 
       if (result?.error) {
-        setError("Credenciales inválidas. Verifica tu email y contraseña.")
-      } else {
-        // Redirigir al dashboard
-        router.push("/dashboard")
-        router.refresh()
+        setError("Email o contraseña incorrectos")
+        setIsLoading(false)
+        return
       }
-    } catch (error) {
-      setError("Ocurrió un error al iniciar sesión. Por favor intenta de nuevo.")
-    } finally {
+
+      router.push("/dashboard")
+      router.refresh()
+    } catch (err) {
+      setError("Ocurrió un error. Por favor, intenta de nuevo")
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50 flex">
-      {/* Panel izquierdo - Información */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 to-blue-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative z-10 flex flex-col justify-center px-12 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Logo y volver */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-4">¡Bienvenido de vuelta a Tolio!</h1>
-            <p className="text-xl text-emerald-100 mb-8">
-              {statsData ? 
-                `Únete a ${statsData.stats.totalUsers.toLocaleString()} usuarios que ya transformaron su forma de consumir` :
-                "La plataforma donde compartir es cuidar el planeta"
-              }
-            </p>
-            {statsData && (
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-                  <div className="text-2xl font-bold">{statsData.stats.totalItems.toLocaleString()}</div>
-                  <div className="text-sm text-emerald-100">Objetos disponibles</div>
-                </div>
-                <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-                  <div className="text-2xl font-bold">{statsData.stats.avgRating}⭐</div>
-                  <div className="text-sm text-emerald-100">Puntuación promedio</div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-6">
-            {statsLoading ? (
-              // Loading skeleton
-              <div className="space-y-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-full animate-pulse"></div>
-                    <div>
-                      <div className="h-4 bg-white/20 rounded w-32 mb-2 animate-pulse"></div>
-                      <div className="h-3 bg-white/20 rounded w-48 animate-pulse"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              statsData?.benefits.map((benefit, index) => (
-                <div key={index} className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                    {getIcon(benefit.icon)}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{benefit.title}</h3>
-                    <p className="text-emerald-100">{benefit.description}</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="mt-12 p-6 bg-white/10 rounded-2xl backdrop-blur-sm">
-            {statsLoading ? (
-              <div className="animate-pulse">
-                <div className="h-4 bg-white/20 rounded w-full mb-2"></div>
-                <div className="h-4 bg-white/20 rounded w-3/4 mb-3"></div>
-                <div className="h-3 bg-white/20 rounded w-24"></div>
-              </div>
-            ) : statsData?.testimonials && statsData.testimonials.length > 0 ? (
-              <>
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="flex">
-                    {[1,2,3,4,5].map(star => (
-                      <span key={star} className="text-yellow-300">⭐</span>
-                    ))}
-                  </div>
-                  <span className="text-emerald-100 font-semibold">{statsData.stats.avgRating}</span>
-                </div>
-                <p className="text-sm text-emerald-100 italic">
-                  "{statsData.testimonials[0].comment}"
-                </p>
-                <p className="text-sm font-semibold mt-3">- {statsData.testimonials[0].author}</p>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="flex">
-                    {[1,2,3,4,5].map(star => (
-                      <span key={star} className="text-yellow-300">⭐</span>
-                    ))}
-                  </div>
-                  <span className="text-emerald-100 font-semibold">5.0</span>
-                </div>
-                <p className="text-sm text-emerald-100 italic">
-                  "Tolio me permitió monetizar objetos que tenía guardados y conocer personas increíbles en mi comunidad"
-                </p>
-                <p className="text-sm font-semibold mt-3">- María G., Buenos Aires</p>
-              </>
-            )}
-          </div>
-        </div>
-        
-        {/* Decorative elements */}
-        <div className="absolute top-20 right-20 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
-        <div className="absolute bottom-20 left-20 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
-      </div>
-
-      {/* Panel derecho - Formulario */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Iniciar sesión</h2>
-            <p className="text-gray-600">Ingresa a tu cuenta de Tolio</p>
-          </div>
-
-          {/* Error Alert */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-3">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-              <p className="text-red-700 text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* Formulario */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Correo electrónico
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500 transition-colors"
-                  placeholder="tu@email.com"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contraseña
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500 transition-colors"
-                  placeholder="Tu contraseña"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                  Recordarme
-                </label>
-              </div>
-              <Link 
-                href="/forgot-password" 
-                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
-              >
-                ¿Olvidaste tu contraseña?
-              </Link>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-emerald-600 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-emerald-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
+            <Link 
+              href="/" 
+              className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Iniciando sesión...</span>
-                </>
-              ) : (
-                <>
-                  <span>Iniciar sesión</span>
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="my-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">¿Nuevo en Tolio?</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Registro */}
-          <div className="text-center">
-            <Link
-              href="/signup"
-              className="inline-flex items-center justify-center w-full px-4 py-3 border-2 border-emerald-600 text-emerald-600 font-semibold rounded-xl hover:bg-emerald-50 transition-colors space-x-2"
-            >
-              <span>Crear cuenta nueva</span>
-              <Sparkles className="w-5 h-5" />
+              <ArrowRight className="h-5 w-5 mr-2 rotate-180" />
+              Volver al inicio
             </Link>
           </div>
 
-          {/* Footer */}
-          <div className="mt-8 text-center">
-            <p className="text-xs text-gray-500">
-              Al iniciar sesión, aceptas nuestros{" "}
-              <Link href="/terms" className="text-emerald-600 hover:underline">
-                Términos de Servicio
-              </Link>{" "}
-              y{" "}
-              <Link href="/privacy" className="text-emerald-600 hover:underline">
-                Política de Privacidad
-              </Link>
-            </p>
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Columna Izquierda - Branding */}
+            <div className="space-y-8">
+              <div>
+                <h1 className="text-5xl font-bold text-gray-900 mb-4 leading-tight">
+                  Bienvenido a <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600">Tolio</span>
+                </h1>
+                <p className="text-xl text-gray-600 leading-relaxed">
+                  La plataforma que conecta profesionales y herramientas en tu comunidad
+                </p>
+              </div>
+
+              {/* Features */}
+              <div className="space-y-6">
+                <div className="flex items-start space-x-4 p-6 bg-white rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
+                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl flex-shrink-0">
+                    <Briefcase className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-1">Servicios Profesionales</h3>
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      Encuentra plomeros, electricistas, pintores y más profesionales verificados
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-4 p-6 bg-white rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
+                  <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-3 rounded-xl flex-shrink-0">
+                    <Wrench className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-1">Alquiler de Herramientas</h3>
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      Accede a herramientas y equipos cuando los necesites sin comprarlos
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-white rounded-xl border border-gray-100">
+                  <div className="text-3xl font-bold text-gray-900">1K+</div>
+                  <div className="text-sm text-gray-600 mt-1">Usuarios</div>
+                </div>
+                <div className="text-center p-4 bg-white rounded-xl border border-gray-100">
+                  <div className="text-3xl font-bold text-gray-900">3K+</div>
+                  <div className="text-sm text-gray-600 mt-1">Publicaciones</div>
+                </div>
+                <div className="text-center p-4 bg-white rounded-xl border border-gray-100">
+                  <div className="text-3xl font-bold text-gray-900">4.8</div>
+                  <div className="text-sm text-gray-600 mt-1">Rating</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Columna Derecha - Formulario */}
+            <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-8 lg:p-10">
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  Iniciar Sesión
+                </h2>
+                <p className="text-gray-600">
+                  Ingresa a tu cuenta para continuar
+                </p>
+              </div>
+
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start">
+                  <AlertCircle className="h-5 w-5 text-red-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-800">{error}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                      placeholder="tu@email.com"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Contraseña
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    <span className="ml-2 text-gray-600">Recordarme</span>
+                  </label>
+                  <Link
+                    href="/recuperar-password"
+                    className="text-orange-600 hover:text-orange-700 font-medium transition-colors"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`${components.button.base} ${components.button.sizes.lg} ${components.button.variants.primary} w-full`}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                      Ingresando...
+                    </>
+                  ) : (
+                    <>
+                      Ingresar
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+                <p className="text-gray-600">
+                  ¿No tienes cuenta?{" "}
+                  <Link
+                    href="/signup"
+                    className="text-orange-600 hover:text-orange-700 font-semibold transition-colors"
+                  >
+                    Regístrate gratis
+                  </Link>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

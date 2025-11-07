@@ -66,9 +66,9 @@ export default function Navbar() {
             )}
             {session ? (
               <button
-                onClick={() => {
-                  signOut();
+                onClick={async () => {
                   setIsMenuOpen(false);
+                  await signOut({ callbackUrl: "/" });
                 }}
                 className="text-gray-700 hover:text-red-600 px-3 py-2 text-sm font-medium transition-colors"
               >
@@ -138,9 +138,9 @@ export default function Navbar() {
             {session ? (
               <>
                 <button
-                  onClick={() => {
-                    signOut();
+                  onClick={async () => {
                     setIsMenuOpen(false);
+                    await signOut({ callbackUrl: "/" });
                   }}
                   className="block text-gray-700 hover:text-red-600 px-3 py-2 text-base font-medium transition-colors w-full text-left"
                 >

@@ -11,7 +11,7 @@ import {
   DollarSign, Clock, CheckCircle, AlertCircle,
   Eye, Edit, Trash2, Search, Filter, MoreVertical,
   User, CreditCard, MapPin, Phone, Mail, Shield,
-  Wallet, ArrowUpRight, ArrowDownRight, Menu, X
+  ArrowUpRight, ArrowDownRight, Menu, X
 } from "lucide-react"
 
 interface DashboardStats {
@@ -229,6 +229,9 @@ export default function UnifiedDashboard({
     { id: 'overview', label: 'Resumen', icon: Home, path: '/dashboard' },
     { id: 'items', label: 'Mis Artículos', icon: Package, path: '/dashboard/my-items' },
     { id: 'bookings', label: 'Reservas', icon: Calendar, path: '/dashboard/bookings' },
+    { id: 'sales', label: 'Ventas', icon: TrendingUp, path: '/dashboard/sales' },
+    { id: 'expenses', label: 'Gastos', icon: CreditCard, path: '/dashboard/expenses' },
+    { id: 'calendar', label: 'Calendario', icon: Clock, path: '/dashboard/calendar' },
     { id: 'reviews', label: 'Reseñas', icon: Star, path: '/dashboard/reviews' },
     { id: 'settings', label: 'Configuración', icon: Settings, path: '/dashboard/settings' },
   ]

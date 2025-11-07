@@ -8,54 +8,62 @@ datasource db {
 }
 
 model User {
-  id                String         @id @default(uuid())
-  email             String         @unique
-  password          String
-  firstName         String
-  lastName          String
-  profileImage      String?
-  bio               String?
-  phoneNumber       String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  isVerified        Boolean        @default(false)
-  verifiedIdentity  Boolean        @default(false) // Verificación de identidad con DNI
-  verificationToken String?
-  resetToken        String?
-  resetTokenExpiry  DateTime?
+  id                        String           @id @default(uuid())
+  email                     String           @unique
+  password                  String
+  firstName                 String
+  lastName                  String
+  profileImage              String?
+  bio                       String?
+  phoneNumber               String?
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
+  isVerified                Boolean          @default(false)
+  verifiedIdentity          Boolean          @default(false) // Verificación de identidad con DNI
+  verificationToken         String?
+  resetToken                String?
+  resetTokenExpiry          DateTime?
   // Stripe Connect fields
-  stripeAccountId   String?        @unique // Stripe Connect account ID
-  stripeOnboarded   Boolean        @default(false) // Si completó el onboarding de Stripe
-  stripeCustomerId  String?        @unique // Stripe Customer ID para pagos
+  stripeAccountId           String?          @unique // Stripe Connect account ID
+  stripeOnboarded           Boolean          @default(false) // Si completó el onboarding de Stripe
+  stripeCustomerId          String?          @unique // Stripe Customer ID para pagos
   // MercadoPago OAuth fields
-  mercadopagoAccessToken  String?  @unique // Access token del vendedor para recibir pagos
-  mercadopagoRefreshToken String?  // Refresh token para renovar el access token
-  mercadopagoUserId       String?  // User ID en MercadoPago
-  mercadopagoConnected    Boolean  @default(false) // Si completó la autorización
-  mercadopagoConnectedAt  DateTime? // Cuándo se conectó
-  // Relations
-  bookings          Booking[]      @relation("Borrower")
-  receivedBookings  Booking[]      @relation("Owner")
-  ownedItems        Item[]
-  receivedMessages  Message[]      @relation("Receiver")
-  messages          Message[]      @relation("Sender")
-  notifications     Notification[]
-  receivedReviews   Review[]       @relation("Reviewee")
-  reviews           Review[]       @relation("Reviewer")
-  verifications     Verification[]
+  mercadopagoAccessToken    String?          @unique // Access token del vendedor para recibir pagos
+  mercadopagoRefreshToken   String? // Refresh token para renovar el access token
+  mercadopagoUserId         String? // User ID en MercadoPago
+  mercadopagoConnected      Boolean          @default(false) // Si completó la autorización
+  mercadopagoConnectedAt    DateTime? // Cuándo se conectó
+  // Relations - Items
+  bookings                  Booking[]        @relation("Borrower")
+  receivedBookings          Booking[]        @relation("Owner")
+  ownedItems                Item[]
+  // Relations - Services
+  servicesProvided          Service[]
+  serviceBookingsAsClient   ServiceBooking[] @relation("ServiceClient")
+  serviceBookingsAsProvider ServiceBooking[] @relation("ServiceProvider")
+  serviceReviewsGiven       ServiceReview[]  @relation("ServiceReviewsGiven")
+  serviceReviewsReceived    ServiceReview[]  @relation("ServiceReviewsReceived")
+  // Relations - General
+  receivedMessages          Message[]        @relation("Receiver")
+  messages                  Message[]        @relation("Sender")
+  notifications             Notification[]
+  receivedReviews           Review[]         @relation("Reviewee")
+  reviews                   Review[]         @relation("Reviewer")
+  verifications             Verification[]
 }
 
 model Item {
   id          String    @id @default(uuid())
   title       String
   description String
-  type        ItemType  @default(SERVICE) // Tipo de publicación: SERVICE o TOOL
   price       Float
-  priceType   String    @default("hour") // "hour" o "day"
+  priceType   String    @default("day") // "hour" o "day" - para herramientas
   deposit     Float     @default(0)
   category    String
   subcategory String?
   location    String
+  latitude    Float?
+  longitude   Float?
   features    String[]
   images      String[]
   isAvailable Boolean   @default(true)
@@ -65,6 +73,65 @@ model Item {
   bookings    Booking[]
   owner       User      @relation(fields: [ownerId], references: [id])
   reviews     Review[]
+}
+
+model Service {
+  id             String           @id @default(uuid())
+  title          String
+  description    String
+  pricePerHour   Float? // Precio por hora (opcional si es precio variable)
+  priceType      String           @default("hour") // "hour" o "custom" (depende del trabajo)
+  isProfessional Boolean          @default(false) // Badge de matriculado/profesional
+  category       String
+  subcategory    String?
+  location       String
+  latitude       Float?
+  longitude      Float?
+  serviceArea    String? // Radio o zona de servicio
+  features       String[]
+  images         String[]
+  isAvailable    Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  providerId     String
+  bookings       ServiceBooking[]
+  provider       User             @relation(fields: [providerId], references: [id])
+  reviews        ServiceReview[]
+}
+
+model ServiceBooking {
+  id          String         @id @default(uuid())
+  startDate   DateTime
+  endDate     DateTime? // Opcional para servicios
+  hours       Float? // Horas estimadas
+  customPrice Float? // Precio acordado si es custom
+  status      BookingStatus  @default(PENDING)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  serviceId   String
+  clientId    String
+  providerId  String
+  client      User           @relation("ServiceClient", fields: [clientId], references: [id])
+  service     Service        @relation(fields: [serviceId], references: [id])
+  provider    User           @relation("ServiceProvider", fields: [providerId], references: [id])
+  review      ServiceReview?
+}
+
+model ServiceReview {
+  id           String         @id @default(uuid())
+  rating       Int
+  comment      String
+  response     String?
+  responseDate DateTime?
+  createdAt    DateTime       @default(now())
+  serviceId    String
+  reviewerId   String
+  revieweeId   String
+  bookingId    String         @unique
+  booking      ServiceBooking @relation(fields: [bookingId], references: [id])
+  service      Service        @relation(fields: [serviceId], references: [id])
+  reviewer     User           @relation("ServiceReviewsGiven", fields: [reviewerId], references: [id])
+  reviewee     User           @relation("ServiceReviewsReceived", fields: [revieweeId], references: [id])
 }
 
 model Category {
@@ -175,7 +242,7 @@ model Message {
   createdAt  DateTime @default(now())
   senderId   String
   receiverId String
-  bookingId  String?   // Para asociar mensajes con reservas
+  bookingId  String? // Para asociar mensajes con reservas
   receiver   User     @relation("Receiver", fields: [receiverId], references: [id])
   sender     User     @relation("Sender", fields: [senderId], references: [id])
 }
@@ -185,11 +252,6 @@ enum BookingStatus {
   CONFIRMED
   CANCELLED
   COMPLETED
-}
-
-enum ItemType {
-  SERVICE   // Servicios/Oficios/Changas
-  TOOL      // Herramientas para alquilar
 }
 
 enum PaymentStatus {
@@ -224,39 +286,36 @@ enum VerificationStatus {
 }
 
 model Verification {
-  id                String             @id @default(uuid())
-  userId            String
-  type              VerificationType
-  status            VerificationStatus @default(PENDING)
+  id               String             @id @default(uuid())
+  userId           String
+  type             VerificationType
+  status           VerificationStatus @default(PENDING)
   // Datos del documento
-  documentType      String?            // DNI, Pasaporte, etc
-  documentNumber    String?
-  firstName         String?
-  lastName          String?
-  birthDate         String?
-  gender            String?
-  expirationDate    String?
+  documentType     String? // DNI, Pasaporte, etc
+  documentNumber   String?
+  firstName        String?
+  lastName         String?
+  birthDate        String?
+  gender           String?
+  expirationDate   String?
   // URLs de imágenes
-  selfieUrl         String?
-  documentFrontUrl  String?
-  documentBackUrl   String?
+  selfieUrl        String?
+  documentFrontUrl String?
+  documentBackUrl  String?
   // Datos del PDF417
-  pdf417Data        String?            @db.Text
+  pdf417Data       String?            @db.Text
   // Resultados de verificación
-  faceMatchScore    Float?             // Score de coincidencia facial (0-1)
-  livenessScore     Float?             // Score de liveness detection (0-1)
+  faceMatchScore   Float? // Score de coincidencia facial (0-1)
+  livenessScore    Float? // Score de liveness detection (0-1)
   // Metadata
-  verifiedAt        DateTime?
-  rejectedAt        DateTime?
-  rejectionReason   String?
-  metadata          Json?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  user              User               @relation(fields: [userId], references: [id])
+  verifiedAt       DateTime?
+  rejectedAt       DateTime?
+  rejectionReason  String?
+  metadata         Json?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  user             User               @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([status])
 }
-
-
-
