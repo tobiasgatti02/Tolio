@@ -2,14 +2,9 @@ import NextAuth, { DefaultSession, NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
-
-// Conditionally import PrismaAdapter and PrismaClient only on server
-let PrismaAdapter, PrismaClient;
-if (typeof window === 'undefined') {
-  PrismaAdapter = require("@auth/prisma-adapter").PrismaAdapter;
-  PrismaClient = require("@prisma/client").PrismaClient;
-}
+import prisma from "@/lib/prisma";
 
 // Extend the built-in session types
 declare module "next-auth" {
@@ -21,11 +16,9 @@ declare module "next-auth" {
   }
 }
 
-const prisma = typeof window === 'undefined' ? new PrismaClient() : null;
-
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
-  adapter: typeof window === 'undefined' ? PrismaAdapter(prisma) : undefined,
+  adapter: PrismaAdapter(prisma) as any,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
@@ -102,7 +95,7 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account, profile }) {
       // Para OAuth providers (Google/Facebook), marcar como verificado automáticamente
       if (account?.provider !== "credentials") {
-        if (user.email && typeof window === 'undefined') {
+        if (user.email) {
           try {
             const existingUser = await prisma.user.findUnique({
               where: { email: user.email },
@@ -151,7 +144,7 @@ export const authOptions: NextAuthOptions = {
         // Para OAuth, marcar como verificado automáticamente
         if (account?.provider !== "credentials") {
           token.isVerified = true;
-        } else if (typeof window === 'undefined') {
+        } else {
           // Para credenciales, verificar el estado en la base de datos
           const dbUser = await prisma.user.findUnique({
             where: { id: user.id },
