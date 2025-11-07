@@ -18,5 +18,11 @@ export default async function ChatPage({ params }: PageProps) {
 
   const { userId } = await params
 
-  return <ChatClient otherUserId={userId} />
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-8">
+      <div className="container mx-auto px-4">
+        <ChatClient otherUserId={userId} />
+      </div>
+    </div>
+  )
 }
