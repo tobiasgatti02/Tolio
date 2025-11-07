@@ -29,7 +29,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row gap-6 justify-center items-center mb-20">
             <Link 
               href="/services"
-              className="group relative bg-white hover:bg-gray-50 text-gray-900 px-10 py-8 rounded-3xl transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-105 w-full md:w-auto max-w-md"
+              className="group relative bg-white hover:bg-gray-50 text-gray-900 px-10 py-8 rounded-3xl transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-105 w-full md:w-auto md:min-w-[400px]"
             >
               <div className="flex items-center justify-center space-x-5">
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-5 rounded-2xl group-hover:scale-110 transition-transform shadow-lg">
@@ -44,7 +44,7 @@ export default function Home() {
 
             <Link 
               href="/items"
-              className="group relative bg-white hover:bg-gray-50 text-gray-900 px-10 py-8 rounded-3xl transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-105 w-full md:w-auto max-w-md"
+              className="group relative bg-white hover:bg-gray-50 text-gray-900 px-10 py-8 rounded-3xl transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-105 w-full md:w-auto md:min-w-[400px]"
             >
               <div className="flex items-center justify-center space-x-5">
                 <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 rounded-2xl group-hover:scale-110 transition-transform shadow-lg">

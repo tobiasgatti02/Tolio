@@ -230,7 +230,6 @@ export async function POST(request: Request) {
       data: {
         title,
         description,
-        type: type as any, // SERVICE or TOOL
         price,
         priceType,
         deposit,

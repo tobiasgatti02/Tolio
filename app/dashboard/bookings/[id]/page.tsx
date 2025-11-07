@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import BookingActions from "../../../../components/booking-actions"
+import BookingTimeline from "../../../../components/booking-timeline"
 
 export const dynamic = "force-dynamic"
 
@@ -183,6 +184,25 @@ export default async function BookingDetailsPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      {/* Timeline Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Clock className="h-5 w-5 mr-2 text-orange-600" />
+            Progreso de la Reserva
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <BookingTimeline
+            currentStatus={booking.status as any}
+            createdAt={new Date(booking.createdAt || new Date())}
+            confirmedAt={booking.status === 'CONFIRMED' || booking.status === 'COMPLETED' ? new Date(booking.updatedAt) : undefined}
+            completedAt={booking.status === 'COMPLETED' ? new Date(booking.updatedAt) : undefined}
+            cancelledAt={booking.status === 'CANCELLED' ? new Date(booking.updatedAt) : undefined}
+          />
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content - Left Column */}

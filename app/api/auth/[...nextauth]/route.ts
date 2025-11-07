@@ -21,7 +21,7 @@ declare module "next-auth" {
 const prisma = typeof window === 'undefined' ? new PrismaClient() : null;
 
 export const authOptions: NextAuthOptions = {
-    secret: process.env.NEXTAUTH_SECRET, // Asegúrate de definir esta variable en tu .env
+  secret: process.env.NEXTAUTH_SECRET, // Asegúrate de definir esta variable en tu .env
   adapter: typeof window === 'undefined' ? PrismaAdapter(prisma) : undefined,
   providers: [
     CredentialsProvider({
@@ -65,24 +65,42 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 días
   },
   pages: {
     signIn: "/login",
   },
   callbacks: {
     async session({ session, token }: { session: any; token: any }) {
-      if (token) {
+      // Asegurarnos que el user.id siempre esté presente
+      if (token?.id) {
         session.user.id = token.id;
+      }
+      if (token?.email) {
+        session.user.email = token.email;
+      }
+      if (token?.name) {
+        session.user.name = token.name;
+      }
+      if (token?.picture) {
+        session.user.image = token.picture;
       }
       return session;
     },
-    async jwt({ token, user }: { token: any; user: any }) {
+    async jwt({ token, user, trigger }: { token: any; user: any; trigger?: string }) {
+      // Al hacer login, guardar el user.id en el token
       if (user) {
         token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
+        token.picture = user.image;
       }
       return token;
     },
   },
+  // Configuración adicional para producción
+  debug: process.env.NODE_ENV === 'development',
+  useSecureCookies: process.env.NODE_ENV === 'production',
 };
 
 const handler = NextAuth(authOptions);

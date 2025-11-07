@@ -23,9 +23,9 @@ interface FormData {
 }
 
 const categories = [
-  'Construcción',
-  'Electricidad',
   'Plomería',
+  'Electricidad',
+  'Construcción',
   'Pintura',
   'Jardinería',
   'Limpieza',
@@ -38,6 +38,7 @@ const categories = [
   'Mecánica',
   'Herrería',
   'Albañilería',
+  'Otros',
 ]
 
 export default function CreateServiceForm() {
@@ -84,7 +85,20 @@ export default function CreateServiceForm() {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const filesArray = Array.from(e.target.files)
-      const validFiles = filesArray.filter((file) => file.type.startsWith("image/"))
+      
+      // Filtrar solo formatos soportados: JPG, JPEG, PNG, WebP
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+      const validFiles = filesArray.filter((file) => {
+        const isValidType = allowedTypes.includes(file.type.toLowerCase())
+        if (!isValidType) {
+          alert(`Formato no soportado: ${file.name}. Solo se permiten JPG, PNG y WebP.`)
+        }
+        return isValidType
+      })
+
+      if (validFiles.length === 0) {
+        return
+      }
 
       if (images.length + validFiles.length > 6) {
         alert("Máximo 6 imágenes permitidas")

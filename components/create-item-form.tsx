@@ -64,7 +64,22 @@ export default function CreateItemForm() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFiles = Array.from(e.target.files)
-      const newImages = [...images, ...selectedFiles].slice(0, 5) // Limit to 5 images
+      
+      // Filtrar solo formatos soportados: JPG, JPEG, PNG, WebP
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+      const validFiles = selectedFiles.filter((file) => {
+        const isValidType = allowedTypes.includes(file.type.toLowerCase())
+        if (!isValidType) {
+          alert(`Formato no soportado: ${file.name}. Solo se permiten JPG, PNG y WebP.`)
+        }
+        return isValidType
+      })
+
+      if (validFiles.length === 0) {
+        return
+      }
+
+      const newImages = [...images, ...validFiles].slice(0, 5) // Limit to 5 images
       setImages(newImages)
 
       // Create previews
