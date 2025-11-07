@@ -156,21 +156,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-white rounded-xl border border-gray-100">
-                  <div className="text-3xl font-bold text-gray-900">1K+</div>
-                  <div className="text-sm text-gray-600 mt-1">Usuarios</div>
-                </div>
-                <div className="text-center p-4 bg-white rounded-xl border border-gray-100">
-                  <div className="text-3xl font-bold text-gray-900">3K+</div>
-                  <div className="text-sm text-gray-600 mt-1">Publicaciones</div>
-                </div>
-                <div className="text-center p-4 bg-white rounded-xl border border-gray-100">
-                  <div className="text-3xl font-bold text-gray-900">4.8</div>
-                  <div className="text-sm text-gray-600 mt-1">Rating</div>
-                </div>
-              </div>
+
             </div>
 
             {/* Columna Derecha - Formulario */}

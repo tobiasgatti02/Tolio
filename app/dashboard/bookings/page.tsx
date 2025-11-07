@@ -1,11 +1,11 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { redirect } from "next/navigation"
-import BookingsClient from "./bookings-client"
+import BookingsClientEnhanced from "./bookings-client-enhanced"
 
 export const metadata = {
   title: "Mis Reservas | Tolio",
-  description: "Gestiona tus reservas y alquileres",
+  description: "Gestiona tus reservas de herramientas y servicios",
 }
 
 export default async function BookingsPage() {
@@ -15,5 +15,5 @@ export default async function BookingsPage() {
     redirect("/login?callbackUrl=/dashboard/bookings")
   }
 
-  return <BookingsClient userId={session.user.id} />
+  return <BookingsClientEnhanced userId={session.user.id} />
 }

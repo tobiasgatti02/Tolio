@@ -17,10 +17,7 @@ export default function Home() {
           </h1>
           
           {/* Subtitle - More spacious */}
-          <p className="text-2xl md:text-3xl text-white/95 mb-6 max-w-4xl mx-auto font-semibold leading-relaxed">
-            La plataforma donde encontrás <span className="font-black underline decoration-4 decoration-white/80">profesionales para changas</span> y{" "}
-            <span className="font-black underline decoration-4 decoration-white/80">herramientas en tu zona</span>
-          </p>
+          
           <p className="text-xl md:text-2xl text-white/90 mb-16 max-w-3xl mx-auto leading-relaxed">
             Publicá tu servicio, ofrecé herramientas o encontrá lo que necesitás en tu comunidad
           </p>
@@ -211,27 +208,7 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-12 rounded-3xl shadow-2xl">
-              <div className="text-center space-y-10">
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
-                  <div className="text-6xl font-black text-white mb-3">95%</div>
-                  <p className="text-white/90 text-lg font-semibold">de los alquileres se completan exitosamente</p>
-                </div>
-                
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
-                  <div className="flex items-center justify-center gap-2 mb-3">
-                    <div className="text-6xl font-black text-white">4.8</div>
-                    <Star className="w-10 h-10 text-yellow-300 fill-yellow-300" />
-                  </div>
-                  <p className="text-white/90 text-lg font-semibold">promedio de confianza en la comunidad</p>
-                </div>
-                
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
-                  <div className="text-6xl font-black text-white mb-3">24hs</div>
-                  <p className="text-white/90 text-lg font-semibold">tiempo promedio de respuesta</p>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
       </section>

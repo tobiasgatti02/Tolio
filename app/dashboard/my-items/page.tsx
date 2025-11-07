@@ -1,11 +1,11 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
-import MyItemsClient from "./my-items-client";
+import MyContentClient from "./my-content-client";
 
 export const metadata = {
-  title: "Mis Artículos | Tolio",
-  description: "Gestiona tus artículos y prestamos",
+  title: "Mis Artículos y Servicios | Tolio",
+  description: "Gestiona tus herramientas y servicios publicados",
 };
 
 export default async function MyItemsPage() {
@@ -15,5 +15,5 @@ export default async function MyItemsPage() {
     redirect("/login?callbackUrl=/dashboard/my-items");
   }
 
-  return <MyItemsClient userId={session.user.id} />;
+  return <MyContentClient userId={session.user.id} />;
 }

@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client'
 import { Mail, Phone, MapPin, Award, Clock, DollarSign, Star, Calendar, Shield } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import ReportButton from '@/components/report-button'
 import { typography } from '@/lib/design-system'
 
 const prisma = new PrismaClient()
@@ -135,7 +136,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
             {/* Service Details */}
             <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
               <div className="flex items-start justify-between mb-6">
-                <div>
+                <div className="flex-1">
                   <h1 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: typography.fontFamily.sans }}>
                     {service.title}
                   </h1>
@@ -152,14 +153,26 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                       <span className="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
                         {service.category}
                       </span>
-                      {service.subcategory && (
-                        <span className="text-sm px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
-                          {service.subcategory}
-                        </span>
-                      )}
                     </div>
+                    {service.subcategory && (
+                      <span className="text-sm px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
+                        {service.subcategory}
+                      </span>
+                    )}
                   </div>
                 </div>
+                <div className="ml-4">
+                  <ReportButton
+                    serviceId={service.id}
+                    itemTitle={service.title}
+                    itemType="service"
+                    reportedUserId={service.provider.id}
+                    reportedUserName={`${service.provider.firstName} ${service.provider.lastName}`}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6">
                 {service.isProfessional && (
                   <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-full">
                     <Award className="w-5 h-5 text-orange-600" />

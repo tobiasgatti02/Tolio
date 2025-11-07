@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import EnhancedCreateItemForm from "@/components/create-item-form-enhanced"
+import CreateItemFormEnhancedV2 from "@/components/create-item-form-enhanced-v2"
 import { ArrowLeft } from 'lucide-react'
 import Link from "next/link"
 
@@ -17,7 +17,7 @@ export default function CreateItemPage() {
           Volver al panel
         </Link>
 
-        <EnhancedCreateItemForm />
+        <CreateItemFormEnhancedV2 />
       </div>
     </div>
   )

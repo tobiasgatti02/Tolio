@@ -2,8 +2,9 @@ import Link from "next/link"
 import { MapPin, Star, ArrowLeft } from "lucide-react"
 import ItemGallery from "@/components/item-gallery"
 import OwnerProfile from "@/components/owner-profile"
-import BookingFormWithPayment from "@/components/booking-form-with-payment"
+import BookingFormFree from "@/components/booking-form-free"
 import ReviewList from "@/components/review-list"
+import ReportButton from "@/components/report-button"
 import { getItemById } from "@/app/api/items/[itemId]/items/route"
 import { Suspense } from "react"
 import ReviewListSkeleton from "@/components/review-list-skeleton"
@@ -31,7 +32,16 @@ export default async function ItemPage({ params }: { params: { id: string } }) {
           <ItemGallery images={item.images} />
 
           <div className="mt-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{item.title}</h1>
+            <div className="flex justify-between items-start mb-4">
+              <h1 className="text-3xl font-bold text-gray-900">{item.title}</h1>
+              <ReportButton
+                itemId={id}
+                itemTitle={item.title}
+                itemType="item"
+                reportedUserId={item.owner.id}
+                reportedUserName={`${item.owner.firstName} ${item.owner.lastName}`}
+              />
+            </div>
             <div className="flex items-center mb-4">
               <div className="flex items-center mr-4">
                 <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
@@ -86,13 +96,13 @@ export default async function ItemPage({ params }: { params: { id: string } }) {
               <div className="text-sm text-gray-500">${item.deposit} depósito de seguridad</div>
             </div>
 
-            <BookingFormWithPayment 
-              itemId={id} 
-              ownerId={item.owner.id}
+            <BookingFormFree 
+              itemId={id}
+              itemTitle={item.title}
               ownerName={`${item.owner.firstName} ${item.owner.lastName}`}
+              ownerAddress={item.location}
               price={item.price}
-              ownerHasStripe={!!(item.owner.stripeAccountId && item.owner.stripeOnboarded)}
-              ownerHasMercadoPago={!!(item.owner.mercadopagoConnected && item.owner.mercadopagoAccessToken)}
+              type="item"
             />
 
             <div className="border-t mt-6 pt-6">
