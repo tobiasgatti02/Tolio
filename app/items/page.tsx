@@ -19,8 +19,8 @@ interface Item {
   title: string;
   category: string;
   price: number;
-  rating: number;
-  reviews: number;
+  averageRating: number;
+  reviewCount: number;
   location: string;
   features: string[];
   images: string[];
@@ -500,8 +500,8 @@ export default function ItemsPage(){
                       </h3>
                       <div className="flex items-center mb-2">
                         <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                        <span className="text-sm font-medium ml-1">{item.rating}</span>
-                        <span className="text-xs text-gray-500 ml-1">({item.reviews} reseñas)</span>
+                        <span className="text-sm font-medium ml-1">{item.averageRating || 0}</span>
+                        <span className="text-xs text-gray-500 ml-1">({item.reviewCount || 0} reseñas)</span>
                       </div>
                       <div className="flex items-center text-xs text-gray-500 mb-2">
                         <MapPin className="h-3 w-3 mr-1" />
