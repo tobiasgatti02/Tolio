@@ -665,6 +665,16 @@ export default function CreateServiceForm() {
             </div>
           </div>
         </form>
+
+        {/* Image Cropper Modal */}
+        {cropImage && (
+          <ImageCropper
+            image={cropImage}
+            onCropComplete={handleCropComplete}
+            onCancel={handleCropCancel}
+            aspect={4 / 3}
+          />
+        )}
       </div>
     </div>
   )
