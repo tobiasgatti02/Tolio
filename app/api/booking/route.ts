@@ -329,32 +329,79 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { itemId, startDate, endDate, totalPrice, ownerId } = body
+    const { itemId, startDate, endDate, totalDays, skipPayment, totalPrice, ownerId } = body
 
-    if (!itemId || !startDate || !endDate || !totalPrice || !ownerId) {
+    console.log('Received booking request:', { 
+      totalPrice, startDate, endDate, itemId, ownerId, totalDays, skipPayment,
+      userId: session.user.id
+    })
+
+    if (!itemId || !startDate || (!endDate && !skipPayment)) {
       return NextResponse.json({ 
         error: 'Faltan campos requeridos' 
       }, { status: 400 })
     }
 
     // Validate dates
-    if (isNaN(Date.parse(startDate)) || isNaN(Date.parse(endDate))) {
+    if (isNaN(Date.parse(startDate))) {
       return NextResponse.json({ 
         error: 'Formato de fecha inválido' 
       }, { status: 400 })
     }
 
-    if (Date.parse(startDate) > Date.parse(endDate)) {
+    // For paid bookings, validate end date
+    if (!skipPayment) {
+      if (!endDate || isNaN(Date.parse(endDate))) {
+        return NextResponse.json({ 
+          error: 'Formato de fecha de fin inválido' 
+        }, { status: 400 })
+      }
+      if (Date.parse(startDate) > Date.parse(endDate)) {
+        return NextResponse.json({ 
+          error: 'La fecha de finalización debe ser posterior a la fecha de inicio' 
+        }, { status: 400 })
+      }
+    }
+
+    // Get item details if not provided
+    const item = await prisma.item.findUnique({
+      where: { id: itemId },
+      select: { 
+        price: true, 
+        ownerId: true, 
+        isAvailable: true,
+        title: true
+      }
+    })
+
+    if (!item || !item.isAvailable) {
       return NextResponse.json({ 
-        error: 'La fecha de finalización debe ser posterior a la fecha de inicio' 
+        error: 'Artículo no disponible' 
       }, { status: 400 })
     }
 
     // Check if user is trying to book their own item
-    if (ownerId === session.user.id) {
+    if (item.ownerId === session.user.id) {
       return NextResponse.json({ 
         error: 'No puedes alquilar tu propio artículo' 
       }, { status: 400 })
+    }
+
+    // For skipPayment bookings, calculate dates and price
+    let finalEndDate: Date
+    let finalTotalPrice: number
+    
+    if (skipPayment) {
+      const days = totalDays || 1
+      finalEndDate = new Date(startDate)
+      finalEndDate.setDate(finalEndDate.getDate() + days - 1)
+      
+      const baseCost = item.price * days
+      const serviceFee = Math.round(baseCost * 0.1)
+      finalTotalPrice = baseCost + serviceFee
+    } else {
+      finalEndDate = new Date(endDate!)
+      finalTotalPrice = totalPrice
     }
 
     // Check for conflicting bookings
@@ -364,7 +411,7 @@ export async function POST(request: Request) {
         status: { in: ["PENDING", "CONFIRMED"] },
         OR: [
           {
-            startDate: { lte: new Date(endDate) },
+            startDate: { lte: finalEndDate },
             endDate: { gte: new Date(startDate) }
           }
         ]
@@ -378,51 +425,80 @@ export async function POST(request: Request) {
     }
 
     // Create the booking
+    console.log('Creating booking with data:', {
+      startDate: new Date(startDate),
+      endDate: finalEndDate,
+      totalPrice: finalTotalPrice,
+      status: skipPayment ? "PENDING" : "CONFIRMED",
+      itemId,
+      borrowerId: session.user.id,
+      ownerId: item.ownerId
+    })
+
     const booking = await prisma.booking.create({
       data: {
         startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        totalPrice: totalPrice,
-        status: "CONFIRMED", // CONFIRMED porque el pago está autorizado
+        endDate: finalEndDate,
+        totalPrice: finalTotalPrice,
+        status: skipPayment ? "PENDING" : "CONFIRMED",
         itemId,
         borrowerId: session.user.id,
-        ownerId: ownerId
+        ownerId: item.ownerId
       },
       include: {
         item: {
           select: {
             title: true
           }
+        },
+        borrower: {
+          select: {
+            firstName: true,
+            lastName: true
+          }
         }
       }
     })
+
+    console.log('Booking created successfully:', booking.id)
 
     // Create notification for owner
-    await prisma.notification.create({
-      data: {
-        type: "BOOKING_REQUEST",
-        title: "Nueva reserva confirmada",
-        content: `Tienes una nueva reserva para "${booking.item.title}"`,
-        userId: ownerId,
-        bookingId: booking.id,
-        itemId: itemId,
-        actionUrl: `/dashboard/bookings/${booking.id}`,
-        metadata: {
+    console.log('Creating notification for owner:', item.ownerId)
+    
+    try {
+      await prisma.notification.create({
+        data: {
+          type: "BOOKING_REQUEST",
+          title: "Nueva reserva confirmada",
+          content: `Tienes una nueva reserva para "${booking.item.title}"`,
+          userId: item.ownerId,
           bookingId: booking.id,
           itemId: itemId,
-          itemTitle: booking.item.title,
-          startDate: startDate,
-          endDate: endDate,
-          totalPrice: totalPrice
+          actionUrl: `/dashboard/bookings/${booking.id}`,
+          metadata: {
+            bookingId: booking.id,
+            itemId: itemId,
+            itemTitle: booking.item.title,
+            startDate: startDate,
+            endDate: finalEndDate.toISOString(),
+            totalPrice: finalTotalPrice.toString()
+          }
         }
-      }
-    })
+      })
+      console.log('Notification created successfully')
+    } catch (notifError) {
+      console.error('Error creating notification:', notifError)
+      // No fallar la reserva si la notificación falla
+    }
 
     return NextResponse.json(booking)
-  } catch (error) {
-    console.error('Error creating booking:', error)
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    const errorStack = err instanceof Error ? err.stack : ''
+    console.error('Error creating booking:', errorMessage)
+    console.error('Stack trace:', errorStack)
     return NextResponse.json({ 
-      error: 'Error al crear la reserva' 
+      error: 'Error al crear la reserva: ' + errorMessage 
     }, { status: 500 })
   }
 }

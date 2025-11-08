@@ -200,7 +200,7 @@ model Booking {
   id         String        @id @default(uuid())
   startDate  DateTime
   endDate    DateTime
-  // totalPrice Float   // Comentado - para futuras funcionalidades de pago
+  totalPrice Float         @default(0)
   status     BookingStatus @default(PENDING)
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt

@@ -145,6 +145,19 @@ async function main() {
           ]
         }
       }
+    }),
+    prisma.category.create({
+      data: {
+        nombre: 'Otros',
+        descripcion: 'Artículos diversos y misceláneos',
+        imagen: '/categories/others.jpg',
+        subcategorias: {
+          create: [
+            { nombre: 'General', descripcion: 'Artículos diversos' },
+            { nombre: 'Varios', descripcion: 'Otros artículos no categorizados' }
+          ]
+        }
+      }
     })
   ])
 

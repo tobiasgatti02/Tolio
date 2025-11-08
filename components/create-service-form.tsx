@@ -171,6 +171,7 @@ export default function CreateServiceForm() {
     if (step === 1) {
       if (!formData.title.trim()) newErrors.title = "El título es requerido"
       if (!formData.description.trim()) newErrors.description = "La descripción es requerida"
+      if (formData.description.trim().length < 10) newErrors.description = "La descripción debe tener al menos 10 caracteres"
       if (!formData.category) newErrors.category = "La categoría es requerida"
     }
     

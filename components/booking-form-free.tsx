@@ -149,8 +149,8 @@ export default function BookingFormFree({
 
   const calculatedQuantity = type === 'item' ? totalDays : parseInt(hours)
   const totalPrice = price ? price * calculatedQuantity : 0
-  const serviceFee = Math.round(totalPrice * 0.1)
-  const grandTotal = totalPrice + serviceFee
+  // const serviceFee = Math.round(totalPrice * 0.1)
+  const grandTotal = totalPrice 
 
   if (success) {
     return (
@@ -271,10 +271,7 @@ export default function BookingFormFree({
               </span>
               <span className="font-medium text-gray-900">${totalPrice.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Tarifa de servicio (10%)</span>
-              <span className="font-medium text-gray-900">${serviceFee.toLocaleString()}</span>
-            </div>
+
             <div className="pt-2 border-t border-gray-200">
               <div className="flex justify-between">
                 <span className="font-semibold text-gray-900">Total Estimado</span>

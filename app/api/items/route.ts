@@ -157,13 +157,8 @@ export async function POST(request: Request) {
       )
     }
 
-    if (isNaN(deposit) || deposit < 0) {
-      console.error("❌ Depósito inválido:", deposit)
-      return NextResponse.json(
-        { error: "El depósito debe ser un número no negativo" },
-        { status: 400 }
-      )
-    }
+    // Depósito de seguridad opcional - si no se proporciona, se asume 0
+    const finalDeposit = isNaN(deposit) ? 0 : Math.max(0, deposit)
 
     if (!location || location.trim().length === 0) {
       console.error("❌ Ubicación faltante")
@@ -239,7 +234,7 @@ export async function POST(request: Request) {
         description: description.trim(),
         price,
         priceType,
-        deposit,
+        deposit: finalDeposit,
         location: location.trim(),
         ...(latitude !== null && { latitude }),
         ...(longitude !== null && { longitude }),
