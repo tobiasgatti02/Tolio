@@ -466,11 +466,20 @@ export async function POST(request: Request) {
     console.log('Creating notification for owner:', item.ownerId)
     
     try {
+      // Determinar el título y contenido según si requiere pago o no
+      const notificationTitle = skipPayment 
+        ? "Nueva solicitud de alquiler" 
+        : "Nueva reserva confirmada"
+      
+      const notificationContent = skipPayment
+        ? `${booking.borrower.firstName} ${booking.borrower.lastName} quiere alquilar "${booking.item.title}" por ${totalDays || 1} día(s)`
+        : `Tienes una nueva reserva confirmada para "${booking.item.title}"`
+      
       await prisma.notification.create({
         data: {
           type: "BOOKING_REQUEST",
-          title: "Nueva reserva confirmada",
-          content: `Tienes una nueva reserva para "${booking.item.title}"`,
+          title: notificationTitle,
+          content: notificationContent,
           userId: item.ownerId,
           bookingId: booking.id,
           itemId: itemId,
@@ -481,7 +490,8 @@ export async function POST(request: Request) {
             itemTitle: booking.item.title,
             startDate: startDate,
             endDate: finalEndDate.toISOString(),
-            totalPrice: finalTotalPrice.toString()
+            totalPrice: finalTotalPrice.toString(),
+            totalDays: totalDays?.toString() || '1'
           }
         }
       })

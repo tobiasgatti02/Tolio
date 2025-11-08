@@ -71,23 +71,28 @@ export default function NotificationsPanel({ isOpen, onClose, userId }: Notifica
 
   const markAsRead = async (notificationId: string) => {
     try {
-      await fetch(`/api/notifications/${notificationId}/mark-read`, {
+      // Verificar si ya está leída antes de hacer la llamada
+      const notification = notifications.find(n => n.id === notificationId)
+      const wasUnread = notification?.isRead === false
+      
+      const response = await fetch(`/api/notifications/${notificationId}/mark-read`, {
         method: 'PATCH'
       })
       
-      // Actualizar local state
-      const wasUnread = notifications.find(n => n.id === notificationId)?.isRead === false
-      setNotifications(prev => 
-        prev.map(notif => 
-          notif.id === notificationId 
-            ? { ...notif, isRead: true }
-            : notif
+      if (response.ok) {
+        // Actualizar local state
+        setNotifications(prev => 
+          prev.map(notif => 
+            notif.id === notificationId 
+              ? { ...notif, isRead: true }
+              : notif
+          )
         )
-      )
-      
-      // Si la notificación no estaba leída, decrementar el contador inmediatamente
-      if (wasUnread) {
-        decrementUnreadCount()
+        
+        // Si la notificación no estaba leída, refrescar el contador desde el servidor
+        if (wasUnread) {
+          await refreshUnreadCount()
+        }
       }
     } catch (error) {
       console.error('Error marking notification as read:', error)

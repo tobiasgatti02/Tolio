@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../auth/[...nextauth]/route'
 import { prisma } from '@/lib/utils'
+import { revalidatePath } from 'next/cache'
 
 export async function PATCH(
   request: NextRequest,
@@ -29,13 +30,22 @@ export async function PATCH(
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
     }
 
-    // Marcar como leída
-    const updatedNotification = await prisma.notification.update({
-      where: { id: notificationId },
-      data: { isRead: true }
-    })
+    // Solo actualizar si no está leída
+    if (!notification.isRead) {
+      // Marcar como leída
+      const updatedNotification = await prisma.notification.update({
+        where: { id: notificationId },
+        data: { isRead: true }
+      })
 
-    return NextResponse.json(updatedNotification)
+      // Revalidar para actualizar el contador
+      revalidatePath('/api/notifications/unread-count')
+      
+      return NextResponse.json(updatedNotification)
+    }
+
+    // Si ya estaba leída, solo retornar la notificación
+    return NextResponse.json(notification)
   } catch (error) {
     console.error('Error marking notification as read:', error)
     return NextResponse.json(

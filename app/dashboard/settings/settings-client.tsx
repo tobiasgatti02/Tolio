@@ -206,7 +206,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           </div>
         </CardContent>
       </Card>
-
+{/*
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -272,8 +272,11 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           </div>
         </CardContent>
       </Card>
+ /*     
+}
+      {/* MercadoPago Payment Configuration 
 
-      {/* MercadoPago Payment Configuration */}
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -310,6 +313,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           </div>
         </CardContent>
       </Card>
+      */}
     </div>
   )
 }
