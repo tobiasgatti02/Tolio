@@ -531,7 +531,7 @@ export default function MyContentClient({ userId }: MyContentClientProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => handleToggleAvailability(content.id, content.type, content.status)}
-                        className={content.status === 'PAUSADO' ? 'text-green-600 hover:text-green-700' : 'text-gray-600'}
+                        className={content.status === 'PAUSADO' ? 'text-amber-600 hover:text-amber-700' : 'text-gray-600'}
                         title={content.status === 'PAUSADO' ? 'Reactivar' : 'Pausar'}
                       >
                         {content.status === 'PAUSADO' ? (

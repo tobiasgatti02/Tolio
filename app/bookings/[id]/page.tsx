@@ -484,27 +484,7 @@ export default async function BookingDetailsPage({ params }: { params: Promise<{
             </Card>
 
             {/* Quick Actions Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Acciones rápidas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full justify-start">
-                  <Heart className="h-4 w-4 mr-2" />
-                  Guardar en favoritos
-                </Button>
-                
-                <Button variant="outline" size="sm" className="w-full justify-start">
-                  <Star className="h-4 w-4 mr-2" />
-                  Ver perfil completo
-                </Button>
-                
-                <Button variant="outline" size="sm" className="w-full justify-start">
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Compartir reserva
-                </Button>
-              </CardContent>
-            </Card>
+
 
             {/* Support Card */}
             <Card>

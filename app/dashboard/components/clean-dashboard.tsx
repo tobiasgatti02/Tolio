@@ -472,20 +472,7 @@ export default function CleanDashboard({
             ))}
           </nav>
 
-          {/* Quick actions */}
-          <div className="p-4 border-t">
-            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-              Acciones Rápidas
-            </h4>
-            <Link
-              href="/items/nuevo"
-              className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <Plus className="w-4 h-4" />
-              <span className="text-sm font-medium">Nuevo Artículo</span>
-            </Link>
-          </div>
+
         </aside>
 
         {/* Main content */}
