@@ -8,10 +8,10 @@ import Providers from '../providers';
 
 export default async function LocaleLayout(props: {
   children: ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
-  const locale = (await props.params).locale;
-  const messages = await getMessages();
+  const { locale } = await props.params;
+  const messages = await getMessages({ locale });
   if (locale !== 'es' && locale !== 'en') notFound();
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>

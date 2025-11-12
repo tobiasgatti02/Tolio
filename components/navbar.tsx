@@ -16,8 +16,8 @@ export default function Navbar() {
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
-  const t = useTranslations('common');
   const locale = useLocale();
+  const t = useTranslations('common');
   
   function changeLocale(newLocale: string) {
     // Mantener la ruta actual pero cambiar el locale
