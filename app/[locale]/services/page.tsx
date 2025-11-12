@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { useLocale } from 'next-intl'
 import Link from "next/link"
 import Image from "next/image"
 import { Star, MapPin, Filter, Search, Loader2, Briefcase, Plus, Award } from "lucide-react"
@@ -38,6 +39,7 @@ const serviceCategories = [
 ]
 
 export default function ServicesPage() {
+  const locale = useLocale()
   const searchParams = useSearchParams()
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "")
@@ -106,7 +108,7 @@ export default function ServicesPage() {
               <h1 className="text-4xl font-bold mb-2">Servicios Profesionales</h1>
               <p className="text-blue-100 text-lg">Encuentra el profesional ideal para tu proyecto</p>
             </div>
-            <Link href="/services/nuevo" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2">
+            <Link href={`/${locale}/services/nuevo`} className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2">
               <Plus className="h-5 w-5" />
               Ofrecer Servicio
             </Link>
@@ -184,7 +186,7 @@ export default function ServicesPage() {
                 <Briefcase className="h-16 w-16 mx-auto text-gray-400 mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No se encontraron servicios</h3>
                 <p className="text-gray-600 mb-6">Intenta ajustar tus filtros o sé el primero en ofrecer este servicio</p>
-                <Link href="/services/nuevo" className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                <Link href={`/${locale}/services/nuevo`} className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
                   <Plus className="h-5 w-5" />
                   Ofrecer mi Servicio
                 </Link>
@@ -192,7 +194,7 @@ export default function ServicesPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {services.map((service) => (
-                  <Link href={`/services/${service.id}`} key={service.id} className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                  <Link href={`/${locale}/services/${service.id}`} key={service.id} className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="relative h-48 overflow-hidden">
                       <Image src={service.images[0] || "/placeholder-service.jpg"} alt={service.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
                       {service.isProfessional && (

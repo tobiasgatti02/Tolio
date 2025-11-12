@@ -1,3 +1,7 @@
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+
 let userConfig = undefined
 try {
   userConfig = await import('./v0-user-next.config')
@@ -31,6 +35,7 @@ const nextConfig = {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
+    turbo: {},
   },
   // Deshabilitar warnings de módulos faltantes
   webpack: (config, { isServer }) => {
@@ -74,4 +79,4 @@ function mergeConfig(nextConfig, userConfig) {
   }
 }
 
-export default nextConfig
+export default withNextIntl(nextConfig)

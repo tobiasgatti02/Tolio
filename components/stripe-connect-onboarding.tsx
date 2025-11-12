@@ -6,12 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, Wallet, CheckCircle, AlertCircle } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl';
 
 export default function StripeConnectOnboarding() {
   const { data: session } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const t = useTranslations('common');
 
   const handleConnect = async () => {
     setLoading(true)
@@ -45,20 +47,20 @@ export default function StripeConnectOnboarding() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Wallet className="h-5 w-5 text-emerald-600" />
-          Configurar Cuenta de Pagos
+          {t('stripe.setup')}
         </CardTitle>
         <CardDescription>
-          Conecta tu cuenta de Stripe para recibir pagos cuando alquiles tus artículos
+          {t('stripe.connectDesc')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-semibold text-blue-900 mb-2">¿Por qué necesito esto?</h4>
+          <h4 className="font-semibold text-blue-900 mb-2">{t('stripe.whyNeededTitle')}</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>Para recibir pagos directamente en tu cuenta bancaria</li>
-            <li>Stripe procesa los pagos de forma segura</li>
-            <li>El dinero llega automáticamente cuando completas un alquiler</li>
-            <li>Solo toma 5 minutos configurarlo</li>
+            <li>{t('stripe.whyNeededDesc1')}</li>
+            <li>{t('stripe.whyNeededDesc2')}</li>
+            <li>{t('stripe.whyNeededDesc3')}</li>
+            <li>{t('stripe.whyNeededDesc4')}</li>
           </ul>
         </div>
 
@@ -67,7 +69,7 @@ export default function StripeConnectOnboarding() {
             <div className="flex items-start gap-2">
               <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-semibold text-red-900">Error</p>
+                <p className="text-sm font-semibold text-red-900">{t('stripe.errorTitle')}</p>
                 <p className="text-sm text-red-800">{error}</p>
               </div>
             </div>
@@ -75,12 +77,12 @@ export default function StripeConnectOnboarding() {
         )}
 
         <div className="space-y-2">
-          <h4 className="font-semibold text-sm">Qué necesitas tener listo:</h4>
+          <h4 className="font-semibold text-sm">{t('stripe.list.needTitle')}</h4>
           <ul className="text-sm text-gray-600 space-y-1">
-            <li>✓ Tu identificación oficial (INE/Pasaporte)</li>
-            <li>✓ Información de tu cuenta bancaria</li>
-            <li>✓ RFC (para México)</li>
-            <li>✓ Dirección completa</li>
+            <li>{t('stripe.list.needItem1')}</li>
+            <li>{t('stripe.list.needItem2')}</li>
+            <li>{t('stripe.list.needItem3')}</li>
+            <li>{t('stripe.list.needItem4')}</li>
           </ul>
         </div>
 
@@ -88,23 +90,22 @@ export default function StripeConnectOnboarding() {
           onClick={handleConnect}
           disabled={loading}
           className="w-full bg-emerald-600 hover:bg-emerald-700"
-          size="lg"
-        >
+          size="lg">
           {loading ? (
             <>
               <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-              Conectando con Stripe...
+              {t('stripe.connecting')}
             </>
           ) : (
             <>
               <Wallet className="h-5 w-5 mr-2" />
-              Conectar Cuenta de Stripe
+              {t('stripe.connect.button')}
             </>
           )}
         </Button>
 
         <p className="text-xs text-gray-500 text-center">
-          Serás redirigido a Stripe para completar tu registro de forma segura
+          {t('stripe.beRedirected')}
         </p>
       </CardContent>
     </Card>

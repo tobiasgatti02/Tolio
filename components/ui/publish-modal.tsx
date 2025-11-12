@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { X, Package, Briefcase } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from 'next-intl';
 
 interface PublishModalProps {
   isOpen: boolean
@@ -11,7 +12,7 @@ interface PublishModalProps {
 
 export default function PublishModal({ isOpen, onClose }: PublishModalProps) {
   const router = useRouter()
-
+  const t = useTranslations('common');
   if (!isOpen) return null
 
   return (
@@ -24,8 +25,8 @@ export default function PublishModal({ isOpen, onClose }: PublishModalProps) {
           <X className="w-6 h-6" />
         </button>
 
-        <h2 className="text-4xl font-black text-gray-900 mb-3">¿Qué quieres publicar?</h2>
-        <p className="text-lg text-gray-600 mb-10">Elige qué tipo de publicación deseas crear</p>
+        <h2 className="text-4xl font-black text-gray-900 mb-3">{t('publish.whatToPublish')}</h2>
+        <p className="text-lg text-gray-600 mb-10">{t('publish.chooseType')}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Publicar Herramienta */}
@@ -41,9 +42,9 @@ export default function PublishModal({ isOpen, onClose }: PublishModalProps) {
                 <Package className="w-12 h-12 text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-black text-gray-900 mb-2">Herramienta</h3>
+                <h3 className="text-2xl font-black text-gray-900 mb-2">{t('publish.thing')}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Alquila tus taladros, escaleras, equipos y más
+                  {t('publish.thingDesc')}
                 </p>
               </div>
             </div>
@@ -62,9 +63,9 @@ export default function PublishModal({ isOpen, onClose }: PublishModalProps) {
                 <Briefcase className="w-12 h-12 text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-black text-gray-900 mb-2">Servicio</h3>
+                <h3 className="text-2xl font-black text-gray-900 mb-2">{t('publish.service')}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Ofrece tus servicios como plomero, electricista, pintor...
+                  {t('publish.serviceDesc')}
                 </p>
               </div>
             </div>
@@ -72,7 +73,7 @@ export default function PublishModal({ isOpen, onClose }: PublishModalProps) {
         </div>
 
         <p className="text-center text-sm text-gray-500 mt-8">
-          Puedes editar o eliminar tu publicación en cualquier momento desde tu dashboard
+          {t('publish.editDelete')}
         </p>
       </div>
     </div>

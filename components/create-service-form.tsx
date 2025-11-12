@@ -8,6 +8,7 @@ import {
   X, Upload, Loader2, Plus, Trash2, MapPin, DollarSign, 
   Camera, Sparkles, CheckCircle, AlertCircle, Info, Award, Map
 } from 'lucide-react'
+import { useTranslations } from 'next-intl';
 
 interface FormData {
   title: string
@@ -44,6 +45,7 @@ const categories = [
 
 export default function CreateServiceForm() {
   const router = useRouter()
+  const t = useTranslations('common');
   const [formData, setFormData] = useState<FormData>({
     title: "",
     description: "",
@@ -274,9 +276,9 @@ export default function CreateServiceForm() {
             ))}
           </div>
           <div className="flex justify-between text-sm text-gray-600">
-            <span>Información</span>
-            <span>Imágenes</span>
-            <span>Detalles</span>
+            <span>{t('form.step.info')}</span>
+            <span>{t('form.step.images')}</span>
+            <span>{t('form.step.details')}</span>
           </div>
         </div>
 
@@ -285,13 +287,13 @@ export default function CreateServiceForm() {
           {currentStep === 1 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Información del Servicio</h2>
-                <p className="text-gray-600">Contános qué servicio ofrecés</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('form.service.formTitle')}</h2>
+                <p className="text-gray-600">{t('form.service.formDesc')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Título del Servicio *
+                  {t('form.service.titleLabel')}
                 </label>
                 <input
                   type="text"
@@ -301,7 +303,7 @@ export default function CreateServiceForm() {
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
                     errors.title ? 'border-red-300' : 'border-gray-200'
                   }`}
-                  placeholder="Ej: Plomero profesional con 10 años de experiencia"
+                  placeholder={t('form.service.titlePlaceholder')}
                 />
                 {errors.title && (
                   <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -313,7 +315,7 @@ export default function CreateServiceForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Descripción *
+                  {t('form.service.descLabel')}
                 </label>
                 <textarea
                   name="description"
@@ -323,7 +325,7 @@ export default function CreateServiceForm() {
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
                     errors.description ? 'border-red-300' : 'border-gray-200'
                   }`}
-                  placeholder="Describe tu servicio, experiencia y qué trabajos realizás..."
+                  placeholder={t('form.service.descPlaceholder')}
                 />
                 {errors.description && (
                   <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -335,7 +337,7 @@ export default function CreateServiceForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Categoría *
+                  {t('form.service.categoryLabel')}
                 </label>
                 <select
                   name="category"
@@ -345,11 +347,9 @@ export default function CreateServiceForm() {
                     errors.category ? 'border-red-300' : 'border-gray-200'
                   }`}
                 >
-                  <option value="">Selecciona una categoría</option>
+                  <option value="">{t('form.service.categoryOption')}</option>
                   {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
+                    <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
                 {errors.category && (
@@ -373,10 +373,10 @@ export default function CreateServiceForm() {
                   <div>
                     <div className="flex items-center gap-2">
                       <Award className="h-5 w-5 text-blue-600" />
-                      <span className="font-semibold text-gray-900">Soy profesional matriculado</span>
+                      <span className="font-semibold text-gray-900">{t('form.service.professional')}</span>
                     </div>
                     <p className="text-sm text-gray-600 mt-1">
-                      Mostrará un badge de verificación que aumenta la confianza de los clientes
+                      {t('form.service.professionalDesc')}
                     </p>
                   </div>
                 </label>
@@ -388,10 +388,8 @@ export default function CreateServiceForm() {
           {currentStep === 2 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Agrega fotos de tu trabajo</h2>
-                <p className="text-gray-600">
-                  Muestra ejemplos de trabajos anteriores o tu equipo de trabajo
-                </p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('form.service.addPhotos')}</h2>
+                <p className="text-gray-600">{t('form.service.examples')}</p>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -421,7 +419,7 @@ export default function CreateServiceForm() {
                   >
                     <Camera className="h-8 w-8 text-gray-400 group-hover:text-blue-500" />
                     <span className="text-sm text-gray-600 group-hover:text-blue-600">
-                      Agregar foto
+                      {t('form.service.addPhoto')}
                     </span>
                   </button>
                 )}
@@ -446,11 +444,11 @@ export default function CreateServiceForm() {
               <div className="bg-gray-50 rounded-xl p-4 flex items-start gap-3">
                 <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-gray-600">
-                  <p className="font-medium text-gray-900 mb-1">Consejos para buenas fotos:</p>
+                  <p className="font-medium text-gray-900 mb-1">{t('form.service.tips')}</p>
                   <ul className="space-y-1 list-disc list-inside">
-                    <li>Muestra trabajos terminados de alta calidad</li>
-                    <li>Incluye fotos de tu equipo o herramientas profesionales</li>
-                    <li>Asegúrate de que las imágenes tengan buena iluminación</li>
+                    <li>{t('form.service.tip1')}</li>
+                    <li>{t('form.service.tip2')}</li>
+                    <li>{t('form.service.tip3')}</li>
                   </ul>
                 </div>
               </div>
@@ -461,15 +459,15 @@ export default function CreateServiceForm() {
           {currentStep === 3 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Precio y Ubicación</h2>
-                <p className="text-gray-600">Últimos detalles de tu servicio</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('form.service.priceLocation')}</h2>
+                <p className="text-gray-600">{t('form.service.lastDetail')}</p>
               </div>
 
               {/* Pricing */}
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de Precio *
+                    {t('form.service.priceType')}
                   </label>
                   <div className="flex gap-4">
                     <label className="flex items-center px-4 py-3 border-2 rounded-xl cursor-pointer flex-1 hover:border-blue-500 transition-colors">
@@ -482,8 +480,8 @@ export default function CreateServiceForm() {
                         className="mr-3 h-4 w-4 text-blue-600"
                       />
                       <div>
-                        <span className="font-medium">Por hora</span>
-                        <p className="text-sm text-gray-500">Precio fijo por hora</p>
+                        <span className="font-medium">{t('form.service.price.hour')}</span>
+                        <p className="text-sm text-gray-500">{t('form.service.price.hourDesc')}</p>
                       </div>
                     </label>
                     <label className="flex items-center px-4 py-3 border-2 rounded-xl cursor-pointer flex-1 hover:border-blue-500 transition-colors">
@@ -496,8 +494,8 @@ export default function CreateServiceForm() {
                         className="mr-3 h-4 w-4 text-blue-600"
                       />
                       <div>
-                        <span className="font-medium">A convenir</span>
-                        <p className="text-sm text-gray-500">Según el trabajo</p>
+                        <span className="font-medium">{t('form.service.price.custom')}</span>
+                        <p className="text-sm text-gray-500">{t('form.service.price.customDesc')}</p>
                       </div>
                     </label>
                   </div>
@@ -506,7 +504,7 @@ export default function CreateServiceForm() {
                 {formData.priceType === 'hour' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Precio por Hora *
+                      {t('form.service.pricePerHour')}
                     </label>
                     <div className="relative">
                       <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -536,7 +534,7 @@ export default function CreateServiceForm() {
               {/* Location */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ubicación / Zona de Trabajo *
+                  {t('form.service.locationLabel')}
                 </label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -548,7 +546,7 @@ export default function CreateServiceForm() {
                     className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
                       errors.location ? 'border-red-300' : 'border-gray-200'
                     }`}
-                    placeholder="Ej: Palermo, CABA"
+                    placeholder={t('form.service.locationPlaceholder')}
                   />
                 </div>
                 {errors.location && (
@@ -562,7 +560,7 @@ export default function CreateServiceForm() {
               {/* Service Area */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Radio / Zona de Servicio
+                  {t('form.service.serviceAreaLabel')}
                 </label>
                 <input
                   type="text"
@@ -570,17 +568,17 @@ export default function CreateServiceForm() {
                   value={formData.serviceArea}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                  placeholder="Ej: Capital Federal y zona norte de GBA"
+                  placeholder={t('form.service.serviceAreaPlaceholder')}
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Opcional: Especifica hasta dónde te desplazas para trabajar
+                  {t('form.service.optional')}
                 </p>
               </div>
 
               {/* Features */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Características del Servicio
+                  {t('form.service.features')}
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -589,7 +587,7 @@ export default function CreateServiceForm() {
                     onChange={(e) => setNewFeature(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
                     className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ej: Atención 24/7, Garantía incluida..."
+                    placeholder={t('form.service.featuresExample')}
                   />
                   <button
                     type="button"
@@ -630,7 +628,7 @@ export default function CreateServiceForm() {
                 onClick={prevStep}
                 className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
               >
-                Anterior
+                {t('form.service.prev')}
               </button>
             )}
             
@@ -641,7 +639,7 @@ export default function CreateServiceForm() {
                   onClick={nextStep}
                   className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
                 >
-                  Siguiente
+                  {t('form.service.next')}
                   <Sparkles className="h-5 w-5" />
                 </button>
               ) : (
@@ -653,12 +651,12 @@ export default function CreateServiceForm() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-5 w-5 animate-spin" />
-                      Publicando...
+                      {t('form.service.publishing')}
                     </>
                   ) : (
                     <>
                       <CheckCircle className="h-5 w-5" />
-                      Publicar Servicio
+                      {t('form.service.submit')}
                     </>
                   )}
                 </button>

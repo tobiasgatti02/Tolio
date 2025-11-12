@@ -1,0 +1,368 @@
+{
+  "brand": "Tolio",
+  "tools": "Herramientas",
+  "services": "Servicios",
+  "howItWorks": "¿Cómo funciona?",
+  "myPanel": "Mi panel",
+  "logout": "Salir",
+  "login": "Ingresar",
+  "signup": "Registrarse",
+  "continue": "Continuar",
+  "processing": "Procesando...",
+  "publish": {
+    "label": "Publicar",
+    "whatToPublish": "¿Qué quieres publicar?",
+    "chooseType": "Elige qué tipo de publicación deseas crear",
+    "thing": "Herramienta",
+    "thingDesc": "Alquila tus taladros, escaleras, equipos y más",
+    "service": "Servicio",
+    "serviceDesc": "Ofrece tus servicios como plomero, electricista, pintor...",
+    "editDelete": "Puedes editar o eliminar tu publicación en cualquier momento desde tu dashboard"
+  },
+  "stripe": {
+    "setup": "Configurar Cuenta de Pagos",
+    "connectDesc": "Conecta tu cuenta de Stripe para recibir pagos cuando alquiles tus artículos",
+    "whyNeededTitle": "¿Por qué necesito esto?",
+    "whyNeededDesc1": "Para recibir pagos directamente en tu cuenta bancaria",
+    "whyNeededDesc2": "Stripe procesa los pagos de forma segura",
+    "whyNeededDesc3": "El dinero llega automáticamente cuando completas un alquiler",
+    "whyNeededDesc4": "Solo toma 5 minutos configurarlo",
+    "errorTitle": "Error",
+    "list": {
+      "needTitle": "Qué necesitas tener listo:",
+      "needItem1": "✓ Tu identificación oficial (INE/Pasaporte)",
+      "needItem2": "✓ Información de tu cuenta bancaria",
+      "needItem3": "✓ RFC (para México)",
+      "needItem4": "✓ Dirección completa"
+    },
+    "connect": {
+      "button": "Conectar Cuenta de Stripe"
+    },
+    "connecting": "Conectando con Stripe...",
+    "beRedirected": "Serás redirigido a Stripe para completar tu registro de forma segura"
+  },
+  "form": {
+    "step": {
+      "info": "Información",
+      "images": "Imágenes",
+      "details": "Detalles"
+    },
+    "service": {
+      "formTitle": "Información del Servicio",
+      "formDesc": "Contános qué servicio ofrecés",
+      "titleLabel": "Título del Servicio *",
+      "titlePlaceholder": "Ej: Plomero profesional con 10 años de experiencia",
+      "descLabel": "Descripción *",
+      "descPlaceholder": "Describe tu servicio, experiencia y qué trabajos realizás...",
+      "categoryLabel": "Categoría *",
+      "categoryOption": "Selecciona una categoría",
+      "professional": "Soy profesional matriculado",
+      "professionalDesc": "Mostrará un badge de verificación que aumenta la confianza de los clientes",
+      "addPhotos": "Agrega fotos de tu trabajo",
+      "examples": "Muestra ejemplos de trabajos anteriores o tu equipo de trabajo",
+      "addPhoto": "Agregar foto",
+      "tips": "Consejos para buenas fotos:",
+      "tip1": "Muestra trabajos terminados de alta calidad",
+      "tip2": "Incluye fotos de tu equipo o herramientas profesionales",
+      "tip3": "Asegúrate de que las imágenes tengan buena iluminación",
+      "priceLocation": "Precio y Ubicación",
+      "lastDetail": "Últimos detalles de tu servicio",
+      "priceType": "Tipo de Precio *",
+      "price": {
+        "hour": "Por hora",
+        "hourDesc": "Precio fijo por hora",
+        "custom": "A convenir",
+        "customDesc": "Según el trabajo"
+      },
+      "pricePerHour": "Precio por Hora *",
+      "locationLabel": "Ubicación / Zona de Trabajo *",
+      "locationPlaceholder": "Ej: Palermo, CABA",
+      "serviceAreaLabel": "Radio / Zona de Servicio",
+      "serviceAreaPlaceholder": "Ej: Capital Federal y zona norte de GBA",
+      "optional": "Opcional: Especifica hasta dónde te desplazas para trabajar",
+      "features": "Características del Servicio",
+      "featuresExample": "Ej: Atención 24/7, Garantía incluida...",
+      "next": "Siguiente",
+      "prev": "Anterior",
+      "submit": "Publicar Servicio",
+      "publishing": "Publicando...",
+      "required": {
+        "title": "El título es requerido",
+        "description": "La descripción es requerida",
+        "descriptionLen": "La descripción debe tener al menos 10 caracteres",
+        "category": "La categoría es requerida",
+        "images": "Agrega al menos una imagen",
+        "pricePerHour": "El precio por hora es requerido",
+        "location": "La ubicación es requerida"
+      }
+    }
+  },
+  "booking": {
+    "startDate": "Fecha de inicio",
+    "endDate": "Fecha de fin",
+    "rent": "Alquilar",
+    "created": {
+      "title": "Reserva creada",
+      "desc": "Ahora puedes proceder con el pago para confirmar tu reserva."
+    },
+    "error": "Hubo un error al crear la reserva",
+    "total": "Total",
+    "commission": "Comisión de servicio",
+    "serviceFee10": "Comisión de servicio (10%)",
+    "summary": "Resumen del pago",
+    "dates": "Fechas:",
+    "duration": "Duración:",
+    "subtotal": "Subtotal:",
+    "commission2": "Comisión de servicio:",
+    "confirmed": "Reserva confirmada - Listo para usar",
+    "completed": "Reserva completada exitosamente",
+    "cancelled": "Esta reserva fue cancelada",
+    "pending": "Esperando confirmación del propietario",
+    "payLater": "Pagar después",
+    "payLaterDesc": "Puedes completar el pago más tarde desde tu panel de reservas"
+  },
+  "home": {
+    "hero": {
+      "title": "Conecta con Oficios y Herramientas",
+      "subtitle": "Publicá tu servicio, ofrecé herramientas o encontrá lo que necesitás en tu comunidad",
+      "searchServices": "Buscar Servicios",
+      "searchServicesDesc": "Plomeros, electricistas, pintores...",
+      "rentTools": "Alquilar Herramientas",
+      "rentToolsDesc": "Taladros, escaleras, equipos...",
+      "feature1": "Busca oficios",
+      "feature2": "Conecta directo",
+      "feature3": "Comunidad confiable",
+      "feature4": "Publica gratis"
+    },
+    "categories": {
+      "title": "Categorías de servicios",
+      "subtitle": "Encuentra el oficio que necesitas en tu zona"
+    },
+    "featured": {
+      "title": "Publicaciones destacadas",
+      "subtitle": "Servicios y herramientas disponibles cerca de ti",
+      "viewAll": "Ver Todos"
+    },
+    "howItWorks": {
+      "title": "¿Cómo funciona Tolio?",
+      "subtitle": "En tres simples pasos conecta con la comunidad y accede a servicios y herramientas",
+      "step1": {
+        "title": "Encontrá lo que necesitás",
+        "desc": "Explorá miles de artículos y servicios disponibles en tu área. Usá filtros para encontrar exactamente lo que buscás."
+      },
+      "step2": {
+        "title": "Solicitá el servicio",
+        "desc": "Seleccioná tus fechas y enviá una solicitud al prestador. Comunicáte a través de nuestro sistema de mensajería segura."
+      },
+      "step3": {
+        "title": "Coordina y disfrutá",
+        "desc": "Encontráte con el prestador para recibir el servicio o retirar la herramienta. Calificá tu experiencia al finalizar."
+      }
+    },
+    "trust": {
+      "title": "Construyendo confianza en la comunidad",
+      "subtitle": "Sistema de verificación y reviews que genera confianza entre usuarios",
+      "systemTitle": "Sistema de confianza",
+      "systemDesc": "En Tolio medimos la \"confianza\" en lugar de simples estrellas. Cada transacción exitosa aumenta tu nivel de confianza, creando una comunidad más segura para todos.",
+      "feature1": "Reviews honestas después de cada alquiler",
+      "feature2": "Verificación de identidad obligatoria",
+      "feature3": "Depósitos de seguridad opcionales",
+      "feature4": "Comunicación segura en la plataforma"
+    },
+    "cta": {
+      "title": "¿Listo para empezar con Tolio?",
+      "subtitle": "Sumate a miles de usuarios que ya están ahorrando dinero y reduciendo residuos al compartir en lugar de comprar.",
+      "signup": "Registrarte gratis",
+      "explore": "Explorar artículos"
+    }
+  },
+  "navbar": {
+    "mobile": {
+      "tools": "Herramientas",
+      "services": "Servicios",
+      "howItWorks": "¿Cómo funciona?",
+      "publish": "Publicar",
+      "logout": "Salir",
+      "login": "Ingresar",
+      "signup": "Registrarse"
+    }
+  },
+  "loginPage": {
+    "title": "Bienvenido a Tolio",
+    "subtitle": "La plataforma que conecta profesionales y herramientas en tu comunidad",
+    "formTitle": "Iniciar Sesión",
+    "formSubtitle": "Ingresa a tu cuenta para continuar",
+    "email": "Email",
+    "password": "Contraseña",
+    "rememberMe": "Recordarme",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "submit": "Ingresar",
+    "submitting": "Ingresando...",
+    "continueWith": "O continúa con",
+    "continueGoogle": "Continuar con Google",
+    "noAccount": "¿No tienes cuenta?",
+    "signupLink": "Regístrate gratis",
+    "backHome": "Volver al inicio",
+    "feature1": {
+      "title": "Servicios Profesionales",
+      "desc": "Encuentra plomeros, electricistas, pintores y más profesionales verificados"
+    },
+    "feature2": {
+      "title": "Alquiler de Herramientas",
+      "desc": "Accede a herramientas y equipos cuando los necesites sin comprarlos"
+    },
+    "errors": {
+      "verifyEmail": "Por favor verifica tu email antes de iniciar sesión. Revisa tu bandeja de entrada.",
+      "invalidCredentials": "Email o contraseña incorrectos",
+      "loginError": "Error al iniciar sesión. Intenta de nuevo.",
+      "genericError": "Ocurrió un error. Por favor, intenta de nuevo"
+    },
+    "success": {
+      "emailVerified": "✅ ¡Email verificado exitosamente! Ahora puedes iniciar sesión",
+      "alreadyVerified": "✅ Tu email ya está verificado. Puedes iniciar sesión"
+    }
+  },
+  "signupPage": {
+    "title": "Crea tu cuenta",
+    "subtitle": "Únete a la comunidad de Tolio",
+    "firstName": "Nombre *",
+    "lastName": "Apellido *",
+    "email": "Email *",
+    "phone": "Teléfono (opcional)",
+    "password": "Contraseña *",
+    "confirmPassword": "Confirmar Contraseña *",
+    "agreeTerms": "Acepto los términos y condiciones y la política de privacidad",
+    "submit": "Crear cuenta",
+    "submitting": "Creando cuenta...",
+    "registerWith": "O regístrate con",
+    "continueGoogle": "Continuar con Google",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "loginLink": "Inicia sesión",
+    "errors": {
+      "requiredFields": "Por favor completa todos los campos obligatorios",
+      "passwordLength": "La contraseña debe tener al menos 6 caracteres",
+      "passwordMatch": "Las contraseñas no coinciden",
+      "agreeTerms": "Debes aceptar los términos y condiciones",
+      "createError": "Error al crear la cuenta"
+    },
+    "success": {
+      "title": "¡Revisa tu email!",
+      "subtitle": "Te enviamos un link de verificación",
+      "emailSent": "Hemos enviado un email de verificación a:",
+      "instructions": "Por favor revisa tu bandeja de entrada y haz click en el link de verificación para activar tu cuenta.",
+      "step1": {
+        "title": "Abre tu email",
+        "desc": "Busca el email de verificación de Tolio"
+      },
+      "step2": {
+        "title": "Haz click en el link",
+        "desc": "El link expira en 24 horas"
+      },
+      "step3": {
+        "title": "¡Listo para empezar!",
+        "desc": "Inicia sesión y comienza a usar Tolio"
+      },
+      "noEmail": "💡 ¿No ves el email? Revisa tu carpeta de spam o correo no deseado.",
+      "goToLogin": "Ir al inicio de sesión",
+      "backHome": "Volver al inicio"
+    },
+    "hero": {
+      "title": "Forma parte de la comunidad",
+      "subtitle": "Miles de personas ya comparten herramientas y servicios en Tolio",
+      "benefit1": {
+        "title": "Publica gratis",
+        "desc": "Sin costos de publicación ni mensualidades"
+      },
+      "benefit2": {
+        "title": "Comunidad verificada",
+        "desc": "Usuarios confiables y reseñas reales"
+      },
+      "benefit3": {
+        "title": "Gana dinero extra",
+        "desc": "Alquila tus herramientas u ofrece servicios"
+      }
+    }
+  },
+  "dashboard": {
+    "overview": {
+      "greeting": "¡Hola, {name}! 👋",
+      "subtitle": "Aquí tienes un resumen de tu actividad en Tolio",
+      "operationSuccess": "¡Operación completada con éxito!"
+    },
+    "publishedItems": "Artículos publicados",
+    "activeBookings": "Reservas activas",
+    "totalEarnings": "Ganancias totales",
+    "score": "Puntuación",
+    "recentActivity": "Actividad reciente",
+    "error": "Error",
+    "retry": "Reintentar",
+    "trust": "Confianza",
+    "items": "Artículos",
+    "earned": "Ganado",
+    "menu": {
+      "overview": "Resumen",
+      "items": "Mis Artículos",
+      "bookings": "Reservas",
+      "sales": "Ventas",
+      "expenses": "Gastos",
+      "calendar": "Calendario",
+      "reviews": "Reseñas",
+      "settings": "Configuración"
+    },
+    "sales": {
+      "title": "Panel de Ventas",
+      "subtitle": "Análisis de ingresos y transacciones",
+      "totalRevenue": "Ingresos Totales",
+      "itemsRevenue": "Herramientas",
+      "servicesRevenue": "Servicios",
+      "itemsSales": "alquileres completados",
+      "servicesSales": "servicios completados",
+      "timeRange": {
+        "week": "Semana",
+        "month": "Mes",
+        "year": "Año"
+      },
+      "vsPrevious": "vs período anterior"
+    },
+    "expenses": {
+      "title": "Panel de Gastos",
+      "subtitle": "Análisis de reservas realizadas",
+      "totalSpent": "Total Gastado",
+      "itemsSpent": "En Herramientas",
+      "servicesSpent": "En Servicios",
+      "itemsBookings": "reservas de herramientas",
+      "servicesBookings": "reservas de servicios",
+      "timeRange": {
+        "week": "Semana",
+        "month": "Mes",
+        "year": "Año"
+      }
+    },
+    "settings": {
+      "title": "Configuración",
+      "subtitle": "Gestiona tu cuenta y preferencias"
+    }
+  },
+  "item": {
+    "title": "Artículo",
+    "new": {
+      "title": "Crear Nuevo Artículo",
+      "subtitle": "Publica tu herramienta para alquilar"
+    },
+    "edit": {
+      "title": "Editar Artículo",
+      "subtitle": "Modifica la información de tu artículo"
+    }
+  },
+  "service": {
+    "title": "Servicio",
+    "new": {
+      "title": "Crear Nuevo Servicio",
+      "subtitle": "Publica tu servicio profesional"
+    },
+    "edit": {
+      "title": "Editar Servicio",
+      "subtitle": "Modifica la información de tu servicio"
+    }
+  }
+}

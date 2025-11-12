@@ -1,10 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
-import Navbar from "@/components/navbar"
-import Footer from "@/components/footer"
-import Providers from "./providers"
-import { Analytics } from "@vercel/analytics/next"
 import { inter, manrope, jetbrainsMono, playfair } from "@/lib/fonts"
 
 export const metadata: Metadata = {
@@ -32,11 +28,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} ${manrope.variable} ${jetbrainsMono.variable} ${playfair.variable}`}>
       <body className="font-sans antialiased">
-        <Providers>
-          <Navbar />
           <main className="min-h-screen">{children}</main>
-          <Footer />
-        </Providers>
       </body>
     </html>
   )

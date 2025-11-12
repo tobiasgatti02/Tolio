@@ -1,0 +1,368 @@
+{
+  "brand": "Tolio",
+  "tools": "Tools",
+  "services": "Services",
+  "howItWorks": "How it works?",
+  "myPanel": "My panel",
+  "logout": "Logout",
+  "login": "Sign in",
+  "signup": "Sign up",
+  "continue": "Continue",
+  "processing": "Processing...",
+  "publish": {
+    "label": "Publish",
+    "whatToPublish": "What do you want to publish?",
+    "chooseType": "Choose the type of publication you want to create",
+    "thing": "Item",
+    "thingDesc": "Rent your drills, ladders, equipment and more",
+    "service": "Service",
+    "serviceDesc": "Offer your services as a plumber, electrician, painter...",
+    "editDelete": "You can edit or delete your publication anytime from your dashboard"
+  },
+  "stripe": {
+    "setup": "Configure Payment Account",
+    "connectDesc": "Connect your Stripe account to receive payments when you rent your items",
+    "whyNeededTitle": "Why do I need this?",
+    "whyNeededDesc1": "To receive payments directly into your bank account",
+    "whyNeededDesc2": "Stripe processes payments securely",
+    "whyNeededDesc3": "Money arrives automatically when you complete a rental",
+    "whyNeededDesc4": "It only takes 5 minutes to set up",
+    "errorTitle": "Error",
+    "list": {
+      "needTitle": "What you need ready:",
+      "needItem1": "✓ Your official ID (INE/Passport)",
+      "needItem2": "✓ Your bank account details",
+      "needItem3": "✓ Tax ID (for Mexico)",
+      "needItem4": "✓ Complete address"
+    },
+    "connect": {
+      "button": "Connect Stripe Account"
+    },
+    "connecting": "Connecting to Stripe...",
+    "beRedirected": "You will be redirected to Stripe to complete your registration securely"
+  },
+  "form": {
+    "step": {
+      "info": "Information",
+      "images": "Images",
+      "details": "Details"
+    },
+    "service": {
+      "formTitle": "Service Information",
+      "formDesc": "Tell us which service you offer",
+      "titleLabel": "Service Title *",
+      "titlePlaceholder": "E.g.: Professional plumber with 10 years of experience",
+      "descLabel": "Description *",
+      "descPlaceholder": "Describe your service, experience, and types of jobs...",
+      "categoryLabel": "Category *",
+      "categoryOption": "Select a category",
+      "professional": "I'm a certified professional",
+      "professionalDesc": "Will show a verification badge that increases customer trust",
+      "addPhotos": "Add photos of your work",
+      "examples": "Show examples of previous work or your work team",
+      "addPhoto": "Add photo",
+      "tips": "Tips for great photos:",
+      "tip1": "Show finished work of high quality",
+      "tip2": "Include photos of your team or professional tools",
+      "tip3": "Make sure images are well-lit",
+      "priceLocation": "Price and Location",
+      "lastDetail": "Final details of your service",
+      "priceType": "Price Type *",
+      "price": {
+        "hour": "Per hour",
+        "hourDesc": "Fixed price per hour",
+        "custom": "Custom",
+        "customDesc": "Depending on the job"
+      },
+      "pricePerHour": "Price per Hour *",
+      "locationLabel": "Location / Work Area *",
+      "locationPlaceholder": "E.g.: Palermo, Buenos Aires",
+      "serviceAreaLabel": "Service Area / Radius",
+      "serviceAreaPlaceholder": "E.g.: Buenos Aires and North Area",
+      "optional": "Optional: Specify how far you travel for work",
+      "features": "Service Features",
+      "featuresExample": "E.g.: 24/7 Service, Warranty included...",
+      "next": "Next",
+      "prev": "Previous",
+      "submit": "Publish Service",
+      "publishing": "Publishing...",
+      "required": {
+        "title": "Title is required",
+        "description": "Description is required",
+        "descriptionLen": "Description must be at least 10 characters",
+        "category": "Category is required",
+        "images": "Add at least one image",
+        "pricePerHour": "Price per hour is required",
+        "location": "Location is required"
+      }
+    }
+  },
+  "booking": {
+    "startDate": "Start date",
+    "endDate": "End date",
+    "rent": "Rent",
+    "created": {
+      "title": "Booking created",
+      "desc": "You can now proceed with payment to confirm your booking."
+    },
+    "error": "There was an error creating the booking",
+    "total": "Total",
+    "commission": "Service fee",
+    "serviceFee10": "Service fee (10%)",
+    "summary": "Payment summary",
+    "dates": "Dates:",
+    "duration": "Duration:",
+    "subtotal": "Subtotal:",
+    "commission2": "Service fee:",
+    "confirmed": "Booking confirmed - Ready to use",
+    "completed": "Booking successfully completed",
+    "cancelled": "This booking was cancelled",
+    "pending": "Waiting for owner's confirmation",
+    "payLater": "Pay later",
+    "payLaterDesc": "You can complete the payment later from your bookings dashboard"
+  },
+  "home": {
+    "hero": {
+      "title": "Connect with Trades and Tools",
+      "subtitle": "Publish your service, offer tools or find what you need in your community",
+      "searchServices": "Search Services",
+      "searchServicesDesc": "Plumbers, electricians, painters...",
+      "rentTools": "Rent Tools",
+      "rentToolsDesc": "Drills, ladders, equipment...",
+      "feature1": "Search trades",
+      "feature2": "Connect directly",
+      "feature3": "Trusted community",
+      "feature4": "Publish for free"
+    },
+    "categories": {
+      "title": "Service Categories",
+      "subtitle": "Find the trade you need in your area"
+    },
+    "featured": {
+      "title": "Featured Listings",
+      "subtitle": "Services and tools available near you",
+      "viewAll": "View All"
+    },
+    "howItWorks": {
+      "title": "How does Tolio work?",
+      "subtitle": "In three simple steps connect with the community and access services and tools",
+      "step1": {
+        "title": "Find what you need",
+        "desc": "Explore thousands of items and services available in your area. Use filters to find exactly what you're looking for."
+      },
+      "step2": {
+        "title": "Request the service",
+        "desc": "Select your dates and send a request to the provider. Communicate through our secure messaging system."
+      },
+      "step3": {
+        "title": "Coordinate and enjoy",
+        "desc": "Meet with the provider to receive the service or pick up the tool. Rate your experience when finished."
+      }
+    },
+    "trust": {
+      "title": "Building trust in the community",
+      "subtitle": "Verification and review system that generates trust among users",
+      "systemTitle": "Trust system",
+      "systemDesc": "At Tolio we measure \"trust\" instead of simple stars. Each successful transaction increases your trust level, creating a safer community for everyone.",
+      "feature1": "Honest reviews after each rental",
+      "feature2": "Mandatory identity verification",
+      "feature3": "Optional security deposits",
+      "feature4": "Secure communication on the platform"
+    },
+    "cta": {
+      "title": "Ready to get started with Tolio?",
+      "subtitle": "Join thousands of users who are already saving money and reducing waste by sharing instead of buying.",
+      "signup": "Sign up for free",
+      "explore": "Explore items"
+    }
+  },
+  "navbar": {
+    "mobile": {
+      "tools": "Tools",
+      "services": "Services",
+      "howItWorks": "How it works?",
+      "publish": "Publish",
+      "logout": "Logout",
+      "login": "Sign in",
+      "signup": "Sign up"
+    }
+  },
+  "loginPage": {
+    "title": "Welcome to Tolio",
+    "subtitle": "The platform that connects professionals and tools in your community",
+    "formTitle": "Sign In",
+    "formSubtitle": "Enter your account to continue",
+    "email": "Email",
+    "password": "Password",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot your password?",
+    "submit": "Sign in",
+    "submitting": "Signing in...",
+    "continueWith": "Or continue with",
+    "continueGoogle": "Continue with Google",
+    "noAccount": "Don't have an account?",
+    "signupLink": "Sign up for free",
+    "backHome": "Back to home",
+    "feature1": {
+      "title": "Professional Services",
+      "desc": "Find plumbers, electricians, painters and more verified professionals"
+    },
+    "feature2": {
+      "title": "Tool Rental",
+      "desc": "Access tools and equipment when you need them without buying them"
+    },
+    "errors": {
+      "verifyEmail": "Please verify your email before signing in. Check your inbox.",
+      "invalidCredentials": "Incorrect email or password",
+      "loginError": "Error signing in. Try again.",
+      "genericError": "An error occurred. Please try again"
+    },
+    "success": {
+      "emailVerified": "✅ Email verified successfully! You can now sign in",
+      "alreadyVerified": "✅ Your email is already verified. You can sign in"
+    }
+  },
+  "signupPage": {
+    "title": "Create your account",
+    "subtitle": "Join the Tolio community",
+    "firstName": "First Name *",
+    "lastName": "Last Name *",
+    "email": "Email *",
+    "phone": "Phone (optional)",
+    "password": "Password *",
+    "confirmPassword": "Confirm Password *",
+    "agreeTerms": "I accept the terms and conditions and privacy policy",
+    "submit": "Create account",
+    "submitting": "Creating account...",
+    "registerWith": "Or sign up with",
+    "continueGoogle": "Continue with Google",
+    "hasAccount": "Already have an account?",
+    "loginLink": "Sign in",
+    "errors": {
+      "requiredFields": "Please complete all required fields",
+      "passwordLength": "Password must be at least 6 characters",
+      "passwordMatch": "Passwords do not match",
+      "agreeTerms": "You must accept the terms and conditions",
+      "createError": "Error creating account"
+    },
+    "success": {
+      "title": "Check your email!",
+      "subtitle": "We sent you a verification link",
+      "emailSent": "We have sent a verification email to:",
+      "instructions": "Please check your inbox and click on the verification link to activate your account.",
+      "step1": {
+        "title": "Open your email",
+        "desc": "Look for the Tolio verification email"
+      },
+      "step2": {
+        "title": "Click on the link",
+        "desc": "The link expires in 24 hours"
+      },
+      "step3": {
+        "title": "Ready to get started!",
+        "desc": "Sign in and start using Tolio"
+      },
+      "noEmail": "💡 Don't see the email? Check your spam or junk mail folder.",
+      "goToLogin": "Go to sign in",
+      "backHome": "Back to home"
+    },
+    "hero": {
+      "title": "Join the community",
+      "subtitle": "Thousands of people already share tools and services on Tolio",
+      "benefit1": {
+        "title": "Publish for free",
+        "desc": "No publication costs or monthly fees"
+      },
+      "benefit2": {
+        "title": "Verified community",
+        "desc": "Trusted users and real reviews"
+      },
+      "benefit3": {
+        "title": "Earn extra money",
+        "desc": "Rent your tools or offer services"
+      }
+    }
+  },
+  "dashboard": {
+    "overview": {
+      "greeting": "Hello, {name}! 👋",
+      "subtitle": "Here's a summary of your activity on Tolio",
+      "operationSuccess": "Operation completed successfully!"
+    },
+    "publishedItems": "Published Items",
+    "activeBookings": "Active Bookings",
+    "totalEarnings": "Total Earnings",
+    "score": "Score",
+    "recentActivity": "Recent Activity",
+    "error": "Error",
+    "retry": "Retry",
+    "trust": "Trust",
+    "items": "Items",
+    "earned": "Earned",
+    "menu": {
+      "overview": "Overview",
+      "items": "My Items",
+      "bookings": "Bookings",
+      "sales": "Sales",
+      "expenses": "Expenses",
+      "calendar": "Calendar",
+      "reviews": "Reviews",
+      "settings": "Settings"
+    },
+    "sales": {
+      "title": "Sales Panel",
+      "subtitle": "Revenue and transaction analysis",
+      "totalRevenue": "Total Revenue",
+      "itemsRevenue": "Tools",
+      "servicesRevenue": "Services",
+      "itemsSales": "completed rentals",
+      "servicesSales": "completed services",
+      "timeRange": {
+        "week": "Week",
+        "month": "Month",
+        "year": "Year"
+      },
+      "vsPrevious": "vs previous period"
+    },
+    "expenses": {
+      "title": "Expenses Panel",
+      "subtitle": "Analysis of bookings made",
+      "totalSpent": "Total Spent",
+      "itemsSpent": "On Tools",
+      "servicesSpent": "On Services",
+      "itemsBookings": "tool bookings",
+      "servicesBookings": "service bookings",
+      "timeRange": {
+        "week": "Week",
+        "month": "Month",
+        "year": "Year"
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Manage your account and preferences"
+    }
+  },
+  "item": {
+    "title": "Item",
+    "new": {
+      "title": "Create New Item",
+      "subtitle": "Publish your tool for rent"
+    },
+    "edit": {
+      "title": "Edit Item",
+      "subtitle": "Modify your item information"
+    }
+  },
+  "service": {
+    "title": "Service",
+    "new": {
+      "title": "Create New Service",
+      "subtitle": "Publish your professional service"
+    },
+    "edit": {
+      "title": "Edit Service",
+      "subtitle": "Modify your service information"
+    }
+  }
+}
