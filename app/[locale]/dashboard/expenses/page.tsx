@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { TrendingDown, DollarSign, Package, Briefcase, Calendar, CreditCard } from "lucide-react"
 
+
 interface ExpensesData {
   totalExpenses: number
   itemsExpenses: number
