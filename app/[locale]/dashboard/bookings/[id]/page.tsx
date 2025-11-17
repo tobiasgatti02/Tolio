@@ -17,8 +17,8 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
-import BookingActions from "../../../../components/booking-actions"
-import BookingTimeline from "../../../../components/booking-timeline"
+import BookingActions from "@/components/booking-actions"
+import BookingTimeline from "@/components/booking-timeline"
 
 export const dynamic = "force-dynamic"
 
