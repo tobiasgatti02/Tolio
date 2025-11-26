@@ -1,11 +1,32 @@
 import Image from "next/image"
 import { Star, MessageSquare } from "lucide-react"
-import { getReviewsByItemId } from "@/app/api/items/[itemId]/reviews/route"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { PrismaClient } from "@prisma/client"
+
+const prisma = new PrismaClient()
 
 interface ReviewProps {
   itemId: string
+}
+
+async function getReviewsByItemId(itemId: string) {
+  const reviews = await prisma.review.findMany({
+    where: { itemId },
+    include: {
+      reviewer: {
+        select: {
+          firstName: true,
+          lastName: true,
+          profileImage: true,
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+  return reviews
 }
 
 export default async function ReviewList({ itemId }: ReviewProps) {
