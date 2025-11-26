@@ -2,22 +2,28 @@ import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { authOptions } from "../auth/[...nextauth]/route"
 import { prisma } from "@/lib/utils"
+import { calculateDistance, isValidCoordinates } from "@/lib/geo-utils"
 import sharp from "sharp"
 
 // GET: Obtener todos los items con filtros
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    
+
     const search = searchParams.get("search")
     const location = searchParams.get("location")
     const category = searchParams.get("category")
     const sort = searchParams.get("sort") || "recent"
-    
+
+    // Parámetros de búsqueda geográfica
+    const userLat = searchParams.get("userLat")
+    const userLng = searchParams.get("userLng")
+    const radius = searchParams.get("radius")
+
     const where: any = {
       isAvailable: true,
     }
-    
+
     // Aplicar filtro de búsqueda
     if (search) {
       where.OR = [
@@ -26,20 +32,20 @@ export async function GET(request: Request) {
         { features: { has: search } }
       ]
     }
-    
+
     // Aplicar filtro de ubicación
     if (location) {
       where.location = { contains: location, mode: 'insensitive' }
     }
-    
+
     // Aplicar filtro de categoría
     if (category && category !== "all") {
       where.category = category
     }
-    
+
     // Determinar orden
     let orderBy: any = { createdAt: 'desc' }
-    
+
     if (sort === "price-low") {
       orderBy = { price: 'asc' }
     } else if (sort === "price-high") {
@@ -47,7 +53,7 @@ export async function GET(request: Request) {
     } else if (sort === "rating") {
       orderBy = { reviews: { _count: 'desc' } }
     }
-    
+
     const items = await prisma.item.findMany({
       where,
       orderBy,
@@ -66,14 +72,14 @@ export async function GET(request: Request) {
           },
         },
       },
-      take: 50,
+      take: userLat && userLng && radius ? 100 : 50, // Menos items si hay filtro geográfico
     })
-    
-    const formattedItems = items.map(item => {
+
+    let formattedItems = items.map(item => {
       const averageRating = item.reviews.length > 0
         ? item.reviews.reduce((sum, review) => sum + review.rating, 0) / item.reviews.length
         : 0
-        
+
       return {
         ...item,
         averageRating: parseFloat(averageRating.toFixed(1)),
@@ -85,7 +91,33 @@ export async function GET(request: Request) {
         },
       }
     })
-    
+
+    // Aplicar filtro geográfico si se proporcionan coordenadas
+    if (userLat && userLng && radius) {
+      const lat = parseFloat(userLat)
+      const lng = parseFloat(userLng)
+      const radiusKm = parseFloat(radius)
+
+      if (isValidCoordinates(lat, lng)) {
+        // Calcular distancia para cada item y filtrar por radio
+        formattedItems = formattedItems
+          .map(item => {
+            if (isValidCoordinates(item.latitude, item.longitude)) {
+              const distance = calculateDistance(lat, lng, item.latitude!, item.longitude!)
+              return { ...item, distance }
+            }
+            return { ...item, distance: undefined }
+          })
+          .filter(item => {
+            // Si tiene distancia, debe estar dentro del radio
+            // Si no tiene coordenadas, no se muestra en búsqueda geográfica
+            return item.distance !== undefined && item.distance <= radiusKm
+          })
+          .sort((a, b) => (a.distance || 0) - (b.distance || 0)) // Ordenar por distancia
+          .slice(0, 50) // Limitar a 50 resultados
+      }
+    }
+
     return NextResponse.json(formattedItems)
   } catch (err) {
     console.error("❌ Error fetching items:", err)
@@ -99,16 +131,16 @@ export async function GET(request: Request) {
 // POST: Crear nuevo item
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
-  
+
   if (!session || !session.user || !session.user.id) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
 
   try {
     console.log("📦 Iniciando creación de item para usuario:", session.user.id)
-    
+
     const formData = await request.formData()
-    
+
     // Extraer campos del formulario
     const title = formData.get('title') as string
     const description = formData.get('description') as string
@@ -178,7 +210,7 @@ export async function POST(request: Request) {
     if (imageFiles && imageFiles.length > 0) {
       for (let i = 0; i < imageFiles.length; i++) {
         const imageFile = imageFiles[i]
-        
+
         if (imageFile.size === 0) {
           console.log(`⏭️  Omitiendo archivo vacío ${i + 1}`)
           continue
@@ -198,18 +230,18 @@ export async function POST(request: Request) {
 
         try {
           console.log(`📸 Procesando imagen ${i + 1}/${imageFiles.length}: ${imageFile.name} (${(imageFile.size / 1024).toFixed(2)}KB)`)
-          
+
           const buffer = Buffer.from(await imageFile.arrayBuffer())
-          
+
           // Optimizar imagen con Sharp
           const optimizedBuffer = await sharp(buffer)
             .resize({ width: 1200, withoutEnlargement: true })
             .jpeg({ quality: 85, progressive: true })
             .toBuffer()
-          
+
           const base64 = optimizedBuffer.toString('base64')
           const dataUrl = `data:image/jpeg;base64,${base64}`
-          
+
           imageUrls.push(dataUrl)
           console.log(`✅ Imagen ${i + 1} procesada correctamente (${(optimizedBuffer.length / 1024).toFixed(2)}KB)`)
         } catch (imageError) {
@@ -274,7 +306,7 @@ export async function POST(request: Request) {
 // PUT: Actualizar item existente
 export async function PUT(request: Request) {
   const session = await getServerSession(authOptions)
-  
+
   if (!session || !session.user || !session.user.id) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
@@ -282,7 +314,7 @@ export async function PUT(request: Request) {
   try {
     const formData = await request.formData()
     const itemId = formData.get('id') as string
-    
+
     if (!itemId) {
       return NextResponse.json({ error: "ID del item es obligatorio" }, { status: 400 })
     }
@@ -335,15 +367,15 @@ export async function PUT(request: Request) {
 
         try {
           const buffer = Buffer.from(await imageFile.arrayBuffer())
-          
+
           const optimizedBuffer = await sharp(buffer)
             .resize({ width: 1200, withoutEnlargement: true })
             .jpeg({ quality: 85, progressive: true })
             .toBuffer()
-          
+
           const base64 = optimizedBuffer.toString('base64')
           const dataUrl = `data:image/jpeg;base64,${base64}`
-          
+
           imageUrls.push(dataUrl)
         } catch (imageError) {
           console.error('Error procesando imagen:', imageError)

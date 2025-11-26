@@ -4,6 +4,7 @@
 
 /* Leaflet CSS for Maps */
 @import 'leaflet/dist/leaflet.css';
+@import '../styles/leaflet-custom.css';
 
 body {
   font-family: Arial, Helvetica, sans-serif;
@@ -37,14 +38,14 @@ body {
     --border: 214.3 31.8% 91.4%;
     --input: 220 13% 91%;
     --ring: 25 95% 53%;
-    
+
     --chart-1: 25 95% 53%;
     --chart-2: 221 83% 53%;
     --chart-3: 45 93% 47%;
     --chart-4: 42 90% 65%;
     --chart-5: 15 90% 48%;
     --radius: 0.75rem;
-    
+
     --sidebar-background: 42 90% 97%;
     --sidebar-foreground: 240 10% 15%;
     --sidebar-primary: 25 95% 53%;
@@ -54,7 +55,7 @@ body {
     --sidebar-border: 214.3 31.8% 91.4%;
     --sidebar-ring: 25 95% 53%;
   }
-  
+
   .dark {
     /* Tolio Brand Colors - Dark Mode */
     --background: 240 10% 10%;
@@ -76,13 +77,13 @@ body {
     --border: 240 10% 20%;
     --input: 240 10% 20%;
     --ring: 25 95% 53%;
-    
+
     --chart-1: 25 95% 53%;
     --chart-2: 221 83% 53%;
     --chart-3: 45 93% 47%;
     --chart-4: 42 90% 65%;
     --chart-5: 15 90% 48%;
-    
+
     --sidebar-background: 240 10% 13%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 25 95% 53%;
@@ -98,6 +99,7 @@ body {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }

@@ -1,0 +1,181 @@
+"use client"
+
+import { useState, useCallback, useEffect } from "react"
+import dynamic from "next/dynamic"
+import { MapPin, Loader2, Navigation } from "lucide-react"
+import type { LatLngExpression } from "leaflet"
+
+// Importar Leaflet dinámicamente para evitar problemas con SSR
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false }
+)
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false }
+)
+const Marker = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Marker),
+  { ssr: false }
+)
+
+interface MapLocationPickerProps {
+  onLocationSelect: (lat: number, lng: number, address?: string) => void
+  initialLat?: number
+  initialLng?: number
+  height?: string
+}
+
+export default function MapLocationPicker({
+  onLocationSelect,
+  initialLat = -38.7183, // Bahía Blanca por defecto
+  initialLng = -62.2663,
+  height = "400px",
+}: MapLocationPickerProps) {
+  const [position, setPosition] = useState<[number, number] | null>(
+    initialLat && initialLng ? [initialLat, initialLng] : null
+  )
+  const [isLoading, setIsLoading] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
+  const [MapEvents, setMapEvents] = useState<any>(null)
+  const [customIcon, setCustomIcon] = useState<any>(null)
+
+  useEffect(() => {
+    setIsMounted(true)
+    // Cargar useMapEvents y crear icono personalizado después del montaje
+    Promise.all([
+      import("react-leaflet"),
+      import("leaflet")
+    ]).then(([reactLeaflet, L]) => {
+      const MapEventsComponent = () => {
+        reactLeaflet.useMapEvents({
+          click: (e: any) => {
+            handleMapClick(e.latlng.lat, e.latlng.lng)
+          },
+        })
+        return null
+      }
+      setMapEvents(() => MapEventsComponent)
+      
+      // Crear icono personalizado con animación
+      const icon = L.divIcon({
+        className: 'custom-map-marker',
+        html: `
+          <div class="relative">
+            <div class="absolute -top-12 -left-6 animate-bounce">
+              <div class="relative">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#059669" stroke="#047857" stroke-width="1.5"/>
+                  <circle cx="12" cy="9" r="2.5" fill="white"/>
+                </svg>
+                <div class="absolute top-0 left-0 w-12 h-12 bg-emerald-400 rounded-full opacity-30 animate-ping"></div>
+              </div>
+            </div>
+          </div>
+        `,
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+      })
+      setCustomIcon(icon)
+    })
+  }, [])
+
+  const handleMapClick = useCallback(
+    (lat: number, lng: number) => {
+      setPosition([lat, lng])
+      onLocationSelect(lat, lng)
+      
+      // Opcional: Obtener dirección usando Nominatim (geocoding inverso)
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.display_name) {
+            onLocationSelect(lat, lng, data.display_name)
+          }
+        })
+        .catch(err => console.error("Error obteniendo dirección:", err))
+    },
+    [onLocationSelect]
+  )
+
+  const handleUseMyLocation = () => {
+    setIsLoading(true)
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude
+          const lng = position.coords.longitude
+          setPosition([lat, lng])
+          onLocationSelect(lat, lng)
+          setIsLoading(false)
+        },
+        (error) => {
+          console.error("Error obteniendo ubicación:", error)
+          alert("No se pudo obtener tu ubicación. Por favor, haz click en el mapa.")
+          setIsLoading(false)
+        }
+      )
+    } else {
+      alert("Tu navegador no soporta geolocalización")
+      setIsLoading(false)
+    }
+  }
+
+  if (!isMounted) {
+    return (
+      <div className="map-container map-loading flex items-center justify-center" style={{ height }}>
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-600">
+          <MapPin className="inline h-4 w-4 mr-1" />
+          Haz click en el mapa para seleccionar la ubicación exacta
+        </p>
+        <button
+          type="button"
+          onClick={handleUseMyLocation}
+          disabled={isLoading}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+        >
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Navigation className="h-4 w-4" />
+          )}
+          Usar mi ubicación
+        </button>
+      </div>
+
+      <div className="map-container rounded-lg overflow-hidden border-2 border-gray-200 shadow-md" style={{ height }}>
+        <MapContainer
+          center={(position || [initialLat, initialLng]) as LatLngExpression}
+          zoom={13}
+          style={{ height: "100%", width: "100%" }}
+          scrollWheelZoom={true}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {MapEvents && <MapEvents />}
+          {position && customIcon && <Marker position={position as LatLngExpression} icon={customIcon} />}
+        </MapContainer>
+      </div>
+
+      {position && (
+        <div className="text-xs text-gray-500 bg-emerald-50 p-3 rounded-lg border border-emerald-200 flex items-start gap-2">
+          <MapPin className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-emerald-800">Ubicación seleccionada</p>
+            <p className="text-gray-600">{position[0].toFixed(6)}, {position[1].toFixed(6)}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

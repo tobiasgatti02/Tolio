@@ -5,7 +5,12 @@ import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Star, MapPin, Filter, Search, X, ChevronDown, ChevronUp, Loader2, Wrench, Plus } from "lucide-react"
+import dynamic from "next/dynamic"
+import { Star, MapPin, Filter, Search, X, ChevronDown, ChevronUp, Loader2, Wrench, Plus, Map as MapIcon, List } from "lucide-react"
+import RadiusControl from "@/components/radius-control"
+
+// Importar MapSearchView dinámicamente
+const MapSearchView = dynamic(() => import("@/components/map-search-view"), { ssr: false })
 
 interface Category {
   id: string;
@@ -19,9 +24,13 @@ interface Item {
   title: string;
   category: string;
   price: number;
+  priceType?: string;
   averageRating: number;
   reviewCount: number;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
+  distance?: number;
   features: string[];
   images: string[];
   description: string;
@@ -56,6 +65,12 @@ export default function ItemsPage(){
   const [isLoading, setIsLoading] = useState(true)
   const [filteredItems, setFilteredItems] = useState<Item[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  
+  // Map states
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list')
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [radius, setRadius] = useState(10)
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false)
   
   // Fetch items when search params change
   useEffect(() => {
@@ -127,16 +142,43 @@ export default function ItemsPage(){
         minPrice: minPrice,
         maxPrice: maxPrice,
         sort: sortBy,
+        userLat: userLocation ? userLocation.lat.toString() : null,
+        userLng: userLocation ? userLocation.lng.toString() : null,
+        radius: userLocation ? radius.toString() : null,
       })
     }, 300) // Debounce for 300ms
 
     return () => clearTimeout(timeoutId)
-  }, [searchTerm, location, selectedCategory, minPrice, maxPrice, sortBy])
+  }, [searchTerm, location, selectedCategory, minPrice, maxPrice, sortBy, userLocation, radius])
 
   // Handle search form submission (mantener para compatibilidad)
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     // Los filtros ya se aplican automáticamente
+  }
+
+  // Get user location
+  const getUserLocation = () => {
+    setIsLoadingLocation(true)
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          })
+          setIsLoadingLocation(false)
+        },
+        (error) => {
+          console.error("Error obteniendo ubicación:", error)
+          alert("No se pudo obtener tu ubicación. Verifica los permisos del navegador.")
+          setIsLoadingLocation(false)
+        }
+      )
+    } else {
+      alert("Tu navegador no soporta geolocalización")
+      setIsLoadingLocation(false)
+    }
   }
 
   // Clear all filters
@@ -147,6 +189,7 @@ export default function ItemsPage(){
     setMinPrice("")
     setMaxPrice("")
     setSortBy("relevance")
+    setUserLocation(null)
   }
 
   return (
@@ -391,6 +434,17 @@ export default function ItemsPage(){
                 Limpiar filtros
               </button>
             </div>
+            
+            {/* Radius Control */}
+            <div className="mt-6 pt-6 border-t">
+              <RadiusControl
+                radius={radius}
+                onRadiusChange={setRadius}
+                userLocation={userLocation}
+                onGetLocation={getUserLocation}
+                isLoadingLocation={isLoadingLocation}
+              />
+            </div>
           </div>
         </div>
 
@@ -402,6 +456,33 @@ export default function ItemsPage(){
               <h1 className="text-xl font-bold">Artículos disponibles</h1>
               <p className="text-sm text-gray-500">{filteredItems.length} resultados</p>
             </div>
+
+            {/* View Toggle */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                  viewMode === 'list'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                <List className="h-4 w-4" />
+                Lista
+              </button>
+              <button
+                onClick={() => setViewMode('map')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                  viewMode === 'map'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                <MapIcon className="h-4 w-4" />
+                Mapa
+              </button>
+            </div>
+          </div>
 
             {/* Active filters */}
             <div className="flex flex-wrap gap-2">
@@ -478,6 +559,23 @@ export default function ItemsPage(){
                 Limpiar filtros
               </button>
             </div>
+          ) : viewMode === 'map' ? (
+            <MapSearchView
+              items={filteredItems.map(item => ({
+                id: item.id,
+                title: item.title,
+                latitude: item.latitude || 0,
+                longitude: item.longitude || 0,
+                price: item.price,
+                priceType: "day",
+                category: item.category,
+                distance: item.distance,
+                images: item.images
+              }))}
+              userLocation={userLocation}
+              radius={radius}
+              onItemClick={(id) => router.push(`/items/${id}`)}
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredItems.map((item) => (
@@ -507,6 +605,11 @@ export default function ItemsPage(){
                         <MapPin className="h-3 w-3 mr-1" />
                         {item.location}
                       </div>
+                      {item.distance !== undefined && (
+                        <div className="text-xs text-emerald-600 font-medium mb-2">
+                          📍 {item.distance.toFixed(1)} km de distancia
+                        </div>
+                      )}
                       <div className="mt-auto flex justify-between items-center">
                         <div className="text-gray-900 font-bold">
                           {item.price}$<span className="text-gray-500 font-normal text-sm">/día</span>
@@ -521,7 +624,6 @@ export default function ItemsPage(){
           )}
         </div>
       </div>
-    </div>
     </div>
   )
 }

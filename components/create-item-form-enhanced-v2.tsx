@@ -3,11 +3,15 @@
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
+import dynamic from "next/dynamic"
 import ImageCropper from "./image-cropper"
 import { 
   X, Upload, Loader2, Plus, Trash2, MapPin, DollarSign, 
   Camera, Sparkles, CheckCircle, AlertCircle, Info, Package
 } from 'lucide-react'
+
+// Importar MapLocationPicker dinámicamente para evitar problemas con SSR
+const MapLocationPicker = dynamic(() => import("./map-location-picker"), { ssr: false })
 
 interface FormData {
   title: string
@@ -16,6 +20,8 @@ interface FormData {
   price: string
   deposit: string
   location: string
+  latitude: number | null
+  longitude: number | null
   features: string[]
 }
 
@@ -28,8 +34,11 @@ export default function CreateItemFormEnhanced() {
     price: "",
     deposit: "",
     location: "",
+    latitude: null,
+    longitude: null,
     features: [],
   })
+  const [showMap, setShowMap] = useState(false)
 
   const [images, setImages] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
@@ -199,6 +208,10 @@ export default function CreateItemFormEnhanced() {
       formDataObj.append("price", formData.price)
       formDataObj.append("deposit", formData.deposit)
       formDataObj.append("location", formData.location)
+      if (formData.latitude !== null && formData.longitude !== null) {
+        formDataObj.append("latitude", formData.latitude.toString())
+        formDataObj.append("longitude", formData.longitude.toString())
+      }
       formDataObj.append("features", JSON.stringify(formData.features))
   
       images.forEach((image) => {
@@ -519,6 +532,37 @@ export default function CreateItemFormEnhanced() {
                     <AlertCircle className="w-4 h-4 mr-1" />
                     {errors.location}
                   </p>
+                )}
+              </div>
+
+              {/* Optional Map Location */}
+              <div className="border-2 border-gray-200 rounded-xl p-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showMap}
+                    onChange={(e) => setShowMap(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    📍 Mostrar ubicación exacta en el mapa (opcional)
+                  </span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1 ml-6">
+                  Ayuda a los usuarios a encontrar tu herramienta más fácilmente
+                </p>
+                
+                {showMap && (
+                  <div className="mt-4">
+                    <MapLocationPicker
+                      onLocationSelect={(lat, lng) => {
+                        setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }))
+                      }}
+                      initialLat={formData.latitude || undefined}
+                      initialLng={formData.longitude || undefined}
+                      height="350px"
+                    />
+                  </div>
                 )}
               </div>
 

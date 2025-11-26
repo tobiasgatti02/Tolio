@@ -6,16 +6,25 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { useLocale } from 'next-intl'
 import Link from "next/link"
 import Image from "next/image"
-import { Star, MapPin, Filter, Search, Loader2, Briefcase, Plus, Award } from "lucide-react"
+import dynamic from "next/dynamic"
+import { Star, MapPin, Filter, Search, Loader2, Briefcase, Plus, Award, Map as MapIcon, List } from "lucide-react"
+import RadiusControl from "@/components/radius-control"
+
+// Importar MapSearchView dinámicamente
+const MapSearchView = dynamic(() => import("@/components/map-search-view"), { ssr: false })
 
 interface Service {
   id: string;
   title: string;
   category: string;
   pricePerHour: number | null;
+  priceType?: string;
   averageRating: number;
   reviewCount: number;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
+  distance?: number;
   images: string[];
   isProfessional: boolean;
   provider: {
@@ -50,6 +59,12 @@ export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showMobileFilters, setShowMobileFilters] = useState(false)
+  
+  // Map states
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list')
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [radius, setRadius] = useState(10)
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false)
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -86,10 +101,37 @@ export default function ServicesPage() {
         category: selectedCategory,
         professional: isProfessionalOnly ? "true" : null,
         sort: sortBy,
+        userLat: userLocation ? userLocation.lat.toString() : null,
+        userLng: userLocation ? userLocation.lng.toString() : null,
+        radius: userLocation ? radius.toString() : null,
       })
     }, 300)
     return () => clearTimeout(timeoutId)
-  }, [searchTerm, location, selectedCategory, isProfessionalOnly, sortBy])
+  }, [searchTerm, location, selectedCategory, isProfessionalOnly, sortBy, userLocation, radius])
+
+  // Get user location
+  const getUserLocation = () => {
+    setIsLoadingLocation(true)
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          })
+          setIsLoadingLocation(false)
+        },
+        (error) => {
+          console.error("Error obteniendo ubicación:", error)
+          alert("No se pudo obtener tu ubicación. Verifica los permisos del navegador.")
+          setIsLoadingLocation(false)
+        }
+      )
+    } else {
+      alert("Tu navegador no soporta geolocalización")
+      setIsLoadingLocation(false)
+    }
+  }
 
   const clearFilters = () => {
     setSearchTerm("")
@@ -97,6 +139,7 @@ export default function ServicesPage() {
     setSelectedCategory("")
     setIsProfessionalOnly(false)
     setSortBy("relevance")
+    setUserLocation(null)
   }
 
   return (
@@ -164,17 +207,56 @@ export default function ServicesPage() {
                   </label>
                 </div>
               </div>
+              
+              {/* Radius Control */}
+              <div className="mt-6 pt-6 border-t">
+                <RadiusControl
+                  radius={radius}
+                  onRadiusChange={setRadius}
+                  userLocation={userLocation}
+                  onGetLocation={getUserLocation}
+                  isLoadingLocation={isLoadingLocation}
+                />
+              </div>
             </div>
           </div>
 
           <div className="lg:col-span-3">
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <p className="text-gray-600">
                 <span className="font-semibold text-gray-900">{services.length}</span> servicios encontrados
               </p>
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                {sortOptions.map(option => (<option key={option.value} value={option.value}>{option.label}</option>))}
-              </select>
+              
+              <div className="flex items-center gap-2">
+                {/* View Toggle */}
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                    viewMode === 'list'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  <List className="h-4 w-4" />
+                  Lista
+                </button>
+                <button
+                  onClick={() => setViewMode('map')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                    viewMode === 'map'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  <MapIcon className="h-4 w-4" />
+                  Mapa
+                </button>
+                
+                {/* Sort */}
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  {sortOptions.map(option => (<option key={option.value} value={option.value}>{option.label}</option>))}
+                </select>
+              </div>
             </div>
 
             {isLoading ? (
@@ -191,6 +273,23 @@ export default function ServicesPage() {
                   Ofrecer mi Servicio
                 </Link>
               </div>
+            ) : viewMode === 'map' ? (
+              <MapSearchView
+                items={services.map(service => ({
+                  id: service.id,
+                  title: service.title,
+                  latitude: service.latitude || 0,
+                  longitude: service.longitude || 0,
+                  price: service.pricePerHour || 0,
+                  priceType: "hour",
+                  category: service.category,
+                  distance: service.distance,
+                  images: service.images
+                }))}
+                userLocation={userLocation}
+                radius={radius}
+                onItemClick={(id) => router.push(`/${locale}/services/${id}`)}
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {services.map((service) => (
@@ -216,6 +315,11 @@ export default function ServicesPage() {
                         <MapPin className="h-3 w-3 mr-1" />
                         {service.location}
                       </div>
+                      {service.distance !== undefined && (
+                        <div className="text-xs text-blue-600 font-medium mb-2">
+                          📍 {service.distance.toFixed(1)} km de distancia
+                        </div>
+                      )}
                       <div className="flex items-center gap-2 mb-2">
                         {service.provider.profileImage ? (
                           <Image src={service.provider.profileImage} alt={`${service.provider.firstName} ${service.provider.lastName}`} width={24} height={24} className="rounded-full" />

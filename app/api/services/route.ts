@@ -2,23 +2,29 @@ import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { authOptions } from "../auth/[...nextauth]/route"
 import { prisma } from "@/lib/utils"
+import { calculateDistance, isValidCoordinates } from "@/lib/geo-utils"
 import sharp from "sharp"
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    
+
     const search = searchParams.get("search")
     const location = searchParams.get("location")
     const category = searchParams.get("category")
     const priceType = searchParams.get("priceType")
     const isProfessional = searchParams.get("isProfessional")
     const sort = searchParams.get("sort") || "relevance"
-    
+
+    // Parámetros de búsqueda geográfica
+    const userLat = searchParams.get("userLat")
+    const userLng = searchParams.get("userLng")
+    const radius = searchParams.get("radius")
+
     const where: any = {
       isAvailable: true,
     }
-    
+
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
@@ -26,23 +32,23 @@ export async function GET(request: Request) {
         { features: { has: search } }
       ]
     }
-    
+
     if (location) {
       where.location = { contains: location, mode: 'insensitive' }
     }
-    
+
     if (category) {
       where.category = { contains: category, mode: 'insensitive' }
     }
-    
+
     if (priceType) {
       where.priceType = priceType
     }
-    
+
     if (isProfessional === 'true') {
       where.isProfessional = true
     }
-    
+
     let orderBy: any = {}
     if (sort === "rating") {
       // Will implement rating sorting later
@@ -54,7 +60,7 @@ export async function GET(request: Request) {
     } else {
       orderBy = { createdAt: "desc" }
     }
-    
+
     const services = await prisma.service.findMany({
       where,
       orderBy,
@@ -72,17 +78,44 @@ export async function GET(request: Request) {
             rating: true,
           }
         }
-      }
+      },
+      take: userLat && userLng && radius ? 100 : 50, // Menos servicios si hay filtro geográfico
     })
-    
-    const servicesWithStats = services.map(service => ({
+
+    let servicesWithStats = services.map(service => ({
       ...service,
       averageRating: service.reviews.length > 0
         ? service.reviews.reduce((acc, r) => acc + r.rating, 0) / service.reviews.length
         : 0,
       reviewCount: service.reviews.length
     }))
-    
+
+    // Aplicar filtro geográfico si se proporcionan coordenadas
+    if (userLat && userLng && radius) {
+      const lat = parseFloat(userLat)
+      const lng = parseFloat(userLng)
+      const radiusKm = parseFloat(radius)
+
+      if (isValidCoordinates(lat, lng)) {
+        // Calcular distancia para cada servicio y filtrar por radio
+        servicesWithStats = servicesWithStats
+          .map(service => {
+            if (isValidCoordinates(service.latitude, service.longitude)) {
+              const distance = calculateDistance(lat, lng, service.latitude!, service.longitude!)
+              return { ...service, distance }
+            }
+            return { ...service, distance: undefined }
+          })
+          .filter(service => {
+            // Si tiene distancia, debe estar dentro del radio
+            // Si no tiene coordenadas, no se muestra en búsqueda geográfica
+            return service.distance !== undefined && service.distance <= radiusKm
+          })
+          .sort((a, b) => (a.distance || 0) - (b.distance || 0)) // Ordenar por distancia
+          .slice(0, 50) // Limitar a 50 resultados
+      }
+    }
+
     return NextResponse.json(servicesWithStats)
   } catch (error) {
     console.error("Error fetching services:", error)
@@ -101,7 +134,7 @@ export async function POST(request: Request) {
 
   try {
     const formData = await request.formData()
-    
+
     const title = formData.get('title') as string
     const description = formData.get('description') as string
     const category = formData.get('category') as string
@@ -132,19 +165,19 @@ export async function POST(request: Request) {
         if (imageFile.size > 0 && imageFile.type.startsWith('image/')) {
           try {
             const buffer = Buffer.from(await imageFile.arrayBuffer())
-            
+
             // Validar formatos soportados
             const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
             if (!allowedTypes.includes(imageFile.type.toLowerCase())) {
               console.warn(`Formato no soportado: ${imageFile.type}. Saltando...`)
               continue
             }
-            
+
             // Guardar imagen original sin procesamiento (como la subió el usuario)
             const base64 = buffer.toString('base64')
             const mimeType = imageFile.type
             const dataUrl = `data:${mimeType};base64,${base64}`
-            
+
             imageUrls.push(dataUrl)
           } catch (imageError) {
             console.error('Error procesando imagen:', imageError)
@@ -177,9 +210,9 @@ export async function POST(request: Request) {
     return NextResponse.json(newService, { status: 201 })
   } catch (err) {
     console.error("Error creating service:", err instanceof Error ? err.message : String(err))
-    return NextResponse.json({ 
-      error: "Failed to create service", 
-      details: err instanceof Error ? err.message : "Unknown error" 
+    return NextResponse.json({
+      error: "Failed to create service",
+      details: err instanceof Error ? err.message : "Unknown error"
     }, { status: 500 })
   }
 }
