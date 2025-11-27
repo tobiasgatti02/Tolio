@@ -155,14 +155,20 @@ export async function POST(request: Request) {
 
     // Enviar email de verificación
     try {
-      await sendVerificationEmail({
+      console.log('Intentando enviar email de verificación a:', user.email)
+      const emailResult = await sendVerificationEmail({
         email: user.email,
         firstName: user.firstName,
         verificationToken,
       })
-    } catch (emailError) {
-      console.error('Error sending verification email:', emailError)
-      // No fallar el registro si el email falla
+      console.log('Email enviado exitosamente:', emailResult)
+    } catch (emailError: any) {
+      console.error('Error sending verification email:', {
+        error: emailError.message || emailError,
+        email: user.email,
+        stack: emailError.stack
+      })
+      // No fallar el registro si el email falla, pero loguear el error
     }
 
     return NextResponse.json(

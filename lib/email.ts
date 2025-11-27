@@ -13,7 +13,15 @@ export async function sendVerificationEmail({
   firstName,
   verificationToken,
 }: SendVerificationEmailParams) {
-  const verificationUrl = `${process.env.NEXTAUTH_URL}/api/auth/verify-email?token=${verificationToken}`
+  const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const verificationUrl = `${baseUrl}/api/auth/verify-email?token=${verificationToken}`
+
+  console.log('Configuración de email:', {
+    apiKeyExists: !!process.env.RESEND_API_KEY,
+    baseUrl,
+    verificationUrl,
+    toEmail: email
+  })
 
   try {
     const { data, error } = await resend.emails.send({

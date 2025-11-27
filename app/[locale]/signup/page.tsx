@@ -65,7 +65,7 @@ export default function SignupPage() {
     setError("")
 
     try {
-      const response = await fetch("/api/auth/signup", {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -73,21 +73,24 @@ export default function SignupPage() {
           password: formData.password,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          phoneNumber: formData.phone
+          phone: formData.phone
         })
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Error al crear la cuenta")
+        // Mostrar el mensaje específico del error
+        const errorMessage = data.message || data.error || "Error al crear la cuenta"
+        throw new Error(errorMessage)
       }
 
       // Mostrar mensaje de éxito y verificación
       setUserEmail(formData.email)
       setRegistrationSuccess(true)
     } catch (err: any) {
-      setError(err.message)
+      console.error("Error en registro:", err)
+      setError(err.message || "Error desconocido al crear la cuenta. Por favor intenta de nuevo.")
     } finally {
       setIsLoading(false)
     }
