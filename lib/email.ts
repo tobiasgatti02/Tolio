@@ -25,7 +25,7 @@ export async function sendVerificationEmail({
 
   try {
     const { data, error } = await resend.emails.send({
-      from: 'Tolio <onboarding@resend.dev>', // En producción: tu dominio verificado
+      from: 'Tolio <no-reply@tolio.app>', // En producción: tu dominio verificado
       to: [email],
       subject: '¡Verifica tu cuenta en Tolio!',
       html: `
