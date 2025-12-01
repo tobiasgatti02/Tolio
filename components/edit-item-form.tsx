@@ -9,6 +9,7 @@ import {
   X, Upload, Loader2, Plus, Trash2, MapPin, DollarSign, 
   Camera, Sparkles, CheckCircle, AlertCircle, Info, Package, ArrowLeft
 } from 'lucide-react'
+import { provincias, getCiudades } from '@/lib/argentina-locations'
 
 // Importar MapLocationPicker dinámicamente para evitar problemas con SSR
 const MapLocationPicker = dynamic(() => import("./map-location-picker"), { ssr: false })
@@ -58,6 +59,19 @@ export default function EditItemForm({ item }: EditItemFormProps) {
   })
   const [showMap, setShowMap] = useState(item.latitude !== null && item.longitude !== null)
 
+  // Parsear ubicación existente para extraer provincia y ciudad
+  const parseLocation = (location: string) => {
+    const parts = location.split(', ')
+    if (parts.length >= 2) {
+      return { ciudad: parts[0], provincia: parts[1] }
+    }
+    return { ciudad: '', provincia: '' }
+  }
+  const initialLocation = parseLocation(item.location || '')
+  const [selectedProvincia, setSelectedProvincia] = useState(initialLocation.provincia)
+  const [selectedCiudad, setSelectedCiudad] = useState(initialLocation.ciudad)
+  const [ciudades, setCiudades] = useState<string[]>(initialLocation.provincia ? getCiudades(initialLocation.provincia) : [])
+
   // Imágenes existentes (URLs base64 o URLs)
   const [existingImages, setExistingImages] = useState<string[]>(item.images || [])
   // Nuevas imágenes a subir
@@ -67,6 +81,7 @@ export default function EditItemForm({ item }: EditItemFormProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<FormData & { images: string }>>({})
+  const [imageErrors, setImageErrors] = useState<string[]>([])
   const [newFeature, setNewFeature] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [cropImage, setCropImage] = useState<string | null>(null)
@@ -98,18 +113,36 @@ export default function EditItemForm({ item }: EditItemFormProps) {
     }
   }
 
+  // Tamaño máximo de imagen: 5MB
+  const MAX_IMAGE_SIZE = 5 * 1024 * 1024
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const filesArray = Array.from(e.target.files)
       
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+      const newImageErrors: string[] = []
       const validFiles = filesArray.filter((file) => {
         const isValidType = allowedTypes.includes(file.type.toLowerCase())
         if (!isValidType) {
-          alert(`Formato no soportado: ${file.name}. Solo se permiten JPG, PNG y WebP.`)
+          newImageErrors.push(`"${file.name}": Formato no soportado. Solo se permiten JPG, PNG y WebP.`)
+          return false
         }
-        return isValidType
+        
+        // Validar tamaño de imagen
+        if (file.size > MAX_IMAGE_SIZE) {
+          const sizeMB = (file.size / (1024 * 1024)).toFixed(2)
+          newImageErrors.push(`"${file.name}": Imagen demasiado grande (${sizeMB}MB). Máximo 5MB.`)
+          return false
+        }
+        
+        return true
       })
+      
+      // Guardar errores para mostrar en el paso 3
+      if (newImageErrors.length > 0) {
+        setImageErrors(prev => [...prev, ...newImageErrors])
+      }
 
       if (validFiles.length === 0) {
         return
@@ -547,7 +580,7 @@ export default function EditItemForm({ item }: EditItemFormProps) {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Depósito de Seguridad
+                    Depósito de Seguridad (opcional)
                   </label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -563,29 +596,68 @@ export default function EditItemForm({ item }: EditItemFormProps) {
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Se devuelve al finalizar el préstamo si no hay daños
+                    Se devuelve al finalizar el préstamo si no hay daños. Déjalo en 0 si no lo requieres.
                   </p>
                 </div>
               </div>
 
-              {/* Location */}
+              {/* Location - Provincia y Ciudad */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Ubicación *
                 </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                      errors.location ? 'border-red-300' : 'border-gray-200'
-                    }`}
-                    placeholder="Ej: Palermo, CABA"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <select
+                      value={selectedProvincia}
+                      onChange={(e) => {
+                        const provincia = e.target.value
+                        setSelectedProvincia(provincia)
+                        setSelectedCiudad("")
+                        setCiudades(getCiudades(provincia))
+                        setFormData(prev => ({ ...prev, location: "" }))
+                      }}
+                      className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                        errors.location && !selectedProvincia ? 'border-red-300' : 'border-gray-200'
+                      }`}
+                    >
+                      <option value="">Selecciona provincia</option>
+                      {provincias.map((provincia) => (
+                        <option key={provincia} value={provincia}>{provincia}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <select
+                      value={selectedCiudad}
+                      onChange={(e) => {
+                        const ciudad = e.target.value
+                        setSelectedCiudad(ciudad)
+                        if (ciudad && selectedProvincia) {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            location: `${ciudad}, ${selectedProvincia}` 
+                          }))
+                        }
+                      }}
+                      disabled={!selectedProvincia}
+                      className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                        errors.location && !selectedCiudad ? 'border-red-300' : 'border-gray-200'
+                      } ${!selectedProvincia ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    >
+                      <option value="">Selecciona ciudad</option>
+                      {ciudades.map((ciudad) => (
+                        <option key={ciudad} value={ciudad}>{ciudad}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+                {formData.location && (
+                  <p className="text-sm text-green-600 mt-2 flex items-center">
+                    <MapPin className="w-4 h-4 mr-1" />
+                    {formData.location}
+                  </p>
+                )}
                 {errors.location && (
                   <p className="text-red-500 text-sm mt-1 flex items-center">
                     <AlertCircle className="w-4 h-4 mr-1" />
@@ -624,6 +696,30 @@ export default function EditItemForm({ item }: EditItemFormProps) {
                   </div>
                 )}
               </div>
+
+              {/* Errores de imágenes */}
+              {imageErrors.length > 0 && (
+                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-red-800 mb-2">Problemas con las imágenes:</p>
+                      <ul className="text-sm text-red-700 space-y-1">
+                        {imageErrors.map((error, index) => (
+                          <li key={index}>• {error}</li>
+                        ))}
+                      </ul>
+                      <button
+                        type="button"
+                        onClick={() => setImageErrors([])}
+                        className="text-sm text-red-600 hover:text-red-800 mt-2 underline"
+                      >
+                        Limpiar errores
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Features */}
               <div>
