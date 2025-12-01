@@ -218,7 +218,7 @@ export default function MyContentClient({ userId }: MyContentClientProps) {
     return (
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Mis Artículos y Servicios</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Mis Publicaciones</h1>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (

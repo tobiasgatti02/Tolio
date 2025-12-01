@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { X, Package, Briefcase } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface PublishModalProps {
   isOpen: boolean
@@ -13,6 +13,7 @@ interface PublishModalProps {
 export default function PublishModal({ isOpen, onClose }: PublishModalProps) {
   const router = useRouter()
   const t = useTranslations('common');
+  const locale = useLocale();
   if (!isOpen) return null
 
   return (
@@ -33,7 +34,7 @@ export default function PublishModal({ isOpen, onClose }: PublishModalProps) {
           <button
             onClick={() => {
               onClose()
-              router.push("/items/nuevo")
+              router.push(`/${locale}/items/nuevo`)
             }}
             className="group relative bg-gradient-to-br from-emerald-50 to-emerald-100 hover:from-emerald-100 hover:to-emerald-200 rounded-2xl p-8 border-2 border-emerald-200 hover:border-emerald-400 transition-all duration-300 hover:shadow-xl hover:scale-105"
           >
@@ -54,7 +55,7 @@ export default function PublishModal({ isOpen, onClose }: PublishModalProps) {
           <button
             onClick={() => {
               onClose()
-              router.push("/services/nuevo")
+              router.push(`/${locale}/services/nuevo`)
             }}
             className="group relative bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-2xl p-8 border-2 border-blue-200 hover:border-blue-400 transition-all duration-300 hover:shadow-xl hover:scale-105"
           >

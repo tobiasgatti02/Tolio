@@ -39,6 +39,28 @@ interface NotificationItem {
   actionUrl?: string
 }
 
+// Helper para traducciones seguras - convierte cualquier resultado a string
+function useSafeTranslations(namespace: string) {
+  const t = useTranslations(namespace)
+  return (key: string, params?: Record<string, string | number>) => {
+    try {
+      const result = t(key, params as any)
+      // Si el resultado es un objeto (traducción no encontrada o namespace completo), devolver el key
+      if (result === null || result === undefined) {
+        return key
+      }
+      if (typeof result === 'object') {
+        console.warn(`[i18n] Translation "${namespace}.${key}" returned an object instead of string`)
+        return key
+      }
+      return String(result)
+    } catch (err) {
+      console.warn(`[i18n] Error getting translation "${namespace}.${key}":`, err)
+      return key
+    }
+  }
+}
+
 export default function CleanDashboard({ 
   user, 
   children 
@@ -46,8 +68,7 @@ export default function CleanDashboard({
   user: any
   children?: React.ReactNode
 }) {
-  const t = useTranslations('common.dashboard')
-  const tOverview = useTranslations('common.dashboard.overview')
+  const t = useSafeTranslations('common.dashboard')
   const locale = useLocale()
   const pathname = usePathname()
   const router = useRouter()

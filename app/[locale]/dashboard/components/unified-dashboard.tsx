@@ -227,7 +227,7 @@ export default function UnifiedDashboard({
 
   const sidebarItems = [
     { id: 'overview', label: 'Resumen', icon: Home, path: '/dashboard' },
-    { id: 'items', label: 'Mis Artículos', icon: Package, path: '/dashboard/my-items' },
+    { id: 'items', label: 'Mis Publicaciones', icon: Package, path: '/dashboard/my-items' },
     { id: 'bookings', label: 'Reservas', icon: Calendar, path: '/dashboard/bookings' },
     { id: 'sales', label: 'Ventas', icon: TrendingUp, path: '/dashboard/sales' },
     { id: 'expenses', label: 'Gastos', icon: CreditCard, path: '/dashboard/expenses' },
@@ -447,7 +447,7 @@ export default function UnifiedDashboard({
                 {/* Recent Items */}
                 <div className="xl:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-gray-900">Mis Artículos Recientes</h2>
+                    <h2 className="text-xl font-bold text-gray-900">Mis Publicaciones Recientes</h2>
                     <Link 
                       href="/dashboard/my-items"
                       className="text-emerald-600 hover:text-emerald-700 font-medium text-sm"

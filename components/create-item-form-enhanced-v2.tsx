@@ -242,9 +242,16 @@ export default function CreateItemFormEnhanced() {
       <div className="max-w-3xl mx-auto">
         {/* Progress Bar */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between relative">
+            {/* Línea de fondo que conecta todos los pasos */}
+            <div className="absolute top-5 left-5 right-5 h-1 bg-gray-200 -z-10" />
+            <div 
+              className="absolute top-5 left-5 h-1 bg-blue-600 -z-10 transition-all duration-300"
+              style={{ width: `calc(${((currentStep - 1) / 2) * 100}% - 20px)` }}
+            />
+            
             {[1, 2, 3].map((step) => (
-              <div key={step} className="flex items-center">
+              <div key={step} className="flex flex-col items-center z-10">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
                     currentStep >= step
@@ -254,20 +261,11 @@ export default function CreateItemFormEnhanced() {
                 >
                   {currentStep > step ? <CheckCircle className="h-6 w-6" /> : step}
                 </div>
-                {step < 3 && (
-                  <div
-                    className={`w-24 h-1 mx-2 transition-all ${
-                      currentStep > step ? 'bg-blue-600' : 'bg-gray-200'
-                    }`}
-                  />
-                )}
+                <span className="text-sm text-gray-600 mt-2">
+                  {step === 1 ? 'Información' : step === 2 ? 'Imágenes' : 'Detalles'}
+                </span>
               </div>
             ))}
-          </div>
-          <div className="flex justify-between text-sm text-gray-600">
-            <span>Información</span>
-            <span>Imágenes</span>
-            <span>Detalles</span>
           </div>
         </div>
 

@@ -102,7 +102,7 @@ export default function MyItemsClient({ userId }: MyItemsClientProps) {
     return (
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Mis Artículos</h1>
+          <h1 className="text-3xl font-bold">Mis Publicaciones</h1>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
@@ -143,7 +143,7 @@ export default function MyItemsClient({ userId }: MyItemsClientProps) {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Mis Artículos</h1>
+        <h1 className="text-3xl font-bold">Mis Publicaciones</h1>
         <Link href="/items/nuevo">
           <Button>
             <PlusCircle className="h-4 w-4 mr-2" />

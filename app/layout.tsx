@@ -30,6 +30,7 @@ export default function RootLayout({
     <html lang="es" className={`${inter.variable} ${manrope.variable} ${jetbrainsMono.variable} ${playfair.variable}`}>
       <body className="font-sans antialiased">
           <main className="min-h-screen">{children}</main>
+          <Analytics />
       </body>
     </html>
   )

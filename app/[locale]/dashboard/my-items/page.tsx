@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import MyContentClient from "./my-content-client";
 
 export const metadata = {
-  title: "Mis Artículos y Servicios | Tolio",
+  title: "Mis Publicaciones | Tolio",
   description: "Gestiona tus herramientas y servicios publicados",
 };
 

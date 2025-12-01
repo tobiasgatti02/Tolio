@@ -1,30 +1,18 @@
 /**
- * Servicio de moderación de imágenes usando NSFWJS
+ * Servicio de moderación de imágenes
  * Detecta contenido inapropiado: pornografía, desnudos, contenido sugestivo
  * 
- * Categorías detectadas:
- * - Porn: Contenido pornográfico explícito
- * - Sexy: Contenido sexualmente sugestivo
- * - Hentai: Anime/dibujos de contenido sexual
- * - Neutral: Contenido seguro
- * - Drawing: Dibujos/arte no sexual
+ * Opciones disponibles:
+ * 1. Sightengine API (500 ops/mes gratis) - Recomendado
+ * 2. Moderatecontent.com (gratis, ilimitado)
+ * 
+ * Para activar, configura las variables de entorno:
+ * - SIGHTENGINE_API_USER
+ * - SIGHTENGINE_API_SECRET
+ * 
+ * O usa Moderatecontent (gratis):
+ * - MODERATECONTENT_API_KEY
  */
-
-// @ts-ignore - tfjs-node no tiene tipos perfectos
-import * as tf from '@tensorflow/tfjs-node';
-// @ts-ignore - nsfwjs tipos
-import * as nsfwjs from 'nsfwjs';
-
-// Singleton para el modelo (cargarlo una sola vez)
-let model: nsfwjs.NSFWJS | null = null;
-let modelLoading: Promise<nsfwjs.NSFWJS> | null = null;
-
-// Umbrales de detección (ajustables)
-const THRESHOLDS = {
-  porn: 0.3,      // Muy estricto con pornografía
-  sexy: 0.5,      // Moderado con contenido sugestivo  
-  hentai: 0.4,    // Estricto con hentai
-};
 
 export interface ModerationResult {
   isAllowed: boolean;
@@ -36,94 +24,108 @@ export interface ModerationResult {
   flaggedCategories: string[];
 }
 
+// Umbrales de detección
+const THRESHOLDS = {
+  nudity: 0.5,
+  adult: 0.5,
+  violence: 0.6,
+};
+
 /**
- * Carga el modelo NSFWJS (singleton)
+ * Modera una imagen usando Sightengine API
+ * Configurar: SIGHTENGINE_API_USER y SIGHTENGINE_API_SECRET
  */
-async function loadModel(): Promise<nsfwjs.NSFWJS> {
-  if (model) {
-    return model;
+async function moderateWithSightengine(imageBuffer: Buffer): Promise<ModerationResult> {
+  const apiUser = process.env.SIGHTENGINE_API_USER;
+  const apiSecret = process.env.SIGHTENGINE_API_SECRET;
+
+  if (!apiUser || !apiSecret) {
+    console.log('[ImageModeration] Sightengine no configurado, imagen permitida por defecto');
+    return {
+      isAllowed: true,
+      reason: 'Moderación no configurada',
+      predictions: [],
+      flaggedCategories: [],
+    };
   }
 
-  if (modelLoading) {
-    return modelLoading;
-  }
-
-  modelLoading = (async () => {
-    console.log('[ImageModeration] Cargando modelo NSFWJS...');
-    // Usar el modelo más ligero para mejor rendimiento
-    model = await nsfwjs.load('MobileNetV2Mid');
-    console.log('[ImageModeration] Modelo cargado correctamente');
-    return model;
-  })();
-
-  return modelLoading;
-}
-
-/**
- * Convierte un Buffer de imagen a tensor de TensorFlow
- */
-async function bufferToTensor(buffer: Buffer): Promise<tf.Tensor3D> {
-  // Decodificar la imagen usando tfjs-node
-  const decoded = tf.node.decodeImage(buffer, 3);
-  return decoded as tf.Tensor3D;
-}
-
-/**
- * Modera una imagen desde un Buffer
- * @param imageBuffer - Buffer de la imagen a moderar
- * @returns Resultado de la moderación
- */
-export async function moderateImage(imageBuffer: Buffer): Promise<ModerationResult> {
   try {
-    const nsfwModel = await loadModel();
-    
-    // Convertir buffer a tensor
-    const imageTensor = await bufferToTensor(imageBuffer);
-    
-    // Clasificar la imagen
-    const predictions = await nsfwModel.classify(imageTensor);
-    
-    // Liberar memoria del tensor
-    imageTensor.dispose();
-    
-    // Verificar categorías problemáticas
+    const formData = new FormData();
+    // Convertir Buffer a Uint8Array para crear el Blob
+    const uint8Array = new Uint8Array(imageBuffer);
+    const blob = new Blob([uint8Array], { type: 'image/jpeg' });
+    formData.append('media', blob, 'image.jpg');
+    formData.append('models', 'nudity-2.1,weapon,recreational_drug,gore-2.0');
+    formData.append('api_user', apiUser);
+    formData.append('api_secret', apiSecret);
+
+    const response = await fetch('https://api.sightengine.com/1.0/check.json', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Sightengine API error: ${response.status}`);
+    }
+
+    const result = await response.json();
     const flaggedCategories: string[] = [];
-    let isAllowed = true;
-    let reason: string | undefined;
+    const predictions: { className: string; probability: number }[] = [];
 
-    for (const prediction of predictions) {
-      const className = prediction.className.toLowerCase();
-      const probability = prediction.probability;
-
-      if (className === 'porn' && probability >= THRESHOLDS.porn) {
-        flaggedCategories.push('Contenido pornográfico');
-        isAllowed = false;
-      } else if (className === 'sexy' && probability >= THRESHOLDS.sexy) {
-        flaggedCategories.push('Contenido sexualmente sugestivo');
-        isAllowed = false;
-      } else if (className === 'hentai' && probability >= THRESHOLDS.hentai) {
-        flaggedCategories.push('Contenido hentai/anime adulto');
-        isAllowed = false;
+    // Verificar nudity
+    if (result.nudity) {
+      const nudityScore = Math.max(
+        result.nudity.sexual_activity || 0,
+        result.nudity.sexual_display || 0,
+        result.nudity.erotica || 0
+      );
+      predictions.push({ className: 'nudity', probability: nudityScore });
+      if (nudityScore > THRESHOLDS.nudity) {
+        flaggedCategories.push('Contenido con desnudez o sexual');
       }
     }
 
-    if (!isAllowed) {
-      reason = `Imagen rechazada: ${flaggedCategories.join(', ')}`;
+    // Verificar armas
+    if (result.weapon && result.weapon.classes) {
+      const weaponScore = Math.max(
+        result.weapon.classes.firearm || 0,
+        result.weapon.classes.knife || 0
+      );
+      predictions.push({ className: 'weapon', probability: weaponScore });
+      if (weaponScore > 0.5) {
+        flaggedCategories.push('Armas detectadas');
+      }
     }
+
+    // Verificar drogas
+    if (result.recreational_drug) {
+      const drugScore = result.recreational_drug.prob || 0;
+      predictions.push({ className: 'drugs', probability: drugScore });
+      if (drugScore > 0.5) {
+        flaggedCategories.push('Contenido relacionado con drogas');
+      }
+    }
+
+    // Verificar gore/violencia
+    if (result.gore) {
+      const goreScore = result.gore.prob || 0;
+      predictions.push({ className: 'gore', probability: goreScore });
+      if (goreScore > THRESHOLDS.violence) {
+        flaggedCategories.push('Contenido violento/gore');
+      }
+    }
+
+    const isAllowed = flaggedCategories.length === 0;
 
     return {
       isAllowed,
-      reason,
-      predictions: predictions.map((p: { className: string; probability: number }) => ({
-        className: p.className,
-        probability: p.probability,
-      })),
+      reason: isAllowed ? undefined : `Imagen rechazada: ${flaggedCategories.join(', ')}`,
+      predictions,
       flaggedCategories,
     };
   } catch (error) {
-    console.error('[ImageModeration] Error moderando imagen:', error);
-    // En caso de error, permitir la imagen pero logear el error
-    // Puedes cambiar esto a rechazar por defecto si prefieres más seguridad
+    console.error('[ImageModeration] Error con Sightengine:', error);
+    // En caso de error, permitir la imagen
     return {
       isAllowed: true,
       reason: 'Error en moderación - imagen permitida por defecto',
@@ -134,13 +136,103 @@ export async function moderateImage(imageBuffer: Buffer): Promise<ModerationResu
 }
 
 /**
+ * Modera una imagen usando Moderatecontent.com (gratis, ilimitado)
+ * Configurar: MODERATECONTENT_API_KEY (obtener en moderatecontent.com)
+ */
+async function moderateWithModeratecontent(imageBuffer: Buffer): Promise<ModerationResult> {
+  const apiKey = process.env.MODERATECONTENT_API_KEY;
+
+  if (!apiKey) {
+    console.log('[ImageModeration] Moderatecontent no configurado');
+    return {
+      isAllowed: true,
+      reason: 'Moderación no configurada',
+      predictions: [],
+      flaggedCategories: [],
+    };
+  }
+
+  try {
+    // Convertir a base64
+    const base64Image = imageBuffer.toString('base64');
+    
+    const response = await fetch(`https://api.moderatecontent.com/moderate/?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `url=data:image/jpeg;base64,${base64Image}`,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Moderatecontent API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const flaggedCategories: string[] = [];
+    const predictions: { className: string; probability: number }[] = [];
+
+    // rating_index: 1 = everyone, 2 = teen, 3 = adult
+    const ratingIndex = result.rating_index || 1;
+    predictions.push({ className: 'adult_content', probability: ratingIndex / 3 });
+
+    if (ratingIndex >= 3) {
+      flaggedCategories.push('Contenido para adultos');
+    }
+
+    const isAllowed = flaggedCategories.length === 0;
+
+    return {
+      isAllowed,
+      reason: isAllowed ? undefined : `Imagen rechazada: ${flaggedCategories.join(', ')}`,
+      predictions,
+      flaggedCategories,
+    };
+  } catch (error) {
+    console.error('[ImageModeration] Error con Moderatecontent:', error);
+    return {
+      isAllowed: true,
+      reason: 'Error en moderación - imagen permitida por defecto',
+      predictions: [],
+      flaggedCategories: [],
+    };
+  }
+}
+
+/**
+ * Modera una imagen desde un Buffer
+ * Usa Sightengine si está configurado, sino Moderatecontent, sino permite todo
+ * @param imageBuffer - Buffer de la imagen a moderar
+ * @returns Resultado de la moderación
+ */
+export async function moderateImage(imageBuffer: Buffer): Promise<ModerationResult> {
+  // Intentar con Sightengine primero (más completo)
+  if (process.env.SIGHTENGINE_API_USER && process.env.SIGHTENGINE_API_SECRET) {
+    return moderateWithSightengine(imageBuffer);
+  }
+
+  // Fallback a Moderatecontent
+  if (process.env.MODERATECONTENT_API_KEY) {
+    return moderateWithModeratecontent(imageBuffer);
+  }
+
+  // Si no hay API configurada, permitir por defecto
+  console.log('[ImageModeration] No hay servicio de moderación configurado. Imagen permitida.');
+  return {
+    isAllowed: true,
+    reason: 'Sin servicio de moderación configurado',
+    predictions: [],
+    flaggedCategories: [],
+  };
+}
+
+/**
  * Modera una imagen desde una URL base64 (data URL)
  * @param dataUrl - Data URL de la imagen (ej: data:image/jpeg;base64,...)
  * @returns Resultado de la moderación
  */
 export async function moderateImageFromDataUrl(dataUrl: string): Promise<ModerationResult> {
   try {
-    // Extraer el base64 del data URL
     const base64Data = dataUrl.split(',')[1];
     if (!base64Data) {
       throw new Error('Data URL inválido');

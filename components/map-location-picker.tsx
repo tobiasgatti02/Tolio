@@ -57,24 +57,21 @@ export default function MapLocationPicker({
       }
       setMapEvents(() => MapEventsComponent)
       
-      // Crear icono personalizado con animación - color naranja del tema
+      // Crear icono personalizado - color naranja del tema
+      // Usando iconAnchor correcto para que el pin apunte exactamente a la ubicación
       const icon = L.divIcon({
         className: 'custom-map-marker',
         html: `
-          <div class="relative">
-            <div class="absolute -top-12 -left-6 animate-bounce">
-              <div class="relative">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="hsl(25 95% 53%)" stroke="hsl(25 95% 43%)" stroke-width="1.5"/>
-                  <circle cx="12" cy="9" r="2.5" fill="white"/>
-                </svg>
-                <div class="absolute top-0 left-0 w-12 h-12 rounded-full opacity-30 animate-ping" style="background-color: hsl(25 95% 53%);"></div>
-              </div>
-            </div>
+          <div style="position: relative; width: 40px; height: 40px;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#f97316" stroke="#ea580c" stroke-width="1.5"/>
+              <circle cx="12" cy="9" r="2.5" fill="white"/>
+            </svg>
           </div>
         `,
-        iconSize: [48, 48],
-        iconAnchor: [24, 48],
+        iconSize: [40, 40],
+        iconAnchor: [20, 40], // Centro horizontal, parte inferior del pin
+        popupAnchor: [0, -40],
       })
       setCustomIcon(icon)
     })
@@ -167,15 +164,7 @@ export default function MapLocationPicker({
         </MapContainer>
       </div>
 
-      {position && (
-        <div className="text-xs text-gray-500 bg-emerald-50 p-3 rounded-lg border border-emerald-200 flex items-start gap-2">
-          <MapPin className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium text-emerald-800">Ubicación seleccionada</p>
-            <p className="text-gray-600">{position[0].toFixed(6)}, {position[1].toFixed(6)}</p>
-          </div>
-        </div>
-      )}
+      
     </div>
   )
 }
