@@ -4,6 +4,7 @@ import { authOptions } from "../auth/[...nextauth]/route"
 import { prisma } from "@/lib/utils"
 import { calculateDistance, isValidCoordinates } from "@/lib/geo-utils"
 import sharp from "sharp"
+import { moderateImage } from "@/lib/image-moderation"
 
 // GET: Obtener todos los items con filtros
 export async function GET(request: Request) {
@@ -203,6 +204,7 @@ export async function POST(request: Request) {
     // Procesar imágenes con validación robusta
     const imageFiles = formData.getAll('images') as File[]
     const imageUrls: string[] = []
+    const rejectedImages: string[] = []
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
     console.log(`🖼️  Procesando ${imageFiles.length} imágenes`)
@@ -233,6 +235,20 @@ export async function POST(request: Request) {
 
           const buffer = Buffer.from(await imageFile.arrayBuffer())
 
+          // 🔒 MODERACIÓN DE CONTENIDO - Verificar que la imagen sea apropiada
+          try {
+            const moderationResult = await moderateImage(buffer)
+            if (!moderationResult.isAllowed) {
+              console.warn(`🚫 [Moderación] Imagen ${i + 1} rechazada: ${moderationResult.reason}`)
+              rejectedImages.push(moderationResult.reason || 'Contenido inapropiado detectado')
+              continue // Saltar esta imagen
+            }
+            console.log(`✅ [Moderación] Imagen ${i + 1} aprobada`)
+          } catch (moderationError) {
+            console.error(`⚠️ [Moderación] Error al moderar imagen ${i + 1}:`, moderationError)
+            // Si falla la moderación, permitir la imagen (fail-open)
+          }
+
           // Optimizar imagen con Sharp
           const optimizedBuffer = await sharp(buffer)
             .resize({ width: 1200, withoutEnlargement: true })
@@ -250,6 +266,14 @@ export async function POST(request: Request) {
           continue
         }
       }
+    }
+
+    // Si todas las imágenes fueron rechazadas por contenido inapropiado
+    if (rejectedImages.length > 0 && imageUrls.length === 0 && imageFiles.length > 0) {
+      return NextResponse.json({
+        error: "Todas las imágenes fueron rechazadas por contenido inapropiado",
+        details: rejectedImages,
+      }, { status: 400 })
     }
 
     if (imageUrls.length === 0) {
@@ -354,6 +378,7 @@ export async function PUT(request: Request) {
     // Procesar imágenes
     const imageFiles = formData.getAll('images') as File[]
     const imageUrls: string[] = []
+    const rejectedImages: string[] = []
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
     if (imageFiles && imageFiles.length > 0) {
@@ -367,6 +392,18 @@ export async function PUT(request: Request) {
 
         try {
           const buffer = Buffer.from(await imageFile.arrayBuffer())
+
+          // 🔒 MODERACIÓN DE CONTENIDO
+          try {
+            const moderationResult = await moderateImage(buffer)
+            if (!moderationResult.isAllowed) {
+              console.warn(`🚫 [Moderación] Imagen rechazada: ${moderationResult.reason}`)
+              rejectedImages.push(moderationResult.reason || 'Contenido inapropiado detectado')
+              continue
+            }
+          } catch (moderationError) {
+            console.error('[Moderación] Error al moderar imagen:', moderationError)
+          }
 
           const optimizedBuffer = await sharp(buffer)
             .resize({ width: 1200, withoutEnlargement: true })
@@ -382,6 +419,14 @@ export async function PUT(request: Request) {
           continue
         }
       }
+    }
+
+    // Si todas las imágenes nuevas fueron rechazadas
+    if (rejectedImages.length > 0 && imageUrls.length === 0 && imageFiles.length > 0) {
+      return NextResponse.json({
+        error: "Todas las imágenes fueron rechazadas por contenido inapropiado",
+        details: rejectedImages,
+      }, { status: 400 })
     }
 
     // Actualizar item

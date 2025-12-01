@@ -35,6 +35,7 @@ export default function StripeAccountCheck() {
   }
 
   return (
+    {/** 
     <Card className="border-yellow-300 bg-yellow-50 mb-6">
       <CardContent className="pt-6">
         <div className="flex items-start gap-3">
@@ -60,5 +61,6 @@ export default function StripeAccountCheck() {
         </div>
       </CardContent>
     </Card>
+    **/}
   )
 }

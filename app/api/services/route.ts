@@ -4,6 +4,7 @@ import { authOptions } from "../auth/[...nextauth]/route"
 import { prisma } from "@/lib/utils"
 import { calculateDistance, isValidCoordinates } from "@/lib/geo-utils"
 import sharp from "sharp"
+import { moderateImage } from "@/lib/image-moderation"
 
 export async function GET(request: Request) {
   try {
@@ -159,6 +160,7 @@ export async function POST(request: Request) {
 
     const imageFiles = formData.getAll('images') as File[]
     const imageUrls: string[] = []
+    const rejectedImages: string[] = []
 
     if (imageFiles && imageFiles.length > 0) {
       for (const imageFile of imageFiles) {
@@ -171,6 +173,20 @@ export async function POST(request: Request) {
             if (!allowedTypes.includes(imageFile.type.toLowerCase())) {
               console.warn(`Formato no soportado: ${imageFile.type}. Saltando...`)
               continue
+            }
+
+            // 🔒 MODERACIÓN DE CONTENIDO - Verificar que la imagen sea apropiada
+            try {
+              const moderationResult = await moderateImage(buffer)
+              if (!moderationResult.isAllowed) {
+                console.warn(`[Moderación] Imagen rechazada: ${moderationResult.reason}`)
+                rejectedImages.push(moderationResult.reason || 'Contenido inapropiado detectado')
+                continue // Saltar esta imagen
+              }
+            } catch (moderationError) {
+              console.error('[Moderación] Error al moderar imagen:', moderationError)
+              // Si falla la moderación, permitir la imagen (fail-open)
+              // Puedes cambiar a 'continue' si prefieres rechazar en caso de error (fail-closed)
             }
 
             // Guardar imagen original sin procesamiento (como la subió el usuario)
@@ -186,6 +202,14 @@ export async function POST(request: Request) {
           }
         }
       }
+    }
+
+    // Si todas las imágenes fueron rechazadas por contenido inapropiado
+    if (rejectedImages.length > 0 && imageUrls.length === 0 && imageFiles.length > 0) {
+      return NextResponse.json({
+        error: "Todas las imágenes fueron rechazadas por contenido inapropiado",
+        details: rejectedImages,
+      }, { status: 400 })
     }
 
     const newService = await prisma.service.create({
