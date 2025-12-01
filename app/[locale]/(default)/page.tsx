@@ -166,7 +166,7 @@ export default function Home() {
               Sistema de verificación y reviews que genera confianza entre usuarios
             </p>
           </div>
-          <div className="grid md:grid-cols-2 gap-16 items-center">
+          <div className="grid md:grid-cols-1 gap-16 items-center">
             <div className="space-y-8">
               <div>
                 <h3 className="text-3xl font-black mb-6 text-gray-900">Sistema de confianza</h3>
