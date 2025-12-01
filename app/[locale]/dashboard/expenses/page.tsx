@@ -69,7 +69,7 @@ export default function ExpensesPanel() {
               onClick={() => setTimeRange(range)}
               className={`px-6 py-2 rounded-lg font-semibold transition-all ${
                 timeRange === range
-                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md"
+                  ? "bg-[hsl(221_83%_53%)] text-white shadow-md"
                   : "text-gray-600 hover:bg-gray-50"
               }`}
             >
@@ -84,7 +84,7 @@ export default function ExpensesPanel() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Total Expenses */}
-        <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-3xl shadow-xl p-8 text-white">
+        <div className="bg-gradient-to-br from-[hsl(221_83%_53%)] to-[hsl(221_83%_43%)] rounded-3xl shadow-xl p-8 text-white">
           <div className="flex items-center justify-between mb-4">
             <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
               <CreditCard className="w-8 h-8" />
@@ -181,7 +181,7 @@ export default function ExpensesPanel() {
       </div>
 
       {/* Top Expenses */}
-      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl shadow-lg border border-purple-200 p-8">
+      <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-3xl shadow-lg border border-blue-200 p-8">
         <h2 className="text-2xl font-black text-gray-900 mb-6">Mayores Gastos</h2>
         <div className="space-y-4">
           {expensesData.topExpenses.map((expense, idx) => (
@@ -190,12 +190,12 @@ export default function ExpensesPanel() {
               className="flex items-center justify-between bg-white rounded-xl p-4 shadow-sm"
             >
               <div className="flex items-center gap-4">
-                <div className="bg-gradient-to-br from-purple-500 to-pink-600 text-white font-black text-lg w-10 h-10 rounded-xl flex items-center justify-center">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-black text-lg w-10 h-10 rounded-xl flex items-center justify-center">
                   #{idx + 1}
                 </div>
                 <span className="font-semibold text-gray-900">{expense.name}</span>
               </div>
-              <span className="text-lg font-black text-purple-600">
+              <span className="text-lg font-black text-blue-600">
                 ${expense.amount.toLocaleString()}
               </span>
             </div>

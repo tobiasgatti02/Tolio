@@ -10,6 +10,7 @@ import {
   Pause, Play, Wrench, Briefcase, Filter, Search
 } from "lucide-react";
 import Link from "next/link";
+import DeleteConfirmationModal from "@/components/delete-confirmation-modal";
 
 interface ContentItem {
   id: string;
@@ -44,6 +45,13 @@ export default function MyContentClient({ userId }: MyContentClientProps) {
   const [activeTab, setActiveTab] = useState("all");
   const [contentFilter, setContentFilter] = useState<'all' | 'items' | 'services'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    type: 'in-use' | 'pending-bookings' | 'confirm-delete';
+    itemId: string;
+    itemType: 'item' | 'service';
+    itemTitle: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchContent();
@@ -90,28 +98,47 @@ export default function MyContentClient({ userId }: MyContentClientProps) {
     }
   };
 
-  const handleDelete = async (id: string, type: 'item' | 'service') => {
-    const typeName = type === 'item' ? 'herramienta' : 'servicio';
-    
-    if (!confirm(`¿Estás seguro de que quieres eliminar esta ${typeName}?`)) {
-      return;
-    }
+  const handleDelete = async (id: string, type: 'item' | 'service', title: string) => {
+    // Mostrar modal de confirmación inicial
+    setDeleteModal({
+      isOpen: true,
+      type: 'confirm-delete',
+      itemId: id,
+      itemType: type,
+      itemTitle: title
+    });
+  };
+
+  const executeDelete = async () => {
+    if (!deleteModal) return;
+
+    const { itemId, itemType } = deleteModal;
 
     try {
-      const response = await fetch(`/api/dashboard/my-content/${id}?type=${type}`, {
+      const response = await fetch(`/api/dashboard/my-content/${itemId}?type=${itemType}`, {
         method: "DELETE",
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Error al eliminar");
+        // Verificar si es error de item en uso
+        if (result.code === "IN_USE") {
+          setDeleteModal({
+            ...deleteModal,
+            type: 'in-use'
+          });
+          return;
+        }
+        throw new Error(result.message || "Error al eliminar");
       }
 
-      const result = await response.json();
-      alert(result.message);
+      // Éxito - cerrar modal y actualizar lista
+      setDeleteModal(null);
       fetchContent();
     } catch (error: any) {
       console.error("Error deleting:", error);
+      setDeleteModal(null);
       alert(error.message || "Error al eliminar");
     }
   };
@@ -234,7 +261,7 @@ export default function MyContentClient({ userId }: MyContentClientProps) {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mis Artículos y Servicios</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Mis Publicaciones</h1>
           <p className="text-gray-600 mt-1">Gestiona tus herramientas y servicios publicados</p>
         </div>
         <div className="flex gap-2">
@@ -543,7 +570,7 @@ export default function MyContentClient({ userId }: MyContentClientProps) {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(content.id, content.type)}
+                        onClick={() => handleDelete(content.id, content.type, content.title)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         title="Eliminar"
                       >
@@ -557,6 +584,18 @@ export default function MyContentClient({ userId }: MyContentClientProps) {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal && (
+        <DeleteConfirmationModal
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal(null)}
+          onConfirm={executeDelete}
+          type={deleteModal.type}
+          itemType={deleteModal.itemType}
+          itemTitle={deleteModal.itemTitle}
+        />
+      )}
     </div>
   );
 }

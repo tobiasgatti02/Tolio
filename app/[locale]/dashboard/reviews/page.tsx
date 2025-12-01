@@ -295,7 +295,7 @@ export default async function ReviewsPage() {
         ) : (
           <div className="divide-y divide-gray-200">
             {reviews.map((review) => (
-              <div key={review.id} className="p-6">
+              <div key={`${review.id}-${review.type}`} className="p-6">
                 <div className="flex items-start space-x-4">
                   {/* Reviewer avatar */}
                   <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">

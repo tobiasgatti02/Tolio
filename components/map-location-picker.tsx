@@ -57,7 +57,7 @@ export default function MapLocationPicker({
       }
       setMapEvents(() => MapEventsComponent)
       
-      // Crear icono personalizado con animación
+      // Crear icono personalizado con animación - color naranja del tema
       const icon = L.divIcon({
         className: 'custom-map-marker',
         html: `
@@ -65,10 +65,10 @@ export default function MapLocationPicker({
             <div class="absolute -top-12 -left-6 animate-bounce">
               <div class="relative">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#059669" stroke="#047857" stroke-width="1.5"/>
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="hsl(25 95% 53%)" stroke="hsl(25 95% 43%)" stroke-width="1.5"/>
                   <circle cx="12" cy="9" r="2.5" fill="white"/>
                 </svg>
-                <div class="absolute top-0 left-0 w-12 h-12 bg-emerald-400 rounded-full opacity-30 animate-ping"></div>
+                <div class="absolute top-0 left-0 w-12 h-12 rounded-full opacity-30 animate-ping" style="background-color: hsl(25 95% 53%);"></div>
               </div>
             </div>
           </div>
@@ -159,8 +159,8 @@ export default function MapLocationPicker({
           scrollWheelZoom={true}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           />
           {MapEvents && <MapEvents />}
           {position && customIcon && <Marker position={position as LatLngExpression} icon={customIcon} />}

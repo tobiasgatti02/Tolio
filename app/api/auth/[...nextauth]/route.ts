@@ -5,6 +5,14 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 
+// Check for required environment variables
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  console.error("⚠️ Missing Google OAuth credentials in environment variables");
+}
+if (!process.env.NEXTAUTH_SECRET) {
+  console.error("⚠️ Missing NEXTAUTH_SECRET in environment variables");
+}
+
 // Extend the built-in session types
 declare module "next-auth" {
   interface Session {
@@ -85,9 +93,22 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
+    error: "/login", // Redirect to login page on error
+  },
+  logger: {
+    error(code, metadata) {
+      console.error(`[NextAuth][Error][${code}]`, metadata);
+    },
+    warn(code) {
+      console.warn(`[NextAuth][Warn][${code}]`);
+    },
+    debug(code, metadata) {
+      console.debug(`[NextAuth][Debug][${code}]`, metadata);
+    },
   },
   callbacks: {
     async signIn({ user, account, profile }) {
+      console.log(`[NextAuth] SignIn callback for user: ${user.email}, provider: ${account?.provider}`);
       // Para OAuth providers (Google/Facebook), marcar como verificado automáticamente
       if (account?.provider !== "credentials") {
         if (user.email) {
@@ -153,6 +174,7 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async createUser({ user }) {
+      console.log(`[NextAuth] createUser event for user: ${user.email}`);
       // Cuando se crea un usuario con OAuth, asegurarse de que tenga los campos necesarios
       if (user.email && user.name) {
         try {
@@ -174,9 +196,12 @@ export const authOptions: NextAuthOptions = {
         }
       }
     },
+    async linkAccount({ user, account, profile }) {
+      console.log(`[NextAuth] linkAccount event for user: ${user.email}, provider: ${account.provider}`);
+    }
   },
   // Configuración adicional para producción
-  debug: process.env.NODE_ENV === 'development',
+  debug: true, // Enable debug logs temporarily
   useSecureCookies: process.env.NODE_ENV === 'production',
 };
 

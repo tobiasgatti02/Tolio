@@ -64,7 +64,7 @@
 
 /* Estilos para marcadores personalizados */
 .custom-marker {
-  background-color: #059669;
+  background-color: hsl(25 95% 53%);
   border: 3px solid white;
   border-radius: 50%;
   width: 30px;
@@ -82,9 +82,9 @@
 
 /* Estilos para el círculo de radio */
 .radius-circle {
-  fill: #059669;
+  fill: hsl(25 95% 53%);
   fill-opacity: 0.1;
-  stroke: #059669;
+  stroke: hsl(25 95% 53%);
   stroke-opacity: 0.5;
   stroke-width: 2;
 }
@@ -116,7 +116,7 @@
   .map-container {
     height: 300px;
   }
-  
+
   .map-container-large {
     height: 400px;
   }

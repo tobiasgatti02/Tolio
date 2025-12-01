@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/utils"
+import { createNotification } from "@/lib/notification-helpers"
 
 export async function PATCH(
   request: NextRequest,
@@ -9,7 +10,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
@@ -19,10 +20,11 @@ export async function PATCH(
     // Verificar que la reserva existe y el usuario es el propietario
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { 
-        item: { 
-          include: { owner: true } 
-        } 
+      include: {
+        item: {
+          include: { owner: true }
+        },
+        borrower: true
       }
     })
 
@@ -44,24 +46,17 @@ export async function PATCH(
       data: { status: "CANCELLED" }
     })
 
-    // Crear notificación para el inquilino
-    await prisma.notification.create({
-      data: {
-        userId: booking.borrowerId,
-        type: "BOOKING_CANCELLED",
-        title: "Reserva rechazada",
-        content: `Tu reserva para "${booking.item.title}" ha sido rechazada`,
-        bookingId: bookingId,
+    // Crear notificación para el inquilino usando el helper
+    await createNotification(
+      booking.borrowerId,
+      'BOOKING_CANCELLED',
+      {
+        bookingId,
         itemId: booking.itemId,
-        actionUrl: `/dashboard/bookings/${bookingId}`,
-        metadata: {
-          bookingId,
-          itemTitle: booking.item.title,
-          ownerName: booking.item.owner.firstName + ' ' + booking.item.owner.lastName,
-          reason: 'rejected_by_owner'
-        }
+        itemTitle: booking.item.title,
+        ownerName: `${booking.item.owner.firstName} ${booking.item.owner.lastName}`.trim()
       }
-    })
+    )
 
     return NextResponse.json(updatedBooking)
   } catch (error) {

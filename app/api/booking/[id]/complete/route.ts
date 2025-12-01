@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/utils"
+import { createNotification } from "@/lib/notification-helpers"
 
 export async function PATCH(
   request: NextRequest,
@@ -9,7 +10,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
@@ -19,11 +20,11 @@ export async function PATCH(
     // Verificar que la reserva existe y el usuario es parte de ella
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { 
-        item: { 
-          include: { owner: true } 
+      include: {
+        item: {
+          include: { owner: true }
         },
-        borrower: true 
+        borrower: true
       }
     })
 
@@ -46,24 +47,18 @@ export async function PATCH(
       data: { status: "COMPLETED" }
     })
 
-    // Crear notificaciones para ambos usuarios
+    // Crear notificación para el otro usuario
     const otherUserId = booking.item.ownerId === userId ? booking.borrowerId : booking.item.ownerId
-    
-    await prisma.notification.create({
-      data: {
-        userId: otherUserId,
-        type: "MESSAGE_RECEIVED",
-        title: "Reserva completada",
-        content: `La reserva para "${booking.item.title}" ha sido completada. ¡Deja tu reseña!`,
-        bookingId: bookingId,
+
+    await createNotification(
+      otherUserId,
+      'BOOKING_COMPLETED',
+      {
+        bookingId,
         itemId: booking.itemId,
-        actionUrl: `/dashboard/bookings/${bookingId}`,
-        metadata: {
-          bookingId,
-          itemTitle: booking.item.title
-        }
+        itemTitle: booking.item.title
       }
-    })
+    )
 
     return NextResponse.json(updatedBooking)
   } catch (error) {

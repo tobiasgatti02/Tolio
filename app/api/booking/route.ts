@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { NextResponse } from "next/server"
 import { cache } from "react"
 import { BookingStatus } from "@prisma/client"
+import { createNotification } from "@/lib/notification-helpers"
 
 // Define the response type
 export type BookingResponse = {
@@ -16,49 +17,49 @@ export type BookingResponse = {
 export async function createBooking(formData: FormData): Promise<BookingResponse> {
   const session = await getServerSession(authOptions)
   if (!session || !session.user || !session.user.id) {
-    return { 
-      success: false, 
-      error: "Unauthorized" 
+    return {
+      success: false,
+      error: "Unauthorized"
     }
   }
 
   const userId = session.user.id
-    
+
   try {
     const itemId = formData.get("itemId") as string
     const startDate = formData.get("startDate") as string
     const endDate = formData.get("endDate") as string
 
     if (isNaN(Date.parse(startDate)) || isNaN(Date.parse(endDate))) {
-      return { 
-        success: false, 
-        error: "Formato de fecha inválido" 
+      return {
+        success: false,
+        error: "Formato de fecha inválido"
       }
     }
 
     if (Date.parse(startDate) > Date.parse(endDate)) {
-      return { 
-        success: false, 
-        error: "La fecha de finalización debe ser posterior a la fecha de inicio" 
+      return {
+        success: false,
+        error: "La fecha de finalización debe ser posterior a la fecha de inicio"
       }
     }
-    
+
     const item = await prisma.item.findUnique({
       where: { id: itemId },
       select: { price: true, ownerId: true, isAvailable: true }
     })
 
     if (!item || !item.isAvailable) {
-      return { 
-        success: false, 
-        error: "Artículo no disponible" 
+      return {
+        success: false,
+        error: "Artículo no disponible"
       }
     }
-    
+
     if (item.ownerId === userId) {
-      return { 
-        success: false, 
-        error: "No puedes alquilar tu propio artículo" 
+      return {
+        success: false,
+        error: "No puedes alquilar tu propio artículo"
       }
     }
 
@@ -78,12 +79,12 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
     })
 
     if (conflictingBookings.length > 0) {
-      return { 
-        success: false, 
-        error: "Este artículo ya está reservado para las fechas seleccionadas" 
+      return {
+        success: false,
+        error: "Este artículo ya está reservado para las fechas seleccionadas"
       }
     }
-      
+
     // Calculate total price
     const startDateObj = new Date(startDate)
     const endDateObj = new Date(endDate)
@@ -118,40 +119,30 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
       }
     })
 
-    await prisma.notification.create({
-      data: {
-        type: "BOOKING_REQUEST",
-        title: "Nueva solicitud de reserva",
-        content: `${booking.borrower.firstName} ${booking.borrower.lastName} quiere alquilar "${booking.item.title}"`,
-        userId: item.ownerId,
+    await createNotification(
+      item.ownerId,
+      'BOOKING_REQUEST',
+      {
         bookingId: booking.id,
         itemId: itemId,
-        actionUrl: `/dashboard/bookings/${booking.id}`,
-        metadata: {
-          bookingId: booking.id,
-          itemId: itemId,
-          itemTitle: booking.item.title,
-          borrowerName: `${booking.borrower.firstName} ${booking.borrower.lastName}`,
-          startDate: startDate,
-          endDate: endDate,
-          totalPrice: totalPrice
-        }
+        itemTitle: booking.item.title,
+        borrowerName: `${booking.borrower.firstName} ${booking.borrower.lastName}`.trim()
       }
-    })
+    )
 
     // Revalidate paths to update UI
     revalidatePath(`/items/${itemId}`)
     revalidatePath(`/bookings`)
 
-    return { 
-      success: true, 
-      bookingId: booking.id 
+    return {
+      success: true,
+      bookingId: booking.id
     }
   } catch (error) {
     console.error("Failed to create booking:", error)
-    return { 
-      success: false, 
-      error: "Error al crear la reserva. Por favor, inténtalo de nuevo." 
+    return {
+      success: false,
+      error: "Error al crear la reserva. Por favor, inténtalo de nuevo."
     }
   }
 }
@@ -164,7 +155,7 @@ export const getBookings = cache(async (userId?: string) => {
     const bookings = await prisma.booking.findMany({
       where: userId ? {
         OR: [
-          { borrowerId: userId }, 
+          { borrowerId: userId },
           { ownerId: userId }
         ]
       } : undefined,
@@ -214,9 +205,9 @@ export const getBookings = cache(async (userId?: string) => {
 export async function handleReservationStatus(bookingId: string, status: BookingStatus): Promise<BookingResponse> {
   const session = await getServerSession(authOptions)
   if (!session || !session.user || !session.user.id) {
-    return { 
-      success: false, 
-      error: "Unauthorized" 
+    return {
+      success: false,
+      error: "Unauthorized"
     }
   }
 
@@ -229,23 +220,23 @@ export async function handleReservationStatus(bookingId: string, status: Booking
     })
 
     if (!booking) {
-      return { 
-        success: false, 
-        error: "Reserva no encontrada" 
+      return {
+        success: false,
+        error: "Reserva no encontrada"
       }
     }
 
     if (booking.ownerId !== userId && booking.borrowerId !== userId) {
-      return { 
-        success: false, 
-        error: "No tienes permiso para modificar esta reserva" 
+      return {
+        success: false,
+        error: "No tienes permiso para modificar esta reserva"
       }
     }
 
     if (booking.status === "CANCELLED" || booking.status === "COMPLETED") {
-      return { 
-        success: false, 
-        error: "La reserva ya ha sido cancelada o completada" 
+      return {
+        success: false,
+        error: "La reserva ya ha sido cancelada o completada"
       }
     }
 
@@ -262,19 +253,19 @@ export async function handleReservationStatus(bookingId: string, status: Booking
 
     revalidatePath(`/bookings`)
 
-    return { 
-      success: true 
+    return {
+      success: true
     }
   } catch (error) {
     console.error("Failed to update booking status:", error)
-    return { 
-      success: false, 
-      error: "Error al actualizar el estado de la reserva. Por favor, inténtalo de nuevo." 
+    return {
+      success: false,
+      error: "Error al actualizar el estado de la reserva. Por favor, inténtalo de nuevo."
     }
   }
 }
 
-export async function getBookingById(bookingId: string ) {
+export async function getBookingById(bookingId: string) {
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
@@ -317,7 +308,7 @@ export async function getBookingById(bookingId: string ) {
     console.error("Failed to fetch booking:", error)
     throw new Error("Failed to fetch booking")
   }
-  
+
 }
 
 // HTTP POST endpoint for creating bookings (for Stripe integration)
@@ -331,34 +322,34 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { itemId, startDate, endDate, totalDays, skipPayment, totalPrice, ownerId } = body
 
-    console.log('Received booking request:', { 
+    console.log('Received booking request:', {
       totalPrice, startDate, endDate, itemId, ownerId, totalDays, skipPayment,
       userId: session.user.id
     })
 
     if (!itemId || !startDate || (!endDate && !skipPayment)) {
-      return NextResponse.json({ 
-        error: 'Faltan campos requeridos' 
+      return NextResponse.json({
+        error: 'Faltan campos requeridos'
       }, { status: 400 })
     }
 
     // Validate dates
     if (isNaN(Date.parse(startDate))) {
-      return NextResponse.json({ 
-        error: 'Formato de fecha inválido' 
+      return NextResponse.json({
+        error: 'Formato de fecha inválido'
       }, { status: 400 })
     }
 
     // For paid bookings, validate end date
     if (!skipPayment) {
       if (!endDate || isNaN(Date.parse(endDate))) {
-        return NextResponse.json({ 
-          error: 'Formato de fecha de fin inválido' 
+        return NextResponse.json({
+          error: 'Formato de fecha de fin inválido'
         }, { status: 400 })
       }
       if (Date.parse(startDate) > Date.parse(endDate)) {
-        return NextResponse.json({ 
-          error: 'La fecha de finalización debe ser posterior a la fecha de inicio' 
+        return NextResponse.json({
+          error: 'La fecha de finalización debe ser posterior a la fecha de inicio'
         }, { status: 400 })
       }
     }
@@ -366,36 +357,36 @@ export async function POST(request: Request) {
     // Get item details if not provided
     const item = await prisma.item.findUnique({
       where: { id: itemId },
-      select: { 
-        price: true, 
-        ownerId: true, 
+      select: {
+        price: true,
+        ownerId: true,
         isAvailable: true,
         title: true
       }
     })
 
     if (!item || !item.isAvailable) {
-      return NextResponse.json({ 
-        error: 'Artículo no disponible' 
+      return NextResponse.json({
+        error: 'Artículo no disponible'
       }, { status: 400 })
     }
 
     // Check if user is trying to book their own item
     if (item.ownerId === session.user.id) {
-      return NextResponse.json({ 
-        error: 'No puedes alquilar tu propio artículo' 
+      return NextResponse.json({
+        error: 'No puedes alquilar tu propio artículo'
       }, { status: 400 })
     }
 
     // For skipPayment bookings, calculate dates and price
     let finalEndDate: Date
     let finalTotalPrice: number
-    
+
     if (skipPayment) {
       const days = totalDays || 1
       finalEndDate = new Date(startDate)
       finalEndDate.setDate(finalEndDate.getDate() + days - 1)
-      
+
       const baseCost = item.price * days
       const serviceFee = Math.round(baseCost * 0.1)
       finalTotalPrice = baseCost + serviceFee
@@ -419,8 +410,8 @@ export async function POST(request: Request) {
     })
 
     if (conflictingBookings.length > 0) {
-      return NextResponse.json({ 
-        error: 'Este artículo ya está reservado para las fechas seleccionadas' 
+      return NextResponse.json({
+        error: 'Este artículo ya está reservado para las fechas seleccionadas'
       }, { status: 409 })
     }
 
@@ -464,37 +455,18 @@ export async function POST(request: Request) {
 
     // Create notification for owner
     console.log('Creating notification for owner:', item.ownerId)
-    
+
     try {
-      // Determinar el título y contenido según si requiere pago o no
-      const notificationTitle = skipPayment 
-        ? "Nueva solicitud de alquiler" 
-        : "Nueva reserva confirmada"
-      
-      const notificationContent = skipPayment
-        ? `${booking.borrower.firstName} ${booking.borrower.lastName} quiere alquilar "${booking.item.title}" por ${totalDays || 1} día(s)`
-        : `Tienes una nueva reserva confirmada para "${booking.item.title}"`
-      
-      await prisma.notification.create({
-        data: {
-          type: "BOOKING_REQUEST",
-          title: notificationTitle,
-          content: notificationContent,
-          userId: item.ownerId,
+      await createNotification(
+        item.ownerId,
+        'BOOKING_REQUEST',
+        {
           bookingId: booking.id,
           itemId: itemId,
-          actionUrl: `/dashboard/bookings/${booking.id}`,
-          metadata: {
-            bookingId: booking.id,
-            itemId: itemId,
-            itemTitle: booking.item.title,
-            startDate: startDate,
-            endDate: finalEndDate.toISOString(),
-            totalPrice: finalTotalPrice.toString(),
-            totalDays: totalDays?.toString() || '1'
-          }
+          itemTitle: booking.item.title,
+          borrowerName: `${booking.borrower.firstName} ${booking.borrower.lastName}`.trim()
         }
-      })
+      )
       console.log('Notification created successfully')
     } catch (notifError) {
       console.error('Error creating notification:', notifError)
@@ -507,8 +479,8 @@ export async function POST(request: Request) {
     const errorStack = err instanceof Error ? err.stack : ''
     console.error('Error creating booking:', errorMessage)
     console.error('Stack trace:', errorStack)
-    return NextResponse.json({ 
-      error: 'Error al crear la reserva: ' + errorMessage 
+    return NextResponse.json({
+      error: 'Error al crear la reserva: ' + errorMessage
     }, { status: 500 })
   }
 }

@@ -69,7 +69,7 @@ export default function SalesPanel() {
               onClick={() => setTimeRange(range)}
               className={`px-6 py-2 rounded-lg font-semibold transition-all ${
                 timeRange === range
-                  ? "bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-md"
+                  ? "bg-[hsl(25_95%_53%)] text-white shadow-md"
                   : "text-gray-600 hover:bg-gray-50"
               }`}
             >
@@ -84,7 +84,7 @@ export default function SalesPanel() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Total Revenue */}
-        <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-3xl shadow-xl p-8 text-white">
+        <div className="bg-gradient-to-br from-[hsl(25_95%_53%)] to-[hsl(25_95%_43%)] rounded-3xl shadow-xl p-8 text-white">
           <div className="flex items-center justify-between mb-4">
             <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
               <DollarSign className="w-8 h-8" />

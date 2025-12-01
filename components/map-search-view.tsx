@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
 import type { LatLngExpression } from "leaflet"
+import type L from "leaflet"
 
 // Importar componentes de Leaflet dinámicamente
 const MapContainer = dynamic(
@@ -55,9 +56,46 @@ export default function MapSearchView({
   height = "600px",
 }: MapSearchViewProps) {
   const [isMounted, setIsMounted] = useState(false)
+  const [customIcon, setCustomIcon] = useState<L.DivIcon | null>(null)
+  const [userLocationIcon, setUserLocationIcon] = useState<L.DivIcon | null>(null)
 
   useEffect(() => {
     setIsMounted(true)
+    // Cargar Leaflet y crear iconos personalizados
+    import("leaflet").then((L) => {
+      // Icono naranja para items/servicios
+      const itemIcon = L.divIcon({
+        className: 'custom-item-marker',
+        html: `
+          <div class="relative">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center shadow-lg" style="background-color: hsl(25 95% 53%); border: 3px solid white;">
+              <div class="w-3 h-3 rounded-full bg-white"></div>
+            </div>
+          </div>
+        `,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+      })
+      setCustomIcon(itemIcon)
+
+      // Icono mejorado para ubicación del usuario
+      const userIcon = L.divIcon({
+        className: 'custom-user-marker',
+        html: `
+          <div class="relative">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-xl" style="background-color: hsl(221 83% 53%); border: 4px solid white;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="3" fill="white" stroke="white" stroke-width="2"/>
+              </svg>
+            </div>
+            <div class="absolute top-0 left-0 w-10 h-10 rounded-full animate-ping" style="background-color: hsl(221 83% 53%); opacity: 0.3;"></div>
+          </div>
+        `,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+      })
+      setUserLocationIcon(userIcon)
+    })
   }, [])
 
   if (!isMounted) {
@@ -89,8 +127,8 @@ export default function MapSearchView({
         scrollWheelZoom={true}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
 
         {/* Círculo de radio si hay ubicación del usuario */}
@@ -99,17 +137,17 @@ export default function MapSearchView({
             center={[userLocation.lat, userLocation.lng]}
             radius={radius * 1000} // Convertir km a metros
             pathOptions={{
-              fillColor: "#059669",
+              fillColor: "hsl(25 95% 53%)",
               fillOpacity: 0.1,
-              color: "#059669",
+              color: "hsl(25 95% 53%)",
               weight: 2,
             }}
           />
         )}
 
         {/* Marcador de ubicación del usuario */}
-        {userLocation && (
-          <Marker position={[userLocation.lat, userLocation.lng]}>
+        {userLocation && userLocationIcon && (
+          <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
             <Popup>
               <div className="custom-popup">
                 <h3>📍 Tu ubicación</h3>
@@ -120,10 +158,11 @@ export default function MapSearchView({
         )}
 
         {/* Marcadores de items */}
-        {itemsWithCoords.map((item) => (
+        {customIcon && itemsWithCoords.map((item) => (
           <Marker
             key={item.id}
             position={[item.latitude, item.longitude]}
+            icon={customIcon}
             eventHandlers={{
               click: () => {
                 if (onItemClick) {

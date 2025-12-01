@@ -15,7 +15,7 @@ interface RouteParams {
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }
@@ -40,10 +40,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         data: { isAvailable }
       })
 
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         message: isAvailable ? "Herramienta reactivada" : "Herramienta pausada",
-        item: updatedItem 
+        item: updatedItem
       })
     } else if (type === 'service') {
       // Verificar que el servicio pertenezca al usuario
@@ -62,10 +62,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         data: { isAvailable }
       })
 
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         message: isAvailable ? "Servicio reactivado" : "Servicio pausado",
-        service: updatedService 
+        service: updatedService
       })
     }
 
@@ -73,7 +73,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   } catch (error) {
     console.error('Error updating availability:', error)
     return NextResponse.json(
-      { message: "Error al actualizar" }, 
+      { message: "Error al actualizar" },
       { status: 500 }
     )
   }
@@ -83,7 +83,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }
@@ -96,10 +96,16 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       // Verificar que el item pertenezca al usuario
       const item = await prisma.item.findUnique({
         where: { id },
-        include: {
+        select: {
+          id: true,
+          ownerId: true,
           bookings: {
             where: {
               status: { in: ['PENDING', 'CONFIRMED'] }
+            },
+            select: {
+              id: true,
+              status: true
             }
           }
         }
@@ -109,28 +115,51 @@ export async function DELETE(request: Request, { params }: RouteParams) {
         return NextResponse.json({ message: "Item no encontrado o no autorizado" }, { status: 404 })
       }
 
-      // Verificar que no tenga reservas activas
-      if (item.bookings.length > 0) {
-        return NextResponse.json({ 
-          message: "No puedes eliminar una herramienta con reservas activas" 
+      // Verificar si el item está actualmente en uso (tiene reservas CONFIRMED)
+      const isInUse = item.bookings.some(b => b.status === 'CONFIRMED')
+
+      if (isInUse) {
+        return NextResponse.json({
+          message: "No puedes eliminar un artículo que está actualmente en uso o confirmado",
+          code: "IN_USE"
         }, { status: 400 })
       }
 
-      // Eliminar item
+      // Si tiene solo reservas PENDING, permitir eliminación con advertencia
+      const hasPendingBookings = item.bookings.some(b => b.status === 'PENDING')
+
+      if (hasPendingBookings) {
+        // El frontend debe confirmar esta acción
+        // Eliminar item y las reservas pendientes se eliminarán en cascada
+        await prisma.item.delete({ where: { id } })
+
+        return NextResponse.json({
+          success: true,
+          message: "Herramienta eliminada exitosamente junto con sus reservas pendientes"
+        })
+      }
+
+      // No tiene reservas, eliminar directamente
       await prisma.item.delete({ where: { id } })
 
-      return NextResponse.json({ 
-        success: true, 
-        message: "Herramienta eliminada exitosamente" 
+      return NextResponse.json({
+        success: true,
+        message: "Herramienta eliminada exitosamente"
       })
     } else if (type === 'service') {
       // Verificar que el servicio pertenezca al usuario
       const service = await prisma.service.findUnique({
         where: { id },
-        include: {
+        select: {
+          id: true,
+          providerId: true,
           bookings: {
             where: {
               status: { in: ['PENDING', 'CONFIRMED'] }
+            },
+            select: {
+              id: true,
+              status: true
             }
           }
         }
@@ -140,19 +169,35 @@ export async function DELETE(request: Request, { params }: RouteParams) {
         return NextResponse.json({ message: "Servicio no encontrado o no autorizado" }, { status: 404 })
       }
 
-      // Verificar que no tenga reservas activas
-      if (service.bookings.length > 0) {
-        return NextResponse.json({ 
-          message: "No puedes eliminar un servicio con reservas activas" 
+      // Verificar si el servicio está actualmente en uso (tiene reservas CONFIRMED)
+      const isInUse = service.bookings.some(b => b.status === 'CONFIRMED')
+
+      if (isInUse) {
+        return NextResponse.json({
+          message: "No puedes eliminar un servicio que está actualmente en uso o confirmado",
+          code: "IN_USE"
         }, { status: 400 })
       }
 
-      // Eliminar servicio
+      // Si tiene solo reservas PENDING, permitir eliminación con advertencia
+      const hasPendingBookings = service.bookings.some(b => b.status === 'PENDING')
+
+      if (hasPendingBookings) {
+        // Eliminar servicio y las reservas pendientes se eliminarán en cascada
+        await prisma.service.delete({ where: { id } })
+
+        return NextResponse.json({
+          success: true,
+          message: "Servicio eliminado exitosamente junto con sus reservas pendientes"
+        })
+      }
+
+      // No tiene reservas, eliminar directamente
       await prisma.service.delete({ where: { id } })
 
-      return NextResponse.json({ 
-        success: true, 
-        message: "Servicio eliminado exitosamente" 
+      return NextResponse.json({
+        success: true,
+        message: "Servicio eliminado exitosamente"
       })
     }
 
@@ -160,7 +205,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
   } catch (error) {
     console.error('Error deleting content:', error)
     return NextResponse.json(
-      { message: "Error al eliminar" }, 
+      { message: "Error al eliminar" },
       { status: 500 }
     )
   }

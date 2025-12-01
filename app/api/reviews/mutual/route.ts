@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/utils"
+import { createNotification } from "@/lib/notification-helpers"
 
 // Crear review mutuo
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
     // Verificar que el usuario esté autorizado para esta reserva
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { 
+      include: {
         item: true,
         borrower: true,
         owner: true
@@ -72,14 +73,14 @@ export async function POST(request: NextRequest) {
     })
 
     // Crear notificación para el usuario que recibe la review
-    await prisma.notification.create({
-      data: {
-        userId: revieweeId,
-        type: "REVIEW_RECEIVED",
-        title: "Nueva reseña recibida",
-        content: `${reviewer?.firstName} ${reviewer?.lastName} te ha dejado una reseña de ${rating} estrellas`,
+    await createNotification(
+      revieweeId,
+      'REVIEW_RECEIVED',
+      {
+        itemId: booking.item.id,
+        itemTitle: booking.item.title
       }
-    })
+    )
 
     // Verificar si ambos usuarios han dejado reseña para enviar notificación de completar review mutuo
     const otherReview = await prisma.review.findFirst({
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
@@ -130,7 +131,7 @@ export async function GET(request: NextRequest) {
 
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { 
+      include: {
         item: { include: { owner: true } },
         borrower: true,
       }

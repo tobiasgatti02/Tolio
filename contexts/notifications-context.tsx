@@ -1,50 +1,109 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 
 interface NotificationsContextType {
   unreadCount: number
   setUnreadCount: (count: number) => void
   decrementUnreadCount: () => void
   refreshUnreadCount: () => Promise<void>
+  forceRefresh: () => Promise<void>
 }
 
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined)
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0)
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isRefreshingRef = useRef(false)
 
-  const refreshUnreadCount = async () => {
+  // Debounced refresh function
+  const refreshUnreadCount = useCallback(async () => {
+    // Clear any pending refresh
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current)
+    }
+
+    // Debounce: wait 300ms before actually refreshing
+    return new Promise<void>((resolve) => {
+      refreshTimeoutRef.current = setTimeout(async () => {
+        // Prevent multiple simultaneous refreshes
+        if (isRefreshingRef.current) {
+          resolve()
+          return
+        }
+
+        try {
+          isRefreshingRef.current = true
+          const response = await fetch(`/api/notifications/unread-count`)
+          
+          if (response.ok) {
+            const data = await response.json()
+            setUnreadCount(data.count)
+          }
+        } catch (error) {
+          console.error('Error fetching unread count:', error)
+        } finally {
+          isRefreshingRef.current = false
+          resolve()
+        }
+      }, 300)
+    })
+  }, [])
+
+  // Force immediate refresh without debouncing
+  const forceRefresh = useCallback(async () => {
+    // Clear any pending debounced refresh
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current)
+    }
+
+    // Prevent multiple simultaneous refreshes
+    if (isRefreshingRef.current) {
+      return
+    }
+
     try {
+      isRefreshingRef.current = true
       const response = await fetch(`/api/notifications/unread-count`)
+      
       if (response.ok) {
         const data = await response.json()
         setUnreadCount(data.count)
       }
     } catch (error) {
       console.error('Error fetching unread count:', error)
+    } finally {
+      isRefreshingRef.current = false
     }
-  }
+  }, [])
 
-  const decrementUnreadCount = () => {
+  const decrementUnreadCount = useCallback(() => {
     setUnreadCount(prev => Math.max(0, prev - 1))
-  }
+  }, [])
 
   useEffect(() => {
-    refreshUnreadCount()
+    // Initial fetch
+    forceRefresh()
 
-    // Polling cada 30 segundos para mantener sincronizado (más frecuente)
-    const interval = setInterval(refreshUnreadCount, 30000)
+    // Polling every 30 seconds
+    const interval = setInterval(forceRefresh, 30000)
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => {
+      clearInterval(interval)
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current)
+      }
+    }
+  }, [forceRefresh])
 
   return (
     <NotificationsContext.Provider value={{
       unreadCount,
       setUnreadCount,
       decrementUnreadCount,
-      refreshUnreadCount
+      refreshUnreadCount,
+      forceRefresh
     }}>
       {children}
     </NotificationsContext.Provider>
