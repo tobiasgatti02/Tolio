@@ -267,6 +267,7 @@ export async function handleReservationStatus(bookingId: string, status: Booking
 
 export async function getBookingById(bookingId: string) {
   try {
+    // Primero buscar en reservas de items
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
@@ -276,6 +277,7 @@ export async function getBookingById(bookingId: string) {
             title: true,
             price: true,
             images: true,
+            location: true,
           }
         },
         owner: {
@@ -284,6 +286,9 @@ export async function getBookingById(bookingId: string) {
             firstName: true,
             lastName: true,
             profileImage: true,
+            email: true,
+            phoneNumber: true,
+            isVerified: true,
           }
         },
         borrower: {
@@ -292,23 +297,84 @@ export async function getBookingById(bookingId: string) {
             firstName: true,
             lastName: true,
             profileImage: true,
+            email: true,
+            phoneNumber: true,
+            isVerified: true,
           }
-        }
+        },
+        review: true
       }
     })
 
-    return {
-      ...booking, // Correctly spread the booking object
-      startDate: booking?.startDate,
-      endDate: booking?.endDate,
-      createdAt: booking?.createdAt,
-      updatedAt: booking?.updatedAt
+    if (booking) {
+      return { ...booking, type: 'item' }
     }
+
+    // Si no se encuentra, buscar en reservas de servicios
+    const serviceBooking = await prisma.serviceBooking.findUnique({
+      where: { id: bookingId },
+      include: {
+        service: {
+          select: {
+            id: true,
+            title: true,
+            pricePerHour: true,
+            images: true,
+            location: true,
+          }
+        },
+        provider: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImage: true,
+            email: true,
+            phoneNumber: true,
+            isVerified: true,
+          }
+        },
+        client: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImage: true,
+            email: true,
+            phoneNumber: true,
+            isVerified: true,
+          }
+        },
+        review: true
+      }
+    })
+
+    if (serviceBooking) {
+      // Mapear ServiceBooking al formato esperado por la página
+      return {
+        ...serviceBooking,
+        type: 'service',
+        // Mapear campos para compatibilidad
+        item: {
+          id: serviceBooking.service.id,
+          title: serviceBooking.service.title,
+          price: serviceBooking.service.pricePerHour || 0,
+          images: serviceBooking.service.images,
+          location: serviceBooking.service.location,
+        },
+        owner: serviceBooking.provider,
+        borrower: serviceBooking.client,
+        ownerId: serviceBooking.providerId,
+        borrowerId: serviceBooking.clientId,
+        endDate: serviceBooking.endDate || serviceBooking.startDate, // Servicios pueden no tener endDate
+      }
+    }
+
+    return null
   } catch (error) {
     console.error("Failed to fetch booking:", error)
-    throw new Error("Failed to fetch booking")
+    return null
   }
-
 }
 
 // HTTP POST endpoint for creating bookings (for Stripe integration)

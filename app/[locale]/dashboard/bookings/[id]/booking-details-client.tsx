@@ -340,25 +340,7 @@ export default function BookingDetailsClient({ bookingId }: BookingDetailsClient
           </div>
 
           {/* Resumen de Costos */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Resumen de Costos</h2>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Alquiler ({days} día{days !== 1 ? 's' : ''})</span>
-                <span>${(booking.totalAmount - booking.deposit).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Depósito de seguridad</span>
-                <span>${booking.deposit.toLocaleString()}</span>
-              </div>
-              <div className="border-t pt-3">
-                <div className="flex justify-between font-semibold text-lg">
-                  <span>Total</span>
-                  <span>${booking.totalAmount.toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          
 
           {/* Información Adicional */}
           <div className="bg-white rounded-lg shadow p-6">

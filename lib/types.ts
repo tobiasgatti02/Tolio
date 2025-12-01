@@ -90,7 +90,7 @@ export interface DashboardNotification {
 // Enums
 export type ItemStatus = 'DISPONIBLE' | 'PRESTADO' | 'MANTENIMIENTO' | 'PAUSADO';
 
-export type BookingStatus = 'PENDIENTE' | 'CONFIRMADA' | 'EN_PROGRESO' | 'COMPLETADA' | 'CANCELADA';
+export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
 
 export type NotificationType = 
   | 'BOOKING_REQUEST'

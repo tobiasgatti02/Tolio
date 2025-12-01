@@ -106,15 +106,31 @@ export default async function BookingDetailsPage({ params }: PageProps) {
   }
   
   const { id } = await params
+  
+  // Debug logging
+  console.log('BookingDetailsPage - Booking ID:', id)
+  console.log('BookingDetailsPage - User ID:', session.user.id)
+  
   const booking = await getBookingById(id) as any
   
+  console.log('BookingDetailsPage - Booking found:', booking ? 'yes' : 'no')
+  
   if (!booking) {
+    console.log('BookingDetailsPage - Booking not found, showing 404')
     notFound()
   }
   
+  console.log('BookingDetailsPage - Booking borrowerId:', booking.borrowerId)
+  console.log('BookingDetailsPage - Booking ownerId:', booking.ownerId)
+  
   // Check if user is authorized to view this booking
   const userId = session.user.id
-  if (booking.borrowerId !== userId && booking.ownerId !== userId) {
+  const isAuthorized = booking.borrowerId === userId || booking.ownerId === userId
+  
+  console.log('BookingDetailsPage - Is authorized:', isAuthorized)
+  
+  if (!isAuthorized) {
+    console.log('BookingDetailsPage - User not authorized, redirecting to /dashboard/bookings')
     redirect("/dashboard/bookings")
   }
   
@@ -123,14 +139,15 @@ export default async function BookingDetailsPage({ params }: PageProps) {
   const bookingStartDate = new Date(booking.startDate)
   const bookingEndDate = new Date(booking.endDate)
   const statusInfo = getStatusInfo(booking.status, bookingStartDate, bookingEndDate)
+  const isService = booking.type === 'service'
   
   // Calculate rental duration and details
   const diffTime = Math.abs(bookingEndDate.getTime() - bookingStartDate.getTime())
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)))
   
   // Calculate price breakdown
-  const dailyRate = booking.item.price
-  const subtotal = dailyRate * diffDays
+  const dailyRate = booking.item.price || 0
+  const subtotal = isService ? dailyRate : dailyRate * diffDays
   const serviceFee = subtotal * 0.1 // 10% service fee
   const totalPrice = subtotal + serviceFee
   
@@ -157,9 +174,9 @@ export default async function BookingDetailsPage({ params }: PageProps) {
             Compartir
           </Button>
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/items/${booking.item.id}`}>
+            <Link href={isService ? `/services/${booking.item.id}` : `/items/${booking.item.id}`}>
               <Eye className="h-4 w-4 mr-2" />
-              Ver artículo
+              Ver {isService ? 'servicio' : 'artículo'}
             </Link>
           </Button>
         </div>
@@ -365,41 +382,7 @@ export default async function BookingDetailsPage({ params }: PageProps) {
               </CardContent>
             </Card>
 
-            {/* Cost Breakdown Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
-                  Resumen de costos
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">${dailyRate} × {diffDays} día{diffDays !== 1 ? 's' : ''}</span>
-                    <span>${subtotal.toFixed(2)}</span>
-                  </div>
-                  
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Comisión de servicio</span>
-                    <span>${serviceFee.toFixed(2)}</span>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex justify-between font-semibold">
-                    <span>Total</span>
-                    <span className="text-blue-600">${totalPrice.toFixed(2)}</span>
-                  </div>
-                  
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                    <p className="text-xs text-blue-800">
-                      💡 El pago se procesa de forma segura a través de nuestra plataforma
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+
 
             {/* Quick Actions Card */}
 
