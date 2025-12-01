@@ -71,7 +71,9 @@ export default function ReportButton({
         }),
       })
 
-      if (response.ok) {
+      const data = await response.json()
+
+      if (response.ok && data.success) {
         setSubmitted(true)
         setTimeout(() => {
           setIsOpen(false)
@@ -80,11 +82,13 @@ export default function ReportButton({
           setDetails("")
         }, 3000)
       } else {
-        throw new Error("Error al enviar la denuncia")
+        const errorMessage = data.message || "Error al enviar la denuncia"
+        console.error('Error response:', data)
+        alert(errorMessage)
       }
     } catch (error) {
       console.error('Error submitting report:', error)
-      alert("Error al enviar la denuncia. Por favor, intenta de nuevo.")
+      alert("Error de conexión. Por favor, verifica tu conexión a internet e intenta de nuevo.")
     } finally {
       setIsSubmitting(false)
     }

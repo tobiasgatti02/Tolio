@@ -8,7 +8,7 @@ const prisma = new PrismaClient()
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }
@@ -25,6 +25,14 @@ export async function POST(request: Request) {
       details
     } = body
 
+    // Validar campos requeridos
+    if (!reason || !details || !itemTitle || !reportedUserId) {
+      return NextResponse.json(
+        { message: "Faltan campos requeridos" },
+        { status: 400 }
+      )
+    }
+
     // Guardar el reporte en la base de datos para revisión posterior
     // Por ahora solo logeamos (puedes agregar una tabla Report en el schema)
     console.log('REPORTE RECIBIDO:', {
@@ -38,10 +46,11 @@ export async function POST(request: Request) {
     })
 
     // Intentar enviar email solo si hay credenciales configuradas
+    let emailSent = false
     try {
       if (process.env.SMTP_USER && process.env.SMTP_PASS) {
         const nodemailer = require('nodemailer')
-        
+
         const transporter = nodemailer.createTransport({
           host: process.env.SMTP_HOST || "smtp.gmail.com",
           port: parseInt(process.env.SMTP_PORT || "587"),
@@ -93,6 +102,9 @@ export async function POST(request: Request) {
           subject: `[DENUNCIA] ${itemType === 'item' ? 'Artículo' : 'Servicio'}: ${itemTitle}`,
           html: emailContent,
         })
+
+        emailSent = true
+        console.log('Email de denuncia enviado exitosamente')
       } else {
         console.warn('Credenciales SMTP no configuradas. Reporte guardado pero email no enviado.')
       }
@@ -101,14 +113,18 @@ export async function POST(request: Request) {
       // No fallar la request si el email falla
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: "Denuncia recibida exitosamente. Será revisada a la brevedad." 
+    return NextResponse.json({
+      success: true,
+      message: "Denuncia recibida exitosamente. Será revisada a la brevedad.",
+      emailSent
     })
   } catch (error) {
     console.error('Error processing report:', error)
     return NextResponse.json(
-      { message: "Error al procesar la denuncia" }, 
+      {
+        success: false,
+        message: "Error al procesar la denuncia. Por favor, intenta nuevamente."
+      },
       { status: 500 }
     )
   }

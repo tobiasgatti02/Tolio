@@ -48,10 +48,7 @@ const faqs = [
     category: "Seguridad",
     icon: Shield,
     questions: [
-      {
-        q: "¿Cómo verifico mi identidad?",
-        a: "Durante el registro te pediremos una foto de tu documento de identidad y una selfie para verificar que eres quien dices ser. Este proceso es seguro y confidencial."
-      },
+      
       {
         q: "¿Qué pasa si hay un problema con un alquiler?",
         a: "Contacta primero al otro usuario para resolver el problema. Si no llegan a un acuerdo, nuestro equipo de soporte puede mediar y ayudar a encontrar una solución."
@@ -59,24 +56,6 @@ const faqs = [
       {
         q: "¿Cómo sé si un usuario es confiable?",
         a: "Revisa las reseñas de otros usuarios, la puntuación de confianza y si tiene el badge de identidad verificada. Estos indicadores te ayudan a tomar mejores decisiones."
-      }
-    ]
-  },
-  {
-    category: "Pagos",
-    icon: CreditCard,
-    questions: [
-      {
-        q: "¿Qué métodos de pago aceptan?",
-        a: "Aceptamos tarjetas de crédito y débito a través de nuestra plataforma segura de pagos. Los pagos se procesan de forma segura y encriptada."
-      },
-      {
-        q: "¿Cuándo recibo el pago como propietario?",
-        a: "Los pagos se liberan 24 horas después de que se completa el alquiler exitosamente. El dinero se transfiere directamente a tu cuenta bancaria configurada."
-      },
-      {
-        q: "¿Cuál es la comisión de Tolio?",
-        a: "Cobramos una comisión del 10% sobre el monto del alquiler. Esta comisión nos permite mantener la plataforma y ofrecer soporte a la comunidad."
       }
     ]
   }
