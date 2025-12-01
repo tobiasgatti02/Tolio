@@ -41,14 +41,14 @@ export default function HowItWorksPage() {
             </a>
           </div>
 
-          {/* Prestar */}
+          {/* Ofrecer */}
           <div className="bg-orange-50 rounded-2xl p-6 border-2 border-orange-200">
             <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mb-4">
               <DollarSign className="h-6 w-6 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Quiero Prestar</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Quiero Ofrecer</h2>
             <p className="text-gray-600 mb-4">Tengo herramientas o servicios para ofrecer</p>
-            <a href="#prestar" className="text-orange-600 font-semibold flex items-center gap-1 hover:gap-2 transition-all">
+            <a href="#ofrecer" className="text-orange-600 font-semibold flex items-center gap-1 hover:gap-2 transition-all">
               Ver cómo <ArrowRight className="h-4 w-4" />
             </a>
           </div>
@@ -136,13 +136,13 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
-        {/* SECCIÓN: PRESTAR */}
-        <section id="prestar" className="mb-16 scroll-mt-8">
+        {/* SECCIÓN: OFRECER */}
+        <section id="ofrecer" className="mb-16 scroll-mt-8">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center">
               <Wrench className="h-5 w-5 text-white" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900">Quiero Prestar</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Quiero Ofrecer</h2>
           </div>
 
           <div className="space-y-6">

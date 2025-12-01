@@ -5,6 +5,7 @@ import ItemGallery from "@/components/item-gallery"
 import BookingFormFree from "@/components/booking-form-free"
 import ReviewList from "@/components/review-list"
 import ReportButton from "@/components/report-button"
+import MapView from "@/components/map-view"
 import { Suspense } from "react"
 import ReviewListSkeleton from "@/components/review-list-skeleton"
 import { getServerSession } from 'next-auth'
@@ -196,6 +197,26 @@ export default async function ItemPage({ params }: ItemPageProps) {
                         <span className="text-gray-700">{feature}</span>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Location Map */}
+              {item.latitude && item.longitude && (
+                <div className="border-t border-gray-200 pt-6">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-blue-600" />
+                    Ubicación
+                  </h2>
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <p className="text-gray-700 mb-4">{item.location}</p>
+                    <MapView
+                      latitude={item.latitude}
+                      longitude={item.longitude}
+                      title={item.title}
+                      location={item.location}
+                      height="300px"
+                    />
                   </div>
                 </div>
               )}

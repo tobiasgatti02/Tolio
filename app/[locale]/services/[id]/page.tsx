@@ -7,6 +7,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import ReportButton from '@/components/report-button'
 import BookingFormFree from '@/components/booking-form-free'
+import MapView from '@/components/map-view'
 import { typography } from '@/lib/design-system'
 
 const prisma = new PrismaClient()
@@ -211,15 +212,15 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                     Ubicación
                   </h2>
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                    <p className="text-gray-700">{service.location || 'Ubicación disponible'}</p>
+                    <p className="text-gray-700 mb-4">{service.location || 'Ubicación disponible'}</p>
                     {service.latitude && service.longitude && (
-                      <div className="mt-4 w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center border border-gray-300">
-                        <p className="text-gray-500 text-center">
-                          Mapa interactivo próximamente
-                          <br />
-                          <span className="text-xs">Lat: {service.latitude.toFixed(4)}, Lng: {service.longitude.toFixed(4)}</span>
-                        </p>
-                      </div>
+                      <MapView
+                        latitude={service.latitude}
+                        longitude={service.longitude}
+                        title={service.title}
+                        location={service.location || undefined}
+                        height="300px"
+                      />
                     )}
                   </div>
                 </div>
