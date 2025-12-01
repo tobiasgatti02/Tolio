@@ -230,7 +230,7 @@ export default async function BookingDetailsPage({ params }: PageProps) {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Package className="h-5 w-5 mr-2 text-blue-600" />
-                  Artículo alquilado
+                  {isService ? 'Servicio contratado' : 'Artículo alquilado'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -258,15 +258,17 @@ export default async function BookingDetailsPage({ params }: PageProps) {
                           {booking.item.location}
                         </div>
                       )}
-                      <div className="flex items-center">
-                        <CreditCard className="h-4 w-4 mr-2" />
-                        ${dailyRate}/día
-                      </div>
+                      {dailyRate > 0 && (
+                        <div className="flex items-center">
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          ${dailyRate}{isService ? '' : '/día'}
+                        </div>
+                      )}
                     </div>
                     
                     <div className="mt-4">
                       <Button asChild variant="outline" className="w-full md:w-auto">
-                        <Link href={`/items/${booking.item.id}`}>
+                        <Link href={isService ? `/services/${booking.item.id}` : `/items/${booking.item.id}`}>
                           <Eye className="h-4 w-4 mr-2" />
                           Ver detalles completos
                         </Link>
@@ -282,10 +284,17 @@ export default async function BookingDetailsPage({ params }: PageProps) {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Calendar className="h-5 w-5 mr-2 text-blue-600" />
-                  Período de alquiler
+                  {isService ? 'Fecha del servicio' : 'Período de alquiler'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {isService ? (
+                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Fecha programada</p>
+                    <p className="font-semibold">{formatDate(bookingStartDate)}</p>
+                    <p className="text-xs text-gray-500">{getRelativeTime(bookingStartDate)}</p>
+                  </div>
+                ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <p className="text-sm text-gray-600 mb-1">Fecha de inicio</p>
@@ -305,6 +314,7 @@ export default async function BookingDetailsPage({ params }: PageProps) {
                     <p className="text-xs text-gray-500">{getRelativeTime(bookingEndDate)}</p>
                   </div>
                 </div>
+                )}
               </CardContent>
             </Card>
 
@@ -313,7 +323,10 @@ export default async function BookingDetailsPage({ params }: PageProps) {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <User className="h-5 w-5 mr-2 text-blue-600" />
-                  {isOwner ? 'Información del inquilino' : 'Información del propietario'}
+                  {isOwner 
+                    ? (isService ? 'Información del cliente' : 'Información del inquilino')
+                    : (isService ? 'Información del prestador' : 'Información del propietario')
+                  }
                 </CardTitle>
               </CardHeader>
               <CardContent>

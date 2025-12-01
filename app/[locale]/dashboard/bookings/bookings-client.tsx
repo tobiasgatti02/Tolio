@@ -380,25 +380,14 @@ export default function BookingsClient({ userId }: { userId: string }) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          {booking.type === 'service' ? (
-                            <Link 
-                              href={`/services/${booking.item.id}`} 
-                              className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
-                              title="Ver servicio"
-                            >
-                              <Eye className="w-4 h-4 mr-1" />
-                              Ver Servicio
-                            </Link>
-                          ) : (
-                            <Link 
-                              href={`/dashboard/bookings/${booking.id}`} 
-                              className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
-                              title="Ver detalles de la reserva"
-                            >
-                              <Eye className="w-4 h-4 mr-1" />
-                              Ver Reserva
-                            </Link>
-                          )}
+                          <Link 
+                            href={`/dashboard/bookings/${booking.id}`} 
+                            className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
+                            title="Ver detalles de la reserva"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            Ver Reserva
+                          </Link>
                           
                           {/* Botones para propietario con reserva pendiente */}
                           {isOwner && booking.status === 'PENDING' && (
