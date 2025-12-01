@@ -78,8 +78,8 @@ export default function BookingFormFree({
         return
       }
     } else {
-      if (!startDate || !hours) {
-        setError("Por favor completa la fecha y las horas")
+      if (!startDate) {
+        setError("Por favor selecciona la fecha del servicio")
         return
       }
     }
@@ -104,7 +104,6 @@ export default function BookingFormFree({
         : {
             serviceId,
             startDate: new Date(startDate).toISOString(),
-            hours: parseInt(hours),
             skipPayment: true
           }
 
@@ -193,8 +192,8 @@ export default function BookingFormFree({
           </p>
         </div>
 
-        {/* Dates and Hours */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Dates */}
+        <div className={type === 'item' ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
           <div>
             <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
               {type === 'service' ? 'Fecha del Servicio *' : 'Fecha de Inicio *'}
@@ -216,7 +215,7 @@ export default function BookingFormFree({
             </div>
           </div>
 
-          {type === 'item' ? (
+          {type === 'item' && (
             <div>
               <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
                 Fecha de Fin *
@@ -237,45 +236,23 @@ export default function BookingFormFree({
                 />
               </div>
             </div>
-          ) : (
-            <div>
-              <label htmlFor="hours" className="block text-sm font-medium text-gray-700 mb-2">
-                Horas de Servicio *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Clock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="number"
-                  id="hours"
-                  name="hours"
-                  min="1"
-                  max="24"
-                  className="pl-10 block w-full rounded-xl border-2 border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-colors py-3 text-sm"
-                  value={hours}
-                  onChange={(e) => setHours(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
           )}
         </div>
 
         {/* Price Summary */}
-        {startDate && (type === 'item' ? endDate : hours) && !error && price && (
+        {startDate && (type === 'item' ? endDate : true) && !error && price && (
           <div className="bg-gray-50 rounded-xl p-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">
-                ${price.toLocaleString()} x {calculatedQuantity} {calculatedQuantity === 1 ? (type === 'service' ? 'hora' : 'día') : (type === 'service' ? 'horas' : 'días')}
+                {type === 'service' ? 'Precio del servicio' : `$${price.toLocaleString()} x ${calculatedQuantity} ${calculatedQuantity === 1 ? 'día' : 'días'}`}
               </span>
-              <span className="font-medium text-gray-900">${totalPrice.toLocaleString()}</span>
+              <span className="font-medium text-gray-900">${type === 'service' ? price.toLocaleString() : totalPrice.toLocaleString()}</span>
             </div>
 
             <div className="pt-2 border-t border-gray-200">
               <div className="flex justify-between">
                 <span className="font-semibold text-gray-900">Total Estimado</span>
-                <span className="font-bold text-xl text-blue-600">${grandTotal.toLocaleString()}</span>
+                <span className="font-bold text-xl text-blue-600">${type === 'service' ? price.toLocaleString() : grandTotal.toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -293,7 +270,7 @@ export default function BookingFormFree({
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isSubmitting || !!error || !startDate || !endDate}
+          disabled={isSubmitting || !!error || !startDate || (type === 'item' && !endDate)}
           className="w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
         >
           {isSubmitting ? (

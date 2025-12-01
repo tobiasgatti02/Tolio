@@ -32,6 +32,7 @@ export interface DashboardItem {
 
 export interface DashboardBooking {
   id: string;
+  type?: 'item' | 'service';
   item: {
     id: string;
     nombre: string;

@@ -61,15 +61,15 @@ export default function BookingsClient({ userId }: { userId: string }) {
     const userBookings = bookingsData.filter(booking => booking.userRole === 'borrower')
     
     const totalSpent = userBookings
-      .filter(booking => booking.status === 'COMPLETADA')
+      .filter(booking => booking.status === 'COMPLETED')
       .reduce((sum, booking) => sum + booking.total, 0)
     
     const activeBookings = bookingsData.filter(booking => 
-      ['PENDIENTE', 'CONFIRMADA'].includes(booking.status)
+      ['PENDING', 'CONFIRMED'].includes(booking.status)
     ).length
     
     const completedBookings = bookingsData.filter(booking => 
-      booking.status === 'COMPLETADA'
+      booking.status === 'COMPLETED'
     ).length
 
     setStats({ totalSpent, activeBookings, completedBookings })
@@ -80,9 +80,9 @@ export default function BookingsClient({ userId }: { userId: string }) {
 
     // Aplicar filtro por estado
     if (activeFilter === 'active') {
-      filtered = filtered.filter(booking => ['PENDIENTE', 'CONFIRMADA'].includes(booking.status))
+      filtered = filtered.filter(booking => ['PENDING', 'CONFIRMED'].includes(booking.status))
     } else if (activeFilter === 'completed') {
-      filtered = filtered.filter(booking => booking.status === 'COMPLETADA')
+      filtered = filtered.filter(booking => booking.status === 'COMPLETED')
     }
 
     // Aplicar búsqueda
@@ -282,7 +282,7 @@ export default function BookingsClient({ userId }: { userId: string }) {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Artículo
+                    Artículo / Servicio
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Fechas
@@ -323,7 +323,11 @@ export default function BookingsClient({ userId }: { userId: string }) {
                               {booking.item.nombre}
                             </div>
                             <div className="text-sm text-gray-500">
-                              ${booking.item.precioPorDia}/día
+                              {booking.type === 'service' ? (
+                                <span className="text-purple-600">Servicio</span>
+                              ) : booking.item.precioPorDia > 0 ? (
+                                <>${booking.item.precioPorDia}/día</>
+                              ) : null}
                             </div>
                           </div>
                         </div>
@@ -332,9 +336,11 @@ export default function BookingsClient({ userId }: { userId: string }) {
                         <div className="text-sm text-gray-900">
                           {formatDate(booking.fechaInicio)}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          hasta {formatDate(booking.fechaFin)}
-                        </div>
+                        {booking.type !== 'service' && booking.fechaInicio !== booking.fechaFin && (
+                          <div className="text-sm text-gray-500">
+                            hasta {formatDate(booking.fechaFin)}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -363,7 +369,7 @@ export default function BookingsClient({ userId }: { userId: string }) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          ${booking.total.toLocaleString()}
+                          {booking.total > 0 ? `$${booking.total.toLocaleString()}` : '-'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -374,17 +380,28 @@ export default function BookingsClient({ userId }: { userId: string }) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          <Link 
-                            href={`/dashboard/bookings/${booking.id}`} 
-                            className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
-                            title="Ver detalles"
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            Ver
-                          </Link>
+                          {booking.type === 'service' ? (
+                            <Link 
+                              href={`/services/${booking.item.id}`} 
+                              className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
+                              title="Ver servicio"
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              Ver Servicio
+                            </Link>
+                          ) : (
+                            <Link 
+                              href={`/dashboard/bookings/${booking.id}`} 
+                              className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
+                              title="Ver detalles de la reserva"
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              Ver Reserva
+                            </Link>
+                          )}
                           
                           {/* Botones para propietario con reserva pendiente */}
-                          {isOwner && booking.status === 'PENDIENTE' && (
+                          {isOwner && booking.status === 'PENDING' && (
                             <>
                               <button
                                 onClick={() => handleBookingAction(booking.id, 'confirm')}
@@ -414,13 +431,15 @@ export default function BookingsClient({ userId }: { userId: string }) {
                               <Star className="w-4 h-4" />
                             </button>
                           )}
-                          <Link 
-                            href={`/messages/${otherUser?.id}`} 
-                            className="text-gray-600 hover:text-gray-900" 
-                            title="Enviar mensaje"
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                          </Link>
+                          {otherUser?.id && (
+                            <Link 
+                              href={`/messages/${otherUser.id}`} 
+                              className="text-gray-600 hover:text-gray-900" 
+                              title={`Enviar mensaje a ${otherUser.name}`}
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                            </Link>
+                          )}
                         </div>
                       </td>
                     </tr>

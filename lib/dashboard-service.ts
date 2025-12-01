@@ -200,7 +200,8 @@ export class DashboardService {
         statusFilter = { status: 'COMPLETED' }
       }
 
-      const bookings = await prisma.booking.findMany({
+      // Obtener reservas de items
+      const itemBookings = await prisma.booking.findMany({
         where: {
           OR: [
             { borrowerId: userId },
@@ -238,13 +239,54 @@ export class DashboardService {
         orderBy: { createdAt: 'desc' }
       })
 
-      return bookings.map(booking => {
+      // Obtener reservas de servicios
+      const serviceBookings = await prisma.serviceBooking.findMany({
+        where: {
+          OR: [
+            { clientId: userId },
+            { providerId: userId }
+          ],
+          ...statusFilter
+        },
+        include: {
+          service: {
+            select: {
+              id: true,
+              title: true,
+              images: true,
+              pricePerHour: true
+            }
+          },
+          client: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          },
+          provider: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          },
+          review: true
+        },
+        orderBy: { createdAt: 'desc' }
+      })
+
+      // Mapear reservas de items
+      const mappedItemBookings: DashboardBooking[] = itemBookings.map(booking => {
         const isBorrower = booking.borrowerId === userId
         const hasReviewed = booking.review !== null
         const totalPrice = calculateBookingPrice(booking.item.price, booking.startDate, booking.endDate)
         
         return {
           id: booking.id,
+          type: 'item' as const,
           item: {
             id: booking.item.id,
             nombre: booking.item.title,
@@ -271,6 +313,48 @@ export class DashboardService {
           userRole: isBorrower ? 'borrower' : 'owner'
         }
       })
+
+      // Mapear reservas de servicios
+      const mappedServiceBookings: DashboardBooking[] = serviceBookings.map(booking => {
+        const isClient = booking.clientId === userId
+        const hasReviewed = booking.review !== null
+        const totalPrice = booking.service.pricePerHour || 0
+        
+        return {
+          id: booking.id,
+          type: 'service' as const,
+          item: {
+            id: booking.service.id,
+            nombre: booking.service.title,
+            imagenes: booking.service.images,
+            precioPorDia: booking.service.pricePerHour || 0
+          },
+          borrower: isClient ? undefined : {
+            id: booking.client.id,
+            name: `${booking.client.firstName} ${booking.client.lastName}`.trim(),
+            email: booking.client.email
+          },
+          owner: !isClient ? undefined : {
+            id: booking.provider.id,
+            name: `${booking.provider.firstName} ${booking.provider.lastName}`.trim(),
+            email: booking.provider.email
+          },
+          fechaInicio: booking.startDate.toISOString(),
+          fechaFin: booking.startDate.toISOString(), // Servicios no tienen fecha fin
+          total: totalPrice,
+          status: booking.status as any,
+          createdAt: booking.createdAt.toISOString(),
+          canReview: booking.status === 'COMPLETED' && !hasReviewed,
+          hasReviewed: hasReviewed,
+          userRole: isClient ? 'borrower' : 'owner'
+        }
+      })
+
+      // Combinar y ordenar por fecha de creación
+      const allBookings = [...mappedItemBookings, ...mappedServiceBookings]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+      return allBookings
     } catch (error) {
       console.error('Error fetching user bookings:', error)
       throw new Error('Failed to fetch user bookings')

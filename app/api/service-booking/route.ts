@@ -12,9 +12,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { serviceId, startDate, hours, skipPayment } = body
+    const { serviceId, startDate, skipPayment } = body
 
-    if (!serviceId || !startDate || !hours) {
+    if (!serviceId || !startDate) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
     }
 
@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
         clientId: session.user.id,
         providerId: service.providerId,
         startDate: new Date(startDate),
-        hours: parseFloat(hours),
         status: 'PENDING'
       },
       include: {
@@ -61,7 +60,6 @@ export async function POST(request: NextRequest) {
         id: booking.id,
         status: booking.status,
         startDate: booking.startDate,
-        hours: booking.hours,
         service: {
           title: booking.service.title
         }
