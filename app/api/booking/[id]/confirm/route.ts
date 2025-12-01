@@ -17,8 +17,8 @@ export async function PATCH(
 
     const { id: bookingId } = await params
 
-    // Verificar que la reserva existe y el usuario es el propietario
-    const booking = await prisma.booking.findUnique({
+    // Primero buscar en Booking (items)
+    let booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
         item: {
@@ -28,10 +28,53 @@ export async function PATCH(
       }
     })
 
+    // Si no se encuentra, buscar en ServiceBooking
     if (!booking) {
-      return NextResponse.json({ error: "Reserva no encontrada" }, { status: 404 })
+      const serviceBooking = await prisma.serviceBooking.findUnique({
+        where: { id: bookingId },
+        include: {
+          service: {
+            include: { provider: true }
+          },
+          client: true
+        }
+      })
+
+      if (!serviceBooking) {
+        return NextResponse.json({ error: "Reserva no encontrada" }, { status: 404 })
+      }
+
+      // Verificar que el usuario es el proveedor del servicio
+      if (serviceBooking.service.providerId !== session.user.id) {
+        return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+      }
+
+      if (serviceBooking.status !== "PENDING") {
+        return NextResponse.json({ error: "Solo se pueden confirmar reservas pendientes" }, { status: 400 })
+      }
+
+      // Actualizar el estado de la reserva de servicio
+      const updatedServiceBooking = await prisma.serviceBooking.update({
+        where: { id: bookingId },
+        data: { status: "CONFIRMED" }
+      })
+
+      // Crear notificación para el cliente
+      await createNotification(
+        serviceBooking.clientId,
+        'BOOKING_CONFIRMED',
+        {
+          bookingId,
+          itemId: serviceBooking.serviceId,
+          itemTitle: serviceBooking.service.title,
+          ownerName: `${serviceBooking.service.provider.firstName} ${serviceBooking.service.provider.lastName}`.trim()
+        }
+      )
+
+      return NextResponse.json(updatedServiceBooking)
     }
 
+    // Es un Booking normal (item)
     if (booking.item.ownerId !== session.user.id) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     }

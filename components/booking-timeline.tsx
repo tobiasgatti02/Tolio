@@ -112,11 +112,11 @@ export default function BookingTimeline({
                 <div
                   className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center border-4 transition-all duration-300 ${
                     state === 'completed'
-                      ? 'bg-emerald-500 border-emerald-600 shadow-lg shadow-emerald-500/50'
+                      ? 'bg-emerald-500 border-emerald-600 shadow-lg shadow-emerald-500/30'
                       : state === 'current'
-                      ? 'bg-orange-500 border-orange-600 shadow-lg shadow-orange-500/50 animate-pulse'
+                      ? 'bg-orange-500 border-orange-600 shadow-lg shadow-orange-500/30'
                       : state === 'cancelled'
-                      ? 'bg-red-500 border-red-600 shadow-lg shadow-red-500/50'
+                      ? 'bg-red-500 border-red-600 shadow-lg shadow-red-500/30'
                       : 'bg-white border-gray-300'
                   }`}
                 >

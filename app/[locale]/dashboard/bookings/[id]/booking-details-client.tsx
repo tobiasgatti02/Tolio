@@ -107,28 +107,28 @@ export default function BookingDetailsClient({ bookingId }: BookingDetailsClient
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PENDIENTE':
+      case 'PENDING':
         return (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
             <Clock className="w-4 h-4 mr-1" />
             Pendiente
           </span>
         )
-      case 'CONFIRMADA':
+      case 'CONFIRMED':
         return (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
             <CheckCircle className="w-4 h-4 mr-1" />
             Confirmada
           </span>
         )
-      case 'CANCELADA':
+      case 'CANCELLED':
         return (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
             <XCircle className="w-4 h-4 mr-1" />
             Cancelada
           </span>
         )
-      case 'COMPLETADA':
+      case 'COMPLETED':
         return (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
             <CheckCircle className="w-4 h-4 mr-1" />
@@ -217,7 +217,7 @@ export default function BookingDetailsClient({ bookingId }: BookingDetailsClient
             </div>
 
             {/* Acciones para propietario */}
-            {booking.userRole === 'owner' && booking.status === 'PENDIENTE' && (
+            {booking.userRole === 'owner' && booking.status === 'PENDING' && (
               <div className="border-t pt-4">
                 <h3 className="text-md font-medium text-gray-900 mb-3">Acciones Pendientes</h3>
                 <div className="flex space-x-3">
@@ -227,7 +227,7 @@ export default function BookingDetailsClient({ bookingId }: BookingDetailsClient
                     className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Aceptar Reserva
+                    {actionLoading ? 'Procesando...' : 'Aceptar Reserva'}
                   </button>
                   <button
                     onClick={() => handleBookingAction('reject')}
@@ -235,7 +235,7 @@ export default function BookingDetailsClient({ bookingId }: BookingDetailsClient
                     className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                   >
                     <XCircle className="w-4 h-4 mr-2" />
-                    Rechazar Reserva
+                    {actionLoading ? 'Procesando...' : 'Rechazar Reserva'}
                   </button>
                 </div>
               </div>

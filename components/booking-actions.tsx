@@ -224,37 +224,19 @@ export default function BookingActions({
               <Button
                 onClick={handleConfirmBooking}
                 disabled={isSubmitting}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-4 text-base shadow-md hover:shadow-lg transition-all"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-4 text-base shadow-md hover:shadow-lg transition-all disabled:opacity-50"
               >
-                {isSubmitting ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Confirmando...
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 mr-2" />
-                    Confirmar reserva
-                  </div>
-                )}
+                <CheckCircle className="h-5 w-5 mr-2" />
+                {isSubmitting ? 'Confirmando...' : 'Confirmar reserva'}
               </Button>
               <Button
                 onClick={handleRejectBooking}
                 disabled={isSubmitting}
                 variant="destructive"
-                className="flex-1 font-medium py-4 text-base shadow-md hover:shadow-lg transition-all"
+                className="flex-1 font-medium py-4 text-base shadow-md hover:shadow-lg transition-all disabled:opacity-50"
               >
-                {isSubmitting ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Rechazando...
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <XCircle className="h-5 w-5 mx-auto" />
-                    Rechazar
-                  </div>
-                )}
+                <XCircle className="h-5 w-5 mr-2" />
+                {isSubmitting ? 'Rechazando...' : 'Rechazar'}
               </Button>
             </div>
           </>
