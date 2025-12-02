@@ -10,7 +10,8 @@ import {
   Plus, 
   DollarSign, TrendingUp, CreditCard, Clock,
  Menu, X,
-  ChevronDown, ChevronRight
+  ChevronDown, ChevronRight,
+  HelpCircle
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { STATUS_COLORS, BOOKING_STATUS, ERROR_MESSAGES } from "@/lib/dashboard-constants"
 import { DashboardBooking, DashboardStats, DashboardItem, DashboardReview, DashboardNotification } from "@/lib/types"
 import StripeAccountCheck from "@/components/stripe-account-check"
+import { useOnboarding } from "@/components/onboarding"
 
 interface MenuItem {
   id: string
@@ -72,6 +74,7 @@ export default function CleanDashboard({
   const locale = useLocale()
   const pathname = usePathname()
   const router = useRouter()
+  const { showOnboarding, isOnboardingComplete } = useOnboarding()
   
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -91,6 +94,17 @@ export default function CleanDashboard({
   const [items, setItems] = useState<DashboardItem[]>([])
   const [bookings, setBookings] = useState<DashboardBooking[]>([])
   const [dropdowns, setDropdowns] = useState<{[key: string]: boolean}>({})
+
+  // Trigger onboarding for new users
+  useEffect(() => {
+    if (!isOnboardingComplete) {
+      // Small delay to let the page render first
+      const timer = setTimeout(() => {
+        showOnboarding()
+      }, 800)
+      return () => clearTimeout(timer)
+    }
+  }, [isOnboardingComplete, showOnboarding])
 
   // Determinar la sección activa basada en la URL
   const getActiveSection = () => {
@@ -453,7 +467,7 @@ export default function CleanDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Header móvil */}
       <div className="lg:hidden">
         <div className="flex items-center justify-between p-4 bg-white border-b">
@@ -470,7 +484,7 @@ export default function CleanDashboard({
       <div className="flex min-h-screen">
         {/* Sidebar */}
         <aside className={`
-          fixed inset-y-0 left-0 z-50 w-96 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out
+          fixed inset-y-0 left-0 z-50 w-[85vw] max-w-[320px] sm:w-80 lg:w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out
           lg:translate-x-0 lg:static lg:inset-0 lg:z-auto
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
@@ -565,14 +579,28 @@ export default function CleanDashboard({
                 )}
               </div>
             ))}
+            
+            {/* Ver tutorial button */}
+            <div className="pt-4 mt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setSidebarOpen(false)
+                  showOnboarding()
+                }}
+                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-orange-600 hover:bg-orange-50 transition-colors"
+              >
+                <HelpCircle className="w-5 h-5" />
+                <span className="font-medium">Ver tutorial</span>
+              </button>
+            </div>
           </nav>
 
 
         </aside>
 
         {/* Main content */}
-        <div className="flex-1 lg:ml-0">
-          <main className="p-6">
+        <div className="flex-1 lg:ml-0 min-w-0">
+          <main className="p-3 sm:p-4 md:p-6">
             {renderContent()}
           </main>
         </div>

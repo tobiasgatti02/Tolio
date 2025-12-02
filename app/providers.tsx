@@ -2,6 +2,7 @@
 
 import { SessionProvider } from "next-auth/react"
 import { NotificationsProvider } from "@/contexts/notifications-context"
+import { OnboardingProvider } from "@/components/onboarding"
 import type { ReactNode } from "react"
 
 interface ProvidersProps {
@@ -12,7 +13,9 @@ export default function Providers({ children }: ProvidersProps) {
   return (
     <SessionProvider>
       <NotificationsProvider>
-        {children}
+        <OnboardingProvider>
+          {children}
+        </OnboardingProvider>
       </NotificationsProvider>
     </SessionProvider>
   )

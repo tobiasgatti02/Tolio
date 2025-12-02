@@ -191,16 +191,16 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-12">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-8 sm:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-4xl font-bold mb-2">Servicios Profesionales</h1>
-              <p className="text-blue-100 text-lg">Encuentra el profesional ideal para tu proyecto</p>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Servicios Profesionales</h1>
+              <p className="text-blue-100 text-base sm:text-lg">Encuentra el profesional ideal para tu proyecto</p>
             </div>
-            <Link href={`/${locale}/services/nuevo`} className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2">
-              <Plus className="h-5 w-5" />
+            <Link href={`/${locale}/services/nuevo`} className="bg-white text-blue-600 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2 text-sm sm:text-base">
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
               Ofrecer Servicio
             </Link>
           </div>
@@ -271,37 +271,37 @@ export default function ServicesPage() {
 
           <div className="lg:col-span-3">
             <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm sm:text-base">
                 <span className="font-semibold text-gray-900">{services.length}</span> servicios encontrados
               </p>
               
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 {/* View Toggle */}
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                  className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-1.5 sm:gap-2 text-sm ${
                     viewMode === 'list'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
                   <List className="h-4 w-4" />
-                  Lista
+                  <span className="hidden xs:inline">Lista</span>
                 </button>
                 <button
                   onClick={() => setViewMode('map')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                  className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-1.5 sm:gap-2 text-sm ${
                     viewMode === 'map'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
                   <MapIcon className="h-4 w-4" />
-                  Mapa
+                  <span className="hidden xs:inline">Mapa</span>
                 </button>
                 
                 {/* Sort */}
-                <select value={sortBy} onChange={(e) => handleFilterChange(setSortBy)(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <select value={sortBy} onChange={(e) => handleFilterChange(setSortBy)(e.target.value)} className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
                   {sortOptions.map(option => (<option key={option.value} value={option.value}>{option.label}</option>))}
                 </select>
               </div>
