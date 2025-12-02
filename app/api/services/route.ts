@@ -6,100 +6,152 @@ import { calculateDistance, isValidCoordinates } from "@/lib/geo-utils"
 import sharp from "sharp"
 import { moderateImage } from "@/lib/image-moderation"
 
+// Cache headers for CDN and browser caching
+const CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
 
-    const search = searchParams.get("search")
-    const location = searchParams.get("location")
-    const category = searchParams.get("category")
+    const search = searchParams.get("search")?.trim()
+    const location = searchParams.get("location")?.trim()
+    const category = searchParams.get("category")?.trim()
     const priceType = searchParams.get("priceType")
-    const isProfessional = searchParams.get("isProfessional")
+    const isProfessional = searchParams.get("professional") === 'true' || searchParams.get("isProfessional") === 'true'
     const sort = searchParams.get("sort") || "relevance"
 
     // Parámetros de búsqueda geográfica
     const userLat = searchParams.get("userLat")
     const userLng = searchParams.get("userLng")
     const radius = searchParams.get("radius")
+    const hasGeoFilter = userLat && userLng && radius
 
-    const where: any = {
-      isAvailable: true,
+    // Build WHERE clause efficiently
+    const where: any = { isAvailable: true }
+
+    // Use exact match for category (more efficient than contains)
+    if (category) {
+      where.category = category
     }
 
-    if (search) {
+    // Only add search if provided (expensive operation)
+    if (search && search.length >= 2) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
-        { features: { has: search } }
       ]
     }
 
-    if (location) {
+    if (location && location.length >= 2) {
       where.location = { contains: location, mode: 'insensitive' }
-    }
-
-    if (category) {
-      where.category = { contains: category, mode: 'insensitive' }
     }
 
     if (priceType) {
       where.priceType = priceType
     }
 
-    if (isProfessional === 'true') {
+    if (isProfessional) {
       where.isProfessional = true
     }
 
-    let orderBy: any = {}
-    if (sort === "rating") {
-      // Will implement rating sorting later
-      orderBy = { createdAt: "desc" }
-    } else if (sort === "price-low") {
-      orderBy = { pricePerHour: "asc" }
-    } else if (sort === "price-high") {
-      orderBy = { pricePerHour: "desc" }
-    } else {
-      orderBy = { createdAt: "desc" }
+    // Determine order efficiently
+    let orderBy: any
+    switch (sort) {
+      case "price-low":
+        orderBy = { pricePerHour: "asc" }
+        break
+      case "price-high":
+        orderBy = { pricePerHour: "desc" }
+        break
+      case "rating":
+        // For rating sort, we'll do it in-memory after aggregation
+        orderBy = { createdAt: "desc" }
+        break
+      default:
+        orderBy = { createdAt: "desc" }
     }
 
+    // OPTIMIZED QUERY: Only select fields we need, use aggregation for reviews
     const services = await prisma.service.findMany({
       where,
       orderBy,
-      include: {
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        pricePerHour: true,
+        priceType: true,
+        location: true,
+        latitude: true,
+        longitude: true,
+        images: true,
+        isProfessional: true,
+        createdAt: true,
         provider: {
           select: {
-            id: true,
             firstName: true,
             lastName: true,
             profileImage: true,
           }
         },
-        reviews: {
-          select: {
-            rating: true,
-          }
+        // Use _count for efficiency instead of fetching all reviews
+        _count: {
+          select: { reviews: true }
         }
       },
-      take: userLat && userLng && radius ? 100 : 50, // Menos servicios si hay filtro geográfico
+      take: hasGeoFilter ? 100 : 40, // Reduced limit for faster queries
     })
 
-    let servicesWithStats = services.map(service => ({
-      ...service,
-      averageRating: service.reviews.length > 0
-        ? service.reviews.reduce((acc, r) => acc + r.rating, 0) / service.reviews.length
-        : undefined,
-      reviewCount: service.reviews.length
-    }))
+    // Get average ratings in a single query using raw aggregation
+    const serviceIds = services.map(s => s.id)
+    const ratingsData = serviceIds.length > 0 
+      ? await prisma.serviceReview.groupBy({
+          by: ['serviceId'],
+          where: { serviceId: { in: serviceIds } },
+          _avg: { rating: true },
+        })
+      : []
 
-    // Aplicar filtro geográfico si se proporcionan coordenadas
-    if (userLat && userLng && radius) {
-      const lat = parseFloat(userLat)
-      const lng = parseFloat(userLng)
-      const radiusKm = parseFloat(radius)
+    // Create a Map for O(1) lookup
+    const ratingsMap = new Map(
+      ratingsData.map(r => [r.serviceId, r._avg.rating])
+    )
+
+    // Transform services efficiently
+    let formattedServices = services.map(service => {
+      const avgRating = ratingsMap.get(service.id)
+      return {
+        id: service.id,
+        title: service.title,
+        category: service.category,
+        pricePerHour: service.pricePerHour,
+        priceType: service.priceType,
+        location: service.location,
+        latitude: service.latitude,
+        longitude: service.longitude,
+        images: service.images,
+        isProfessional: service.isProfessional,
+        provider: service.provider,
+        averageRating: avgRating ? parseFloat(avgRating.toFixed(1)) : 0,
+        reviewCount: service._count.reviews,
+      }
+    })
+
+    // Sort by rating if requested (now we have the data)
+    if (sort === "rating") {
+      formattedServices.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
+    }
+
+    // Apply geo filter if coordinates provided
+    if (hasGeoFilter) {
+      const lat = parseFloat(userLat!)
+      const lng = parseFloat(userLng!)
+      const radiusKm = parseFloat(radius!)
 
       if (isValidCoordinates(lat, lng)) {
-        // Calcular distancia para cada servicio y filtrar por radio
-        servicesWithStats = servicesWithStats
+        formattedServices = formattedServices
           .map(service => {
             if (isValidCoordinates(service.latitude, service.longitude)) {
               const distance = calculateDistance(lat, lng, service.latitude!, service.longitude!)
@@ -107,17 +159,13 @@ export async function GET(request: Request) {
             }
             return { ...service, distance: undefined }
           })
-          .filter(service => {
-            // Si tiene distancia, debe estar dentro del radio
-            // Si no tiene coordenadas, no se muestra en búsqueda geográfica
-            return service.distance !== undefined && service.distance <= radiusKm
-          })
-          .sort((a, b) => (a.distance || 0) - (b.distance || 0)) // Ordenar por distancia
-          .slice(0, 50) // Limitar a 50 resultados
+          .filter(service => service.distance !== undefined && service.distance <= radiusKm)
+          .sort((a, b) => (a.distance || 0) - (b.distance || 0))
+          .slice(0, 40)
       }
     }
 
-    return NextResponse.json(servicesWithStats)
+    return NextResponse.json(formattedServices, { headers: CACHE_HEADERS })
   } catch (error) {
     console.error("Error fetching services:", error)
     return NextResponse.json(

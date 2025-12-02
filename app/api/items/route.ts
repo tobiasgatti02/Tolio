@@ -6,64 +6,82 @@ import { calculateDistance, isValidCoordinates } from "@/lib/geo-utils"
 import sharp from "sharp"
 import { moderateImage } from "@/lib/image-moderation"
 
+// Cache headers for CDN and browser caching
+const CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+}
+
 // GET: Obtener todos los items con filtros
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
 
-    const search = searchParams.get("search")
-    const location = searchParams.get("location")
-    const category = searchParams.get("category")
+    const search = searchParams.get("search")?.trim()
+    const location = searchParams.get("location")?.trim()
+    const category = searchParams.get("category")?.trim()
     const sort = searchParams.get("sort") || "recent"
 
     // Parámetros de búsqueda geográfica
     const userLat = searchParams.get("userLat")
     const userLng = searchParams.get("userLng")
     const radius = searchParams.get("radius")
+    const hasGeoFilter = userLat && userLng && radius
 
-    const where: any = {
-      isAvailable: true,
-    }
+    // Build WHERE clause efficiently
+    const where: any = { isAvailable: true }
 
-    // Aplicar filtro de búsqueda
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { features: { has: search } }
-      ]
-    }
-
-    // Aplicar filtro de ubicación
-    if (location) {
-      where.location = { contains: location, mode: 'insensitive' }
-    }
-
-    // Aplicar filtro de categoría
+    // Use exact match for category when provided (more efficient than contains)
     if (category && category !== "all") {
       where.category = category
     }
 
-    // Determinar orden
-    let orderBy: any = { createdAt: 'desc' }
-
-    if (sort === "price-low") {
-      orderBy = { price: 'asc' }
-    } else if (sort === "price-high") {
-      orderBy = { price: 'desc' }
-    } else if (sort === "rating") {
-      orderBy = { reviews: { _count: 'desc' } }
+    // Only add search if provided and has meaningful length
+    if (search && search.length >= 2) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ]
     }
 
+    if (location && location.length >= 2) {
+      where.location = { contains: location, mode: 'insensitive' }
+    }
+
+    // Determine order efficiently
+    let orderBy: any
+    switch (sort) {
+      case "price-low":
+      case "price_asc":
+        orderBy = { price: 'asc' }
+        break
+      case "price-high":
+      case "price_desc":
+        orderBy = { price: 'desc' }
+        break
+      case "rating":
+        orderBy = { createdAt: 'desc' } // Sort by rating in-memory
+        break
+      default:
+        orderBy = { createdAt: 'desc' }
+    }
+
+    // OPTIMIZED QUERY: Only select fields we need
     const items = await prisma.item.findMany({
       where,
       orderBy,
-      include: {
-        reviews: {
-          select: {
-            rating: true,
-          },
-        },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        priceType: true,
+        category: true,
+        location: true,
+        latitude: true,
+        longitude: true,
+        images: true,
+        features: true,
+        createdAt: true,
         owner: {
           select: {
             id: true,
@@ -72,35 +90,66 @@ export async function GET(request: Request) {
             profileImage: true,
           },
         },
+        _count: {
+          select: { reviews: true }
+        }
       },
-      take: userLat && userLng && radius ? 100 : 50, // Menos items si hay filtro geográfico
+      take: hasGeoFilter ? 100 : 40, // Reduced limit for faster queries
     })
 
-    let formattedItems = items.map(item => {
-      const averageRating = item.reviews.length > 0
-        ? item.reviews.reduce((sum, review) => sum + review.rating, 0) / item.reviews.length
-        : undefined
+    // Get average ratings in a single query using aggregation
+    const itemIds = items.map(i => i.id)
+    const ratingsData = itemIds.length > 0
+      ? await prisma.review.groupBy({
+          by: ['itemId'],
+          where: { itemId: { in: itemIds } },
+          _avg: { rating: true },
+        })
+      : []
 
+    // Create a Map for O(1) lookup
+    const ratingsMap = new Map(
+      ratingsData.map(r => [r.itemId, r._avg.rating])
+    )
+
+    // Transform items efficiently
+    let formattedItems = items.map(item => {
+      const avgRating = ratingsMap.get(item.id)
       return {
-        ...item,
-        averageRating: averageRating !== undefined ? parseFloat(averageRating.toFixed(1)) : undefined,
-        reviewCount: item.reviews.length,
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        price: item.price,
+        priceType: item.priceType,
+        category: item.category,
+        location: item.location,
+        latitude: item.latitude,
+        longitude: item.longitude,
+        images: item.images,
+        features: item.features,
+        averageRating: avgRating ? parseFloat(avgRating.toFixed(1)) : 0,
+        reviewCount: item._count.reviews,
         owner: {
           id: item.owner.id,
-          name: `${item.owner.firstName} ${item.owner.lastName}`.trim(),
-          image: item.owner.profileImage,
+          firstName: item.owner.firstName,
+          lastName: item.owner.lastName,
+          profileImage: item.owner.profileImage,
         },
       }
     })
 
-    // Aplicar filtro geográfico si se proporcionan coordenadas
-    if (userLat && userLng && radius) {
-      const lat = parseFloat(userLat)
-      const lng = parseFloat(userLng)
-      const radiusKm = parseFloat(radius)
+    // Sort by rating if requested
+    if (sort === "rating") {
+      formattedItems.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
+    }
+
+    // Apply geo filter if coordinates provided
+    if (hasGeoFilter) {
+      const lat = parseFloat(userLat!)
+      const lng = parseFloat(userLng!)
+      const radiusKm = parseFloat(radius!)
 
       if (isValidCoordinates(lat, lng)) {
-        // Calcular distancia para cada item y filtrar por radio
         formattedItems = formattedItems
           .map(item => {
             if (isValidCoordinates(item.latitude, item.longitude)) {
@@ -109,17 +158,13 @@ export async function GET(request: Request) {
             }
             return { ...item, distance: undefined }
           })
-          .filter(item => {
-            // Si tiene distancia, debe estar dentro del radio
-            // Si no tiene coordenadas, no se muestra en búsqueda geográfica
-            return item.distance !== undefined && item.distance <= radiusKm
-          })
-          .sort((a, b) => (a.distance || 0) - (b.distance || 0)) // Ordenar por distancia
-          .slice(0, 50) // Limitar a 50 resultados
+          .filter(item => item.distance !== undefined && item.distance <= radiusKm)
+          .sort((a, b) => (a.distance || 0) - (b.distance || 0))
+          .slice(0, 40)
       }
     }
 
-    return NextResponse.json(formattedItems)
+    return NextResponse.json(formattedItems, { headers: CACHE_HEADERS })
   } catch (err) {
     console.error("❌ Error fetching items:", err)
     return NextResponse.json(

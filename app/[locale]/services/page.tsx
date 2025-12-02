@@ -1,16 +1,20 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useLocale } from 'next-intl'
 import Link from "next/link"
 import Image from "next/image"
 import dynamic from "next/dynamic"
 import { Star, MapPin, Filter, Search, Loader2, Briefcase, Plus, Award, Map as MapIcon, List } from "lucide-react"
-import RadiusControl from "@/components/radius-control"
 
-// Importar MapSearchView dinámicamente con loading state
+// Lazy load heavy components
+const RadiusControl = dynamic(() => import("@/components/radius-control"), {
+  ssr: false,
+  loading: () => <div className="h-24 bg-gray-100 animate-pulse rounded-lg" />
+})
+
 const MapSearchView = dynamic(() => import("@/components/map-search-view"), { 
   ssr: false,
   loading: () => <div className="h-[500px] bg-gray-100 animate-pulse rounded-lg" />
@@ -50,8 +54,8 @@ const serviceCategories = [
   "Diseño", "Educación", "Otros"
 ]
 
-// Skeleton component for loading state
-function ServiceCardSkeleton() {
+// Memoized skeleton to prevent re-renders
+const ServiceCardSkeleton = memo(function ServiceCardSkeleton() {
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-sm animate-pulse">
       <div className="h-48 bg-gray-200" />
@@ -71,7 +75,84 @@ function ServiceCardSkeleton() {
       </div>
     </div>
   )
-}
+})
+
+// Memoized service card component to prevent unnecessary re-renders
+const ServiceCard = memo(function ServiceCard({ 
+  service, 
+  locale, 
+  priority 
+}: { 
+  service: Service
+  locale: string
+  priority: boolean 
+}) {
+  return (
+    <Link 
+      href={`/${locale}/services/${service.id}`} 
+      className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200"
+      prefetch={priority}
+    >
+      <div className="relative h-48 overflow-hidden bg-gray-100">
+        <Image 
+          src={service.images[0] || "/placeholder-service.jpg"} 
+          alt={service.title} 
+          fill 
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          loading={priority ? "eager" : "lazy"}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        />
+        {service.isProfessional && (
+          <div className="absolute top-3 right-3 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+            <Award className="h-3 w-3" />
+            Matriculado
+          </div>
+        )}
+      </div>
+      <div className="p-4">
+        <div className="text-xs font-medium text-blue-600 mb-1">{service.category}</div>
+        <h3 className="font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors line-clamp-1">{service.title}</h3>
+        <div className="flex items-center mb-2">
+          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+          <span className="text-sm font-medium ml-1">{service.averageRating?.toFixed(1) || '0.0'}</span>
+          <span className="text-xs text-gray-500 ml-1">({service.reviewCount || 0})</span>
+        </div>
+        <div className="flex items-center text-xs text-gray-500 mb-2">
+          <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+          <span className="truncate">{service.location}</span>
+        </div>
+        {service.distance !== undefined && (
+          <div className="text-xs text-blue-600 font-medium mb-2">
+            📍 {service.distance.toFixed(1)} km
+          </div>
+        )}
+        <div className="flex items-center gap-2 mb-2">
+          {service.provider.profileImage ? (
+            <Image 
+              src={service.provider.profileImage} 
+              alt="" 
+              width={24} 
+              height={24} 
+              className="rounded-full"
+              loading="lazy"
+            />
+          ) : (
+            <div className="h-6 w-6 rounded-full bg-gray-300 flex-shrink-0" />
+          )}
+          <span className="text-xs text-gray-600 truncate">
+            {service.provider.firstName} {service.provider.lastName}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <div className="text-gray-900 font-bold text-sm">
+            {service.pricePerHour ? `$${service.pricePerHour}/h` : "A convenir"}
+          </div>
+          <div className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Disponible</div>
+        </div>
+      </div>
+    </Link>
+  )
+})
 
 export default function ServicesPage() {
   const locale = useLocale()
@@ -95,24 +176,46 @@ export default function ServicesPage() {
   // Track if this is the first render to avoid double fetch
   const isFirstRender = useRef(true)
   const hasUserInteracted = useRef(false)
+  // AbortController for request cancellation
+  const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Fetch services only when searchParams change (from URL)
+  // Fetch services with abort support
   useEffect(() => {
+    // Cancel previous request if still pending
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     const fetchServices = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch(`/api/services?${searchParams.toString()}`)
+        const response = await fetch(`/api/services?${searchParams.toString()}`, {
+          signal: controller.signal,
+          // Enable browser cache
+          cache: 'default',
+        })
         if (!response.ok) throw new Error('Failed to fetch services')
         const data = await response.json()
-        setServices(data)
+        if (!controller.signal.aborted) {
+          setServices(data)
+        }
       } catch (error) {
-        console.error('Error fetching services:', error)
-        setServices([])
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error('Error fetching services:', error)
+          setServices([])
+        }
       } finally {
-        setIsLoading(false)
+        if (!controller.signal.aborted) {
+          setIsLoading(false)
+        }
       }
     }
     fetchServices()
+
+    return () => controller.abort()
   }, [searchParams])
 
   const updateSearchParams = useCallback((params: Record<string, string | null>) => {
@@ -150,8 +253,8 @@ export default function ServicesPage() {
     return () => clearTimeout(timeoutId)
   }, [searchTerm, location, selectedCategory, isProfessionalOnly, sortBy, userLocation, radius, updateSearchParams])
 
-  // Get user location
-  const getUserLocation = () => {
+  // Get user location - memoized callback
+  const getUserLocation = useCallback(() => {
     setIsLoadingLocation(true)
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -172,9 +275,9 @@ export default function ServicesPage() {
       alert("Tu navegador no soporta geolocalización")
       setIsLoadingLocation(false)
     }
-  }
+  }, [])
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     hasUserInteracted.current = true
     setSearchTerm("")
     setLocation("")
@@ -182,9 +285,9 @@ export default function ServicesPage() {
     setIsProfessionalOnly(false)
     setSortBy("relevance")
     setUserLocation(null)
-  }
+  }, [])
 
-  // Helper to mark user interaction
+  // Helper to mark user interaction - memoized
   const handleFilterChange = <T,>(setter: React.Dispatch<React.SetStateAction<T>>) => (value: T) => {
     hasUserInteracted.current = true
     setter(value)
@@ -343,54 +446,12 @@ export default function ServicesPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {services.map((service, index) => (
-                  <Link href={`/${locale}/services/${service.id}`} key={service.id} className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="relative h-48 overflow-hidden bg-gray-100">
-                      <Image 
-                        src={service.images[0] || "/placeholder-service.jpg"} 
-                        alt={service.title} 
-                        fill 
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading={index < 3 ? "eager" : "lazy"}
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      />
-                      {service.isProfessional && (
-                        <div className="absolute top-3 right-3 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                          <Award className="h-3 w-3" />
-                          Matriculado
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <div className="text-xs font-medium text-blue-600 mb-1">{service.category}</div>
-                      <h3 className="font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">{service.title}</h3>
-                      <div className="flex items-center mb-2">
-                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                        <span className="text-sm font-medium ml-1">{service.averageRating?.toFixed(1) || 'N/A'}</span>
-                        <span className="text-xs text-gray-500 ml-1">({service.reviewCount} reseñas)</span>
-                      </div>
-                      <div className="flex items-center text-xs text-gray-500 mb-2">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        {service.location}
-                      </div>
-                      {service.distance !== undefined && (
-                        <div className="text-xs text-blue-600 font-medium mb-2">
-                          📍 {service.distance.toFixed(1)} km de distancia
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 mb-2">
-                        {service.provider.profileImage ? (
-                          <Image src={service.provider.profileImage} alt={`${service.provider.firstName} ${service.provider.lastName}`} width={24} height={24} className="rounded-full" />
-                        ) : (
-                          <div className="h-6 w-6 rounded-full bg-gray-300" />
-                        )}
-                        <span className="text-xs text-gray-600">{service.provider.firstName} {service.provider.lastName}</span>
-                      </div>
-                      <div className="mt-auto flex justify-between items-center">
-                        <div className="text-gray-900 font-bold">{service.pricePerHour ? `$${service.pricePerHour}/hora` : "A convenir"}</div>
-                        <div className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Disponible</div>
-                      </div>
-                    </div>
-                  </Link>
+                  <ServiceCard 
+                    key={service.id} 
+                    service={service} 
+                    locale={locale}
+                    priority={index < 3}
+                  />
                 ))}
               </div>
             )}

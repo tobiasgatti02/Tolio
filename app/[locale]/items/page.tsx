@@ -1,16 +1,20 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, memo } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useLocale } from 'next-intl'
 import Link from "next/link"
 import Image from "next/image"
 import dynamic from "next/dynamic"
 import { Star, MapPin, Filter, Search, Loader2, Wrench, Plus, Map as MapIcon, List } from "lucide-react"
-import RadiusControl from "@/components/radius-control"
 
-// Importar MapSearchView dinámicamente
+// Lazy load heavy components
+const RadiusControl = dynamic(() => import("@/components/radius-control"), {
+  ssr: false,
+  loading: () => <div className="h-24 bg-gray-100 animate-pulse rounded-lg" />
+})
+
 const MapSearchView = dynamic(() => import("@/components/map-search-view"), { 
   ssr: false,
   loading: () => <div className="h-[500px] bg-gray-100 animate-pulse rounded-lg" />
@@ -53,8 +57,8 @@ const sortOptions = [
   { value: "newest", label: "Más recientes" },
 ]
 
-// Skeleton component for loading state
-function ItemCardSkeleton() {
+// Memoized skeleton component
+const ItemCardSkeleton = memo(function ItemCardSkeleton() {
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-sm animate-pulse">
       <div className="h-48 bg-gray-200" />
@@ -70,7 +74,59 @@ function ItemCardSkeleton() {
       </div>
     </div>
   )
-}
+})
+
+// Memoized item card to prevent unnecessary re-renders
+const ItemCard = memo(function ItemCard({ 
+  item, 
+  locale, 
+  priority 
+}: { 
+  item: Item
+  locale: string
+  priority: boolean 
+}) {
+  return (
+    <Link 
+      href={`/${locale}/items/${item.id}`} 
+      className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200"
+      prefetch={priority}
+    >
+      <div className="relative h-48 overflow-hidden bg-gray-100">
+        <Image 
+          src={item.images[0] || "/placeholder.svg"} 
+          alt={item.title} 
+          fill 
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          loading={priority ? "eager" : "lazy"}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        />
+      </div>
+      <div className="p-4">
+        <div className="text-xs font-medium text-emerald-600 mb-1">{item.category}</div>
+        <h3 className="font-bold text-gray-900 mb-1 group-hover:text-emerald-600 transition-colors line-clamp-1">{item.title}</h3>
+        <div className="flex items-center mb-2">
+          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+          <span className="text-sm font-medium ml-1">{(item.averageRating || 0).toFixed(1)}</span>
+          <span className="text-xs text-gray-500 ml-1">({item.reviewCount || 0})</span>
+        </div>
+        <div className="flex items-center text-xs text-gray-500 mb-2">
+          <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+          <span className="truncate">{item.location}</span>
+        </div>
+        {item.distance !== undefined && (
+          <div className="text-xs text-emerald-600 font-medium mb-2">
+            📍 {item.distance.toFixed(1)} km
+          </div>
+        )}
+        <div className="flex justify-between items-center">
+          <div className="text-gray-900 font-bold text-sm">${item.price}/{item.priceType || 'día'}</div>
+          <div className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full">Disponible</div>
+        </div>
+      </div>
+    </Link>
+  )
+})
 
 export default function ItemsPage() {
   const locale = useLocale()
@@ -96,30 +152,52 @@ export default function ItemsPage() {
   // Track if this is the first render to avoid double fetch
   const isFirstRender = useRef(true)
   const hasUserInteracted = useRef(false)
+  // AbortController for request cancellation
+  const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Fetch items only when searchParams change (from URL)
+  // Fetch items with abort support
   useEffect(() => {
+    // Cancel previous request if still pending
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     const fetchItems = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch(`/api/items?${searchParams.toString()}`)
+        const response = await fetch(`/api/items?${searchParams.toString()}`, {
+          signal: controller.signal,
+          cache: 'default',
+        })
         if (!response.ok) throw new Error('Failed to fetch items')
         const data = await response.json()
-        setItems(data)
+        if (!controller.signal.aborted) {
+          setItems(data)
+        }
       } catch (error) {
-        console.error('Error fetching items:', error)
-        setItems([])
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error('Error fetching items:', error)
+          setItems([])
+        }
       } finally {
-        setIsLoading(false)
+        if (!controller.signal.aborted) {
+          setIsLoading(false)
+        }
       }
     }
     fetchItems()
+
+    return () => controller.abort()
   }, [searchParams])
 
+  // Fetch categories only once on mount
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/categorias')
+        const response = await fetch('/api/categorias', { cache: 'force-cache' })
         if (!response.ok) throw new Error('Failed to fetch categories')
         const data = await response.json()
         setCategories(data)
