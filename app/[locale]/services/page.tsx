@@ -437,7 +437,8 @@ export default function ServicesPage() {
                   priceType: "hour",
                   category: service.category,
                   distance: service.distance,
-                  images: service.images
+                  images: service.images,
+                  ownerName: `${service.provider.firstName} ${service.provider.lastName}`
                 }))}
                 userLocation={userLocation}
                 radius={radius}

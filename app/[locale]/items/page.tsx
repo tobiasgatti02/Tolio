@@ -444,7 +444,8 @@ export default function ItemsPage() {
                   priceType: "day",
                   category: item.category,
                   distance: item.distance,
-                  images: item.images
+                  images: item.images,
+                  ownerName: item.owner ? `${item.owner.firstName} ${item.owner.lastName}` : undefined
                 }))}
                 userLocation={userLocation}
                 radius={radius}

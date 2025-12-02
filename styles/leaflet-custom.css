@@ -38,6 +38,31 @@
   min-width: 200px;
 }
 
+/* Estilos para tooltips personalizados */
+.custom-tooltip {
+  background: white !important;
+  border: none !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+  padding: 0 !important;
+}
+
+.custom-tooltip::before {
+  border-top-color: white !important;
+}
+
+.leaflet-tooltip-top:before {
+  border-top-color: white !important;
+}
+
+.leaflet-tooltip {
+  background: white;
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  padding: 0;
+}
+
 .custom-popup {
   padding: 1rem;
 }

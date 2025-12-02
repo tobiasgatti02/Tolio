@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import dynamic from "next/dynamic"
-import { Loader2 } from "lucide-react"
+import { Loader2, ExternalLink } from "lucide-react"
 import type { LatLngExpression } from "leaflet"
 import type L from "leaflet"
 
@@ -23,6 +23,10 @@ const Popup = dynamic(
   () => import("react-leaflet").then((mod) => mod.Popup),
   { ssr: false }
 )
+const Tooltip = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Tooltip),
+  { ssr: false }
+)
 const Circle = dynamic(
   () => import("react-leaflet").then((mod) => mod.Circle),
   { ssr: false }
@@ -38,6 +42,7 @@ interface MapItem {
   category: string
   distance?: number
   images?: string[]
+  ownerName?: string
 }
 
 interface MapSearchViewProps {
@@ -106,9 +111,9 @@ export default function MapSearchView({
     )
   }
 
-  // Filtrar items que tienen coordenadas
+  // Filtrar items que tienen coordenadas válidas (no null, no undefined, no 0)
   const itemsWithCoords = items.filter(
-    (item) => item.latitude !== null && item.longitude !== null
+    (item) => item.latitude && item.longitude && item.latitude !== 0 && item.longitude !== 0
   )
 
   // Determinar el centro del mapa
@@ -157,7 +162,7 @@ export default function MapSearchView({
           </Marker>
         )}
 
-        {/* Marcadores de items */}
+        {/* Marcadores de items con tooltip en hover */}
         {customIcon && itemsWithCoords.map((item) => (
           <Marker
             key={item.id}
@@ -171,25 +176,37 @@ export default function MapSearchView({
               },
             }}
           >
-            <Popup>
-              <div className="custom-popup">
-                <h3>{item.title}</h3>
-                <p className="text-xs text-gray-500">{item.category}</p>
+            <Tooltip 
+              direction="top" 
+              offset={[0, -20]} 
+              opacity={1}
+              permanent={false}
+              className="custom-tooltip"
+            >
+              <div className="p-2 min-w-[180px]">
+                <h4 className="font-semibold text-gray-900 text-sm line-clamp-1">{item.title}</h4>
+                {item.ownerName && (
+                  <p className="text-xs text-gray-500 mt-0.5">por {item.ownerName}</p>
+                )}
+                <p className="text-xs text-emerald-600 font-medium mt-1">{item.category}</p>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="font-bold text-gray-900">
+                    ${item.price}
+                    <span className="text-xs font-normal text-gray-500">
+                      /{item.priceType === "hour" ? "h" : "día"}
+                    </span>
+                  </span>
+                  <span className="text-xs text-blue-600 flex items-center gap-1">
+                    Click para ver <ExternalLink className="h-3 w-3" />
+                  </span>
+                </div>
                 {item.distance !== undefined && (
-                  <p className="text-xs text-emerald-600">
-                    📍 {item.distance.toFixed(1)} km de distancia
+                  <p className="text-xs text-gray-400 mt-1">
+                    📍 {item.distance.toFixed(1)} km
                   </p>
                 )}
-                <div className="price">
-                  ${item.price}
-                  {item.priceType && (
-                    <span className="text-sm font-normal text-gray-600">
-                      /{item.priceType === "hour" ? "hora" : "día"}
-                    </span>
-                  )}
-                </div>
               </div>
-            </Popup>
+            </Tooltip>
           </Marker>
         ))}
       </MapContainer>
