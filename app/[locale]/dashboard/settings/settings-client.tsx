@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Save, X, Wallet, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import Image from "next/image"
+import { Save, X, Wallet, CheckCircle, AlertCircle, Loader2, Camera, Trash2, User } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,9 +34,12 @@ interface SettingsClientProps {
 export default function SettingsClient({ user }: SettingsClientProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [imageLoading, setImageLoading] = useState(false)
   const [stripeLoading, setStripeLoading] = useState(false)
   const [stripeAccountComplete, setStripeAccountComplete] = useState(false)
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
+  const [profileImage, setProfileImage] = useState<string | null>(user?.profileImage || null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -60,6 +64,77 @@ export default function SettingsClient({ user }: SettingsClientProps) {
       console.error('Error checking Stripe:', error)
     } finally {
       setStripeLoading(false)
+    }
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validar tipo
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      setMessage({ type: 'error', text: 'Formato no soportado. Solo se aceptan JPG, PNG y WebP.' })
+      setTimeout(() => setMessage(null), 3000)
+      return
+    }
+
+    // Validar tamaño (máximo 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'La imagen debe ser menor a 10MB.' })
+      setTimeout(() => setMessage(null), 3000)
+      return
+    }
+
+    setImageLoading(true)
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const response = await fetch('/api/user/profile-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setProfileImage(data.profileImage)
+        setMessage({ type: 'success', text: 'Foto de perfil actualizada' })
+        setTimeout(() => setMessage(null), 3000)
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Error al subir imagen')
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Error al subir la imagen' })
+      setTimeout(() => setMessage(null), 3000)
+    } finally {
+      setImageLoading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleDeleteImage = async () => {
+    setImageLoading(true)
+    try {
+      const response = await fetch('/api/user/profile-image', {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setProfileImage(null)
+        setMessage({ type: 'success', text: 'Foto de perfil eliminada' })
+        setTimeout(() => setMessage(null), 3000)
+      } else {
+        throw new Error('Error al eliminar imagen')
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error al eliminar la imagen' })
+      setTimeout(() => setMessage(null), 3000)
+    } finally {
+      setImageLoading(false)
     }
   }
 
@@ -105,6 +180,70 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Foto de Perfil */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Foto de Perfil</CardTitle>
+          <CardDescription>Sube o actualiza tu foto de perfil</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            <div className="relative">
+              <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 flex items-center justify-center">
+                {profileImage ? (
+                  <Image
+                    src={profileImage}
+                    alt="Foto de perfil"
+                    width={128}
+                    height={128}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-16 h-16 text-gray-400" />
+                )}
+              </div>
+              {imageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                  <Loader2 className="h-8 w-8 animate-spin text-white" />
+                </div>
+              )}
+            </div>
+            
+            <div className="flex flex-col gap-3">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={imageLoading}
+              >
+                <Camera className="mr-2 h-4 w-4" />
+                {profileImage ? 'Cambiar foto' : 'Subir foto'}
+              </Button>
+              {profileImage && (
+                <Button
+                  variant="ghost"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={handleDeleteImage}
+                  disabled={imageLoading}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Eliminar foto
+                </Button>
+              )}
+              <p className="text-xs text-gray-500">
+                JPG, PNG o WebP. Máximo 10MB.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

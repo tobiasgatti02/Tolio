@@ -49,6 +49,7 @@ interface BookingsStats {
 
 export default function BookingsClientEnhanced({ userId }: { userId: string }) {
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [toast, setToast] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([])
   const [stats, setStats] = useState<BookingsStats>({
     totalSpent: 0,
@@ -235,7 +236,12 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
     fetchBookings()
   }
 
-  const handleBookingAction = async (bookingId: string, action: 'confirm' | 'reject') => {
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message })
+    setTimeout(() => setToast(null), 4000)
+  }
+
+  const handleBookingAction = async (bookingId: string, action: 'confirm' | 'reject' | 'complete') => {
     try {
       const response = await fetch(`/api/booking/${bookingId}/${action}`, {
         method: 'PATCH'
@@ -243,14 +249,19 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
       
       if (response.ok) {
         fetchBookings()
-        alert(`Reserva ${action === 'confirm' ? 'confirmada' : 'rechazada'} exitosamente`)
+        const actionMessages = {
+          confirm: 'confirmada',
+          reject: 'cancelada', 
+          complete: 'completada'
+        }
+        showToast('success', `Reserva ${actionMessages[action]} exitosamente`)
       } else {
         const errorData = await response.json()
-        alert(`Error: ${errorData.message || 'No se pudo procesar la reserva'}`)
+        showToast('error', errorData.error || 'No se pudo procesar la reserva')
       }
     } catch (error) {
       console.error('Error processing booking:', error)
-      alert('Error al procesar la reserva')
+      showToast('error', 'Error al procesar la reserva')
     }
   }
 
@@ -321,6 +332,28 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-6 p-6">
+      {/* Toast notification */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 animate-in slide-in-from-top-2 duration-300 ${
+          toast.type === 'success' 
+            ? 'bg-green-50 border border-green-200 text-green-800' 
+            : 'bg-red-50 border border-red-200 text-red-800'
+        }`}>
+          {toast.type === 'success' ? (
+            <CheckCircle className="w-5 h-5 text-green-600" />
+          ) : (
+            <XCircle className="w-5 h-5 text-red-600" />
+          )}
+          <span className="font-medium">{toast.message}</span>
+          <button 
+            onClick={() => setToast(null)}
+            className="ml-2 text-gray-400 hover:text-gray-600"
+          >
+            <XCircle className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Mis Reservas</h1>
@@ -477,6 +510,7 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
             const isOwner = booking.userRole === 'owner'
             const otherUser = isOwner ? booking.borrower : booking.owner
             const isPending = booking.status === 'PENDIENTE'
+            const isConfirmed = booking.status === 'CONFIRMADA'
             
             return (
               <div 
@@ -554,36 +588,57 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
                               <div className="flex items-center gap-2 mb-2">
                                 <span className="text-xs font-medium text-gray-600">Progreso</span>
                               </div>
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
                                 {/* Pendiente */}
-                                <div className="flex flex-col items-center gap-1 flex-1">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                <div className="flex flex-col items-center gap-1">
+                                  <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
                                     booking.status === 'PENDIENTE' 
-                                      ? 'bg-yellow-500 text-white ring-4 ring-yellow-100' 
+                                      ? 'bg-yellow-500 text-white ring-2 ring-yellow-200' 
                                       : 'bg-green-500 text-white'
                                   }`}>
-                                    <Clock className="w-4 h-4" />
+                                    <Clock className="w-3.5 h-3.5" />
                                   </div>
-                                  <span className="text-xs text-gray-600 text-center">Pendiente</span>
+                                  <span className="text-[10px] text-gray-600">Pendiente</span>
                                 </div>
                                 
-                                {/* Línea */}
-                                <div className={`flex-1 h-1 rounded-full ${
-                                  booking.status === 'CONFIRMADA' 
+                                {/* Línea 1 */}
+                                <div className={`flex-1 h-0.5 rounded-full ${
+                                  ['CONFIRMADA'].includes(booking.status) 
                                     ? 'bg-green-500' 
                                     : 'bg-gray-200'
                                 }`}></div>
 
                                 {/* Confirmada */}
-                                <div className="flex flex-col items-center gap-1 flex-1">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                <div className="flex flex-col items-center gap-1">
+                                  <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
                                     booking.status === 'CONFIRMADA' 
-                                      ? 'bg-green-500 text-white ring-4 ring-green-100' 
-                                      : 'bg-gray-300 text-white'
+                                      ? 'bg-blue-500 text-white ring-2 ring-blue-200' 
+                                      : booking.status === 'COMPLETADA'
+                                        ? 'bg-green-500 text-white'
+                                        : 'bg-gray-200 text-gray-400'
                                   }`}>
-                                    <CheckCircle className="w-4 h-4" />
+                                    <CheckCircle className="w-3.5 h-3.5" />
                                   </div>
-                                  <span className="text-xs text-gray-600 text-center">Confirmada</span>
+                                  <span className="text-[10px] text-gray-600">Confirmada</span>
+                                </div>
+                                
+                                {/* Línea 2 */}
+                                <div className={`flex-1 h-0.5 rounded-full ${
+                                  booking.status === 'COMPLETADA' 
+                                    ? 'bg-green-500' 
+                                    : 'bg-gray-200'
+                                }`}></div>
+
+                                {/* Completada */}
+                                <div className="flex flex-col items-center gap-1">
+                                  <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
+                                    booking.status === 'COMPLETADA' 
+                                      ? 'bg-green-500 text-white ring-2 ring-green-200' 
+                                      : 'bg-gray-200 text-gray-400'
+                                  }`}>
+                                    <CheckCircle className="w-3.5 h-3.5" />
+                                  </div>
+                                  <span className="text-[10px] text-gray-600">Completada</span>
                                 </div>
                               </div>
                             </div>
@@ -625,6 +680,35 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
                                 >
                                   <XCircle className="w-4 h-4 mr-1" />
                                   Rechazar
+                                </button>
+                              </>
+                            )}
+
+                            {!isOwner && isPending && (
+                              <button
+                                onClick={() => handleBookingAction(booking.id, 'reject')}
+                                className="inline-flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Cancelar
+                              </button>
+                            )}
+
+                            {isOwner && isConfirmed && (
+                              <>
+                                <button
+                                  onClick={() => handleBookingAction(booking.id, 'complete')}
+                                  className="inline-flex items-center px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-1" />
+                                  Completar
+                                </button>
+                                <button
+                                  onClick={() => handleBookingAction(booking.id, 'reject')}
+                                  className="inline-flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
+                                >
+                                  <XCircle className="w-4 h-4 mr-1" />
+                                  Cancelar
                                 </button>
                               </>
                             )}

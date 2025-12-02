@@ -4,6 +4,18 @@ import { ERROR_MESSAGES, DASHBOARD_CONFIG } from './dashboard-constants'
 
 const prisma = new PrismaClient()
 
+// Map status from English (database) to Spanish (frontend)
+function mapStatusToSpanish(status: string): string {
+  const statusMap: Record<string, string> = {
+    'PENDING': 'PENDIENTE',
+    'CONFIRMED': 'CONFIRMADA',
+    'COMPLETED': 'COMPLETADA',
+    'CANCELLED': 'CANCELADA',
+    'IN_PROGRESS': 'EN_PROGRESO'
+  }
+  return statusMap[status] || status
+}
+
 // Helper function to calculate total price for a booking
 function calculateBookingPrice(dailyPrice: number, startDate: Date, endDate: Date): number {
   const diffTime = Math.abs(new Date(endDate).getTime() - new Date(startDate).getTime())
@@ -291,7 +303,8 @@ export class DashboardService {
             id: booking.item.id,
             nombre: booking.item.title,
             imagenes: booking.item.images,
-            precioPorDia: booking.item.price
+            precioPorDia: booking.item.price,
+            type: 'item'
           },
           borrower: isBorrower ? undefined : {
             id: booking.borrower.id,
@@ -306,7 +319,7 @@ export class DashboardService {
           fechaInicio: booking.startDate.toISOString(),
           fechaFin: booking.endDate.toISOString(),
           total: totalPrice,
-          status: booking.status as any,
+          status: mapStatusToSpanish(booking.status) as any,
           createdAt: booking.createdAt.toISOString(),
           canReview: booking.status === 'COMPLETED' && !hasReviewed,
           hasReviewed: hasReviewed,
@@ -327,7 +340,8 @@ export class DashboardService {
             id: booking.service.id,
             nombre: booking.service.title,
             imagenes: booking.service.images,
-            precioPorDia: booking.service.pricePerHour || 0
+            precioPorDia: booking.service.pricePerHour || 0,
+            type: 'service'
           },
           borrower: isClient ? undefined : {
             id: booking.client.id,
@@ -342,7 +356,7 @@ export class DashboardService {
           fechaInicio: booking.startDate.toISOString(),
           fechaFin: booking.startDate.toISOString(), // Servicios no tienen fecha fin
           total: totalPrice,
-          status: booking.status as any,
+          status: mapStatusToSpanish(booking.status) as any,
           createdAt: booking.createdAt.toISOString(),
           canReview: booking.status === 'COMPLETED' && !hasReviewed,
           hasReviewed: hasReviewed,

@@ -16,6 +16,7 @@ export async function PATCH(
     }
 
     const { id: bookingId } = await params
+    const userId = session.user.id
 
     // Primero buscar en Booking (items)
     let booking = await prisma.booking.findUnique({
@@ -44,13 +45,21 @@ export async function PATCH(
         return NextResponse.json({ error: "Reserva no encontrada" }, { status: 404 })
       }
 
-      // Verificar que el usuario es el proveedor del servicio
-      if (serviceBooking.service.providerId !== session.user.id) {
+      const isProvider = serviceBooking.providerId === userId
+      const isClient = serviceBooking.clientId === userId
+
+      if (!isProvider && !isClient) {
         return NextResponse.json({ error: "No autorizado" }, { status: 403 })
       }
 
-      if (serviceBooking.status !== "PENDING") {
-        return NextResponse.json({ error: "Solo se pueden rechazar reservas pendientes" }, { status: 400 })
+      // El cliente solo puede cancelar si está pendiente
+      if (isClient && serviceBooking.status !== "PENDING") {
+        return NextResponse.json({ error: "Solo puedes cancelar reservas pendientes" }, { status: 400 })
+      }
+
+      // El proveedor puede cancelar pendientes o confirmadas
+      if (isProvider && !["PENDING", "CONFIRMED"].includes(serviceBooking.status)) {
+        return NextResponse.json({ error: "No se puede cancelar esta reserva" }, { status: 400 })
       }
 
       // Actualizar el estado de la reserva de servicio
@@ -59,15 +68,20 @@ export async function PATCH(
         data: { status: "CANCELLED" }
       })
 
-      // Crear notificación para el cliente
+      // Crear notificación para el otro usuario
+      const otherUserId = isProvider ? serviceBooking.clientId : serviceBooking.providerId
+      const cancellerName = isProvider 
+        ? `${serviceBooking.service.provider.firstName} ${serviceBooking.service.provider.lastName}`.trim()
+        : `${serviceBooking.client.firstName} ${serviceBooking.client.lastName}`.trim()
+
       await createNotification(
-        serviceBooking.clientId,
+        otherUserId,
         'BOOKING_CANCELLED',
         {
           bookingId,
           itemId: serviceBooking.serviceId,
           itemTitle: serviceBooking.service.title,
-          ownerName: `${serviceBooking.service.provider.firstName} ${serviceBooking.service.provider.lastName}`.trim()
+          ownerName: cancellerName
         }
       )
 
@@ -75,12 +89,21 @@ export async function PATCH(
     }
 
     // Es un Booking normal (item)
-    if (booking.item.ownerId !== session.user.id) {
+    const isOwner = booking.item.ownerId === userId
+    const isBorrower = booking.borrowerId === userId
+
+    if (!isOwner && !isBorrower) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     }
 
-    if (booking.status !== "PENDING") {
-      return NextResponse.json({ error: "Solo se pueden rechazar reservas pendientes" }, { status: 400 })
+    // El borrower solo puede cancelar si está pendiente
+    if (isBorrower && booking.status !== "PENDING") {
+      return NextResponse.json({ error: "Solo puedes cancelar reservas pendientes" }, { status: 400 })
+    }
+
+    // El owner puede cancelar pendientes o confirmadas
+    if (isOwner && !["PENDING", "CONFIRMED"].includes(booking.status)) {
+      return NextResponse.json({ error: "No se puede cancelar esta reserva" }, { status: 400 })
     }
 
     // Actualizar el estado de la reserva
@@ -89,15 +112,20 @@ export async function PATCH(
       data: { status: "CANCELLED" }
     })
 
-    // Crear notificación para el inquilino usando el helper
+    // Crear notificación para el otro usuario
+    const otherUserId = isOwner ? booking.borrowerId : booking.item.ownerId
+    const cancellerName = isOwner
+      ? `${booking.item.owner.firstName} ${booking.item.owner.lastName}`.trim()
+      : `${booking.borrower.firstName} ${booking.borrower.lastName}`.trim()
+
     await createNotification(
-      booking.borrowerId,
+      otherUserId,
       'BOOKING_CANCELLED',
       {
         bookingId,
         itemId: booking.itemId,
         itemTitle: booking.item.title,
-        ownerName: `${booking.item.owner.firstName} ${booking.item.owner.lastName}`.trim()
+        ownerName: cancellerName
       }
     )
 

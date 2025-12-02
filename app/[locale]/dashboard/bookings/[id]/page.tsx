@@ -129,6 +129,12 @@ export default function BookingDetailsPage() {
   const [error, setError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ type: 'success' | 'error', message: string } | null>(null)
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message })
+    setTimeout(() => setToast(null), 4000)
+  }
 
   useEffect(() => {
     fetchBooking()
@@ -180,13 +186,19 @@ export default function BookingDetailsPage() {
       })
       
       if (res.ok) {
+        const actionMessages = {
+          confirm: 'Reserva confirmada',
+          reject: 'Reserva cancelada', 
+          complete: 'Reserva completada'
+        }
+        showToast('success', actionMessages[action])
         await fetchBooking()
       } else {
         const data = await res.json()
-        alert(data.error || 'Error al procesar la acción')
+        showToast('error', data.error || 'Error al procesar la acción')
       }
     } catch (err) {
-      alert('Error de conexión')
+      showToast('error', 'Error de conexión')
     } finally {
       setActionLoading(false)
     }
@@ -268,6 +280,28 @@ export default function BookingDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Toast notification */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 animate-in slide-in-from-top-2 duration-300 ${
+          toast.type === 'success' 
+            ? 'bg-green-50 border border-green-200 text-green-800' 
+            : 'bg-red-50 border border-red-200 text-red-800'
+        }`}>
+          {toast.type === 'success' ? (
+            <CheckCircle className="w-5 h-5 text-green-600" />
+          ) : (
+            <XCircle className="w-5 h-5 text-red-600" />
+          )}
+          <span className="font-medium">{toast.message}</span>
+          <button 
+            onClick={() => setToast(null)}
+            className="ml-2 text-gray-400 hover:text-gray-600"
+          >
+            <XCircle className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Back button */}
         <Link 
@@ -493,11 +527,21 @@ export default function BookingDetailsPage() {
             )}
 
             {booking.status === 'PENDING' && isBorrower && (
-              <div className="text-center">
-                <div className="inline-flex items-center gap-2 text-amber-700 bg-amber-50 px-4 py-2 rounded-lg">
-                  <Clock className="w-5 h-5" />
-                  <span className="font-medium">Esperando confirmación del {isService ? 'prestador' : 'propietario'}</span>
+              <div className="space-y-3">
+                <div className="text-center">
+                  <div className="inline-flex items-center gap-2 text-amber-700 bg-amber-50 px-4 py-2 rounded-lg">
+                    <Clock className="w-5 h-5" />
+                    <span className="font-medium">Esperando confirmación del {isService ? 'prestador' : 'propietario'}</span>
+                  </div>
                 </div>
+                <button
+                  onClick={() => handleAction('reject')}
+                  disabled={actionLoading}
+                  className="w-full py-3 px-4 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <XCircle className="w-5 h-5" />
+                  Cancelar solicitud
+                </button>
               </div>
             )}
 
@@ -510,14 +554,33 @@ export default function BookingDetailsPage() {
                   </div>
                 </div>
                 {isOwner && (
-                  <button
-                    onClick={() => handleAction('complete')}
-                    disabled={actionLoading}
-                    className="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle className="w-5 h-5" />
-                    Marcar como completada
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleAction('complete')}
+                      disabled={actionLoading}
+                      className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {actionLoading ? (
+                        <span className="animate-spin">⏳</span>
+                      ) : (
+                        <CheckCircle className="w-5 h-5" />
+                      )}
+                      Completar
+                    </button>
+                    <button
+                      onClick={() => handleAction('reject')}
+                      disabled={actionLoading}
+                      className="py-3 px-4 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      <XCircle className="w-5 h-5" />
+                      Cancelar
+                    </button>
+                  </div>
+                )}
+                {isBorrower && (
+                  <p className="text-sm text-gray-500 text-center">
+                    Esperando a que el {isService ? 'prestador' : 'propietario'} complete la reserva
+                  </p>
                 )}
               </div>
             )}
