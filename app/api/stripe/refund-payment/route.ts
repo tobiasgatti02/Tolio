@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
-import { PrismaClient } from '@prisma/client';
+import prisma from "@/lib/prisma";
 import { stripe, toStripeAmount } from '@/lib/stripe';
 
-const prisma = new PrismaClient();
+
 
 /**
  * POST /api/stripe/refund-payment

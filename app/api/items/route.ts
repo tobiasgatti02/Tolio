@@ -79,11 +79,11 @@ export async function GET(request: Request) {
     let formattedItems = items.map(item => {
       const averageRating = item.reviews.length > 0
         ? item.reviews.reduce((sum, review) => sum + review.rating, 0) / item.reviews.length
-        : 0
+        : undefined
 
       return {
         ...item,
-        averageRating: parseFloat(averageRating.toFixed(1)),
+        averageRating: averageRating !== undefined ? parseFloat(averageRating.toFixed(1)) : undefined,
         reviewCount: item.reviews.length,
         owner: {
           id: item.owner.id,

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import Link from "next/link"
 import { 
   Calendar, Clock, CheckCircle, XCircle, AlertTriangle,
@@ -49,17 +49,43 @@ interface BookingsStats {
   cancelledBookings: number
 }
 
+// ============== CONSTANTES FUERA DEL COMPONENTE ==============
+const STATUS_MAP: Record<string, { color: string; text: string; iconType: 'check' | 'clock' | 'x' }> = {
+  CONFIRMADA: { color: "bg-green-100 text-green-800 border-green-200", text: "Confirmada", iconType: 'check' },
+  PENDIENTE: { color: "bg-yellow-100 text-yellow-800 border-yellow-200", text: "Pendiente", iconType: 'clock' },
+  CANCELADA: { color: "bg-red-100 text-red-800 border-red-200", text: "Cancelada", iconType: 'x' },
+  COMPLETADA: { color: "bg-blue-100 text-blue-800 border-blue-200", text: "Completada", iconType: 'check' },
+}
+
+const FILTER_OPTIONS = [
+  { key: 'all' as const, label: 'Todas' },
+  { key: 'pending' as const, label: 'Pendientes' },
+  { key: 'active' as const, label: 'Activas' },
+  { key: 'completed' as const, label: 'Finalizadas' },
+] as const
+
+// Función pura para calcular stats (single pass)
+function calculateStatsFromBookings(bookingsData: Booking[]): BookingsStats {
+  let totalSpent = 0, activeBookings = 0, completedBookings = 0, pendingBookings = 0, cancelledBookings = 0
+  
+  for (const booking of bookingsData) {
+    switch (booking.status) {
+      case 'CONFIRMADA': activeBookings++; break
+      case 'COMPLETADA': 
+        completedBookings++
+        if (booking.userRole === 'borrower') totalSpent += booking.total
+        break
+      case 'PENDIENTE': pendingBookings++; break
+      case 'CANCELADA': cancelledBookings++; break
+    }
+  }
+  
+  return { totalSpent, activeBookings, completedBookings, pendingBookings, cancelledBookings }
+}
+
 export default function BookingsClientEnhanced({ userId }: { userId: string }) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [toast, setToast] = useState<{ type: 'success' | 'error', message: string } | null>(null)
-  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([])
-  const [stats, setStats] = useState<BookingsStats>({
-    totalSpent: 0,
-    activeBookings: 0,
-    completedBookings: 0,
-    pendingBookings: 0,
-    cancelledBookings: 0,
-  })
   const [loading, setLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'active' | 'completed'>('all')
   const [typeFilter, setTypeFilter] = useState<'all' | 'items' | 'services'>('all')
@@ -75,86 +101,71 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
   } | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
+  // Fetch bookings una sola vez al montar
   useEffect(() => {
+    let isMounted = true
+    
+    async function fetchBookings() {
+      try {
+        const response = await fetch('/api/dashboard/bookings')
+        if (response.ok && isMounted) {
+          const data = await response.json()
+          setBookings(data)
+        }
+      } catch (error) {
+        console.error('Error fetching bookings:', error)
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+    }
+    
     fetchBookings()
+    return () => { isMounted = false }
   }, [])
 
-  useEffect(() => {
-    filterBookings()
-  }, [bookings, activeFilter, typeFilter, searchTerm])
+  // Stats calculados con useMemo - single pass, se recalcula solo cuando bookings cambia
+  const stats = useMemo(() => calculateStatsFromBookings(bookings), [bookings])
 
-  const fetchBookings = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/dashboard/bookings')
-      if (response.ok) {
-        const data = await response.json()
-        setBookings(data)
-        calculateStats(data)
-      }
-    } catch (error) {
-      console.error('Error fetching bookings:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const calculateStats = (bookingsData: Booking[]) => {
-    const userBookings = bookingsData.filter(booking => booking.userRole === 'borrower')
-    
-    const totalSpent = userBookings
-      .filter(booking => booking.status === 'COMPLETADA')
-      .reduce((sum, booking) => sum + booking.total, 0)
-    
-    const activeBookings = bookingsData.filter(booking => 
-      booking.status === 'CONFIRMADA'
-    ).length
-    
-    const completedBookings = bookingsData.filter(booking => 
-      booking.status === 'COMPLETADA'
-    ).length
-
-    const pendingBookings = bookingsData.filter(booking => 
-      booking.status === 'PENDIENTE'
-    ).length
-
-    const cancelledBookings = bookingsData.filter(booking =>
-      booking.status === 'CANCELADA'
-    ).length
-
-    setStats({ totalSpent, activeBookings, completedBookings, pendingBookings, cancelledBookings })
-  }
-
-  const filterBookings = () => {
-    let filtered = [...bookings]
+  // Filtrado con useMemo - evita recálculo innecesario
+  const filteredBookings = useMemo(() => {
+    let filtered = bookings
 
     // Filtro por estado
     if (activeFilter === 'pending') {
-      filtered = filtered.filter(booking => booking.status === 'PENDIENTE')
+      filtered = filtered.filter(b => b.status === 'PENDIENTE')
     } else if (activeFilter === 'active') {
-      filtered = filtered.filter(booking => booking.status === 'CONFIRMADA')
+      filtered = filtered.filter(b => b.status === 'CONFIRMADA')
     } else if (activeFilter === 'completed') {
-      filtered = filtered.filter(booking => ['COMPLETADA', 'CANCELADA'].includes(booking.status))
+      filtered = filtered.filter(b => b.status === 'COMPLETADA' || b.status === 'CANCELADA')
     }
 
     // Filtro por tipo
     if (typeFilter === 'items') {
-      filtered = filtered.filter(booking => booking.item.type === 'item' || !booking.item.type)
+      filtered = filtered.filter(b => b.item.type === 'item' || !b.item.type)
     } else if (typeFilter === 'services') {
-      filtered = filtered.filter(booking => booking.item.type === 'service')
+      filtered = filtered.filter(b => b.item.type === 'service')
     }
 
-    // Búsqueda
+    // Búsqueda (solo si hay término)
     if (searchTerm) {
-      filtered = filtered.filter(booking =>
-        booking.item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (booking.borrower?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (booking.owner?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+      const term = searchTerm.toLowerCase()
+      filtered = filtered.filter(b =>
+        b.item.nombre.toLowerCase().includes(term) ||
+        b.borrower?.name.toLowerCase().includes(term) ||
+        b.owner?.name.toLowerCase().includes(term)
       )
     }
 
-    setFilteredBookings(filtered)
-  }
+    return filtered
+  }, [bookings, activeFilter, typeFilter, searchTerm])
+
+  // Filter counts memoizados
+  const filterCounts = useMemo(() => ({
+    all: bookings.length,
+    pending: stats.pendingBookings,
+    active: stats.activeBookings,
+    completed: stats.completedBookings + stats.cancelledBookings,
+  }), [bookings.length, stats])
 
   const getDateStatus = (startDate: string, endDate: string, status: string) => {
     const start = new Date(startDate)
@@ -240,52 +251,44 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
     return `${format(startDate, "d MMM", { locale: es })} - ${format(endDate, "d MMM yyyy", { locale: es })}`
   }
 
-  console.log('cancelledBookings:', stats.cancelledBookings);
-
-  const openReviewModal = (booking: Booking) => {
+  // Callbacks estables con useCallback
+  const openReviewModal = useCallback((booking: Booking) => {
     const mappedBooking: DashboardBooking = {
       ...booking,
       status: (booking.status === 'PENDIENTE' ? 'PENDING' :
                booking.status === 'CONFIRMADA' ? 'CONFIRMED' :
-               booking.status === 'COMPLETADA' ? 'COMPLETED' :
-               'CANCELLED') as BookingStatus
+               booking.status === 'COMPLETADA' ? 'COMPLETED' : 'CANCELLED') as BookingStatus
     }
     setSelectedBooking(mappedBooking)
     setShowReviewModal(true)
-  }
+  }, [])
 
-  const closeReviewModal = () => {
+  const closeReviewModal = useCallback(() => {
     setSelectedBooking(null)
     setShowReviewModal(false)
-    fetchBookings()
-  }
+    // Refetch bookings después de cerrar el modal de review
+    fetch('/api/dashboard/bookings')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(setBookings)
+      .catch(console.error)
+  }, [])
 
-  const showToast = (type: 'success' | 'error', message: string) => {
+  const showToast = useCallback((type: 'success' | 'error', message: string) => {
     setToast({ type, message })
     setTimeout(() => setToast(null), 4000)
-  }
+  }, [])
 
-  const openConfirmModal = (bookingId: string, action: 'confirm' | 'reject' | 'complete') => {
-    const titles = {
-      confirm: '¿Confirmar reserva?',
-      reject: '¿Cancelar reserva?',
-      complete: '¿Completar reserva?'
-    }
+  const openConfirmModal = useCallback((bookingId: string, action: 'confirm' | 'reject' | 'complete') => {
+    const titles = { confirm: '¿Confirmar reserva?', reject: '¿Cancelar reserva?', complete: '¿Completar reserva?' }
     const messages = {
       confirm: 'Al confirmar, te comprometes a cumplir con esta reserva.',
       reject: 'Esta acción cancelará la reserva y notificará al usuario.',
       complete: 'Al completar, la reserva se marcará como finalizada y podrás recibir una reseña.'
     }
-    setConfirmModal({
-      show: true,
-      bookingId,
-      action,
-      title: titles[action],
-      message: messages[action]
-    })
-  }
+    setConfirmModal({ show: true, bookingId, action, title: titles[action], message: messages[action] })
+  }, [])
 
-  const handleBookingAction = async () => {
+  const handleBookingAction = useCallback(async () => {
     if (!confirmModal) return
     
     const { bookingId, action } = confirmModal
@@ -327,64 +330,43 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
     } finally {
       setActionLoading(null)
     }
-  }
+  }, [confirmModal, showToast])
 
   if (loading) {
     return (
-      <div className="space-y-6 p-6">
-        {/* Header skeleton */}
+      <div className="space-y-4 p-6">
+        {/* Header */}
         <div>
-          <div className="h-9 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
-          <div className="h-5 w-96 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-8 w-40 bg-gray-200 rounded animate-pulse mb-1"></div>
+          <div className="h-4 w-72 bg-gray-200 rounded animate-pulse"></div>
         </div>
 
-        {/* Stats skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-gray-200 p-6 rounded-xl animate-pulse h-28"></div>
+        {/* Stats - más compactos */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="bg-gradient-to-br from-gray-100 to-gray-200 p-4 rounded-xl h-20 animate-pulse"></div>
           ))}
         </div>
 
-        {/* Filters skeleton */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
-          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
-              <div className="flex gap-2">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="h-10 w-28 bg-gray-200 rounded-lg animate-pulse"></div>
-                ))}
-              </div>
-            </div>
-            <div className="h-10 w-64 bg-gray-200 rounded-lg animate-pulse"></div>
-          </div>
+        {/* Filtros simplificados */}
+        <div className="bg-white p-3 rounded-xl border border-gray-200 flex gap-2 flex-wrap">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-8 w-24 bg-gray-200 rounded-lg animate-pulse"></div>
+          ))}
+          <div className="h-8 w-48 bg-gray-200 rounded-lg animate-pulse ml-auto"></div>
         </div>
 
-        {/* Bookings list skeleton */}
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex flex-col lg:flex-row gap-6">
-                <div className="w-full lg:w-32 h-32 bg-gray-200 rounded-lg animate-pulse"></div>
-                <div className="flex-1">
-                  <div className="flex justify-between mb-4">
-                    <div>
-                      <div className="h-6 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
-                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
-                    </div>
-                    <div className="h-8 w-24 bg-gray-200 rounded-full animate-pulse"></div>
-                  </div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
-                    <div>
-                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-1"></div>
-                      <div className="h-3 w-20 bg-gray-200 rounded animate-pulse"></div>
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <div className="h-10 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
-                    <div className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse"></div>
-                  </div>
+        {/* Solo 2 bookings en skeleton */}
+        <div className="space-y-3">
+          {[0, 1].map((i) => (
+            <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 flex gap-4">
+              <div className="w-24 h-24 bg-gray-200 rounded-lg animate-pulse flex-shrink-0"></div>
+              <div className="flex-1 space-y-2">
+                <div className="h-5 w-40 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
+                <div className="flex gap-2 mt-2">
+                  <div className="h-8 w-16 bg-gray-200 rounded-lg animate-pulse"></div>
+                  <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
                 </div>
               </div>
             </div>
@@ -481,23 +463,17 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
           {/* Filtros por estado */}
           <div className="flex items-center gap-2 flex-wrap">
             <Filter className="w-5 h-5 text-gray-400 flex-shrink-0" />
-            {[
-              { key: 'all', label: 'Todas', count: bookings.length },
-              { key: 'pending', label: 'Pendientes', count: stats.pendingBookings },
-              { key: 'active', label: 'Activas', count: stats.activeBookings },
-              { key: 'completed' , label: 'Finalizadas', count: stats.completedBookings + stats.cancelledBookings }
-
-            ].map((filter) => (
+            {FILTER_OPTIONS.map((filter) => (
               <button
                 key={filter.key}
-                onClick={() => setActiveFilter(filter.key as any)}
+                onClick={() => setActiveFilter(filter.key)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                   activeFilter === filter.key
                     ? 'bg-blue-600 text-white shadow-md'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {filter.label} ({filter.count})
+                {filter.label} ({filterCounts[filter.key]})
               </button>
             ))}
           </div>

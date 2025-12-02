@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
-import { PrismaClient } from '@prisma/client';
+import prisma from "@/lib/prisma";
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { compareFacesForBackend } from '@/lib/face-matching';
 import { detectLiveness } from '@/lib/liveness-detection';
 
-const prisma = new PrismaClient();
+
 
 interface PDF417Data {
   documentNumber: string;

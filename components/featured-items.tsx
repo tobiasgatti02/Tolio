@@ -1,7 +1,7 @@
 import FeaturedItemsClient, { FeaturedItem } from './featured-items-client'
-import { PrismaClient } from '@prisma/client'
+import prisma from "@/lib/prisma"
 
-const prisma = new PrismaClient()
+
 
 // Función del servidor para obtener items destacados directamente desde la base de datos
 async function getFeaturedItems(): Promise<FeaturedItem[]> {

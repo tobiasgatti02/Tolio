@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client'
 import { DashboardStats, DashboardItem, DashboardBooking, DashboardReview, DashboardNotification } from './types'
 import { ERROR_MESSAGES, DASHBOARD_CONFIG } from './dashboard-constants'
-
-const prisma = new PrismaClient()
+import prisma from './prisma'
 
 // Map status from English (database) to Spanish (frontend)
 function mapStatusToSpanish(status: string): string {
@@ -233,83 +231,83 @@ export class DashboardService {
         statusFilter = { status: 'COMPLETED' }
       }
 
-      // Obtener reservas de items
-      const itemBookings = await prisma.booking.findMany({
-        where: {
-          OR: [
-            { borrowerId: userId },
-            { ownerId: userId }
-          ],
-          ...statusFilter
-        },
-        include: {
-          item: {
-            select: {
-              id: true,
-              title: true,
-              images: true,
-              price: true
-            }
+      // Obtener reservas de items y servicios EN PARALELO para mejor rendimiento
+      const [itemBookings, serviceBookings] = await Promise.all([
+        prisma.booking.findMany({
+          where: {
+            OR: [
+              { borrowerId: userId },
+              { ownerId: userId }
+            ],
+            ...statusFilter
           },
-          borrower: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true
-            }
+          include: {
+            item: {
+              select: {
+                id: true,
+                title: true,
+                images: true,
+                price: true
+              }
+            },
+            borrower: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            },
+            owner: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            },
+            review: true
           },
-          owner: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true
-            }
+          orderBy: { createdAt: 'desc' }
+        }),
+        prisma.serviceBooking.findMany({
+          where: {
+            OR: [
+              { clientId: userId },
+              { providerId: userId }
+            ],
+            ...statusFilter
           },
-          review: true
-        },
-        orderBy: { createdAt: 'desc' }
-      })
-
-      // Obtener reservas de servicios
-      const serviceBookings = await prisma.serviceBooking.findMany({
-        where: {
-          OR: [
-            { clientId: userId },
-            { providerId: userId }
-          ],
-          ...statusFilter
-        },
-        include: {
-          service: {
-            select: {
-              id: true,
-              title: true,
-              images: true,
-              pricePerHour: true
-            }
+          include: {
+            service: {
+              select: {
+                id: true,
+                title: true,
+                images: true,
+                pricePerHour: true
+              }
+            },
+            client: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            },
+            provider: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            },
+            review: true
           },
-          client: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true
-            }
-          },
-          provider: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true
-            }
-          },
-          review: true
-        },
-        orderBy: { createdAt: 'desc' }
-      })
+          orderBy: { createdAt: 'desc' }
+        })
+      ])
 
       // Mapear reservas de items
       const mappedItemBookings: DashboardBooking[] = itemBookings.map(booking => {

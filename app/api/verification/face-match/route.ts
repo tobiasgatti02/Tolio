@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
-import { PrismaClient } from '@prisma/client';
+import prisma from "@/lib/prisma";
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import path from 'path';
 import { spawn } from 'child_process';
 
-const prisma = new PrismaClient();
+
 
 /**
  * POST /api/verification/face-match

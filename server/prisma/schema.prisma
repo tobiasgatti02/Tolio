@@ -115,6 +115,11 @@ model Item {
   bookings    Booking[]
   owner       User      @relation(fields: [ownerId], references: [id])
   reviews     Review[]
+
+  @@index([ownerId])
+  @@index([category])
+  @@index([isAvailable])
+  @@index([createdAt(sort: Desc)])
 }
 
 model Service {
@@ -139,6 +144,11 @@ model Service {
   bookings       ServiceBooking[]
   provider       User             @relation(fields: [providerId], references: [id])
   reviews        ServiceReview[]
+
+  @@index([providerId])
+  @@index([category])
+  @@index([isAvailable])
+  @@index([createdAt(sort: Desc)])
 }
 
 model ServiceBooking {
@@ -157,6 +167,12 @@ model ServiceBooking {
   service     Service        @relation(fields: [serviceId], references: [id])
   provider    User           @relation("ServiceProvider", fields: [providerId], references: [id])
   review      ServiceReview?
+
+  @@index([clientId])
+  @@index([providerId])
+  @@index([status])
+  @@index([serviceId])
+  @@index([createdAt(sort: Desc)])
 }
 
 model ServiceReview {
@@ -212,6 +228,12 @@ model Booking {
   owner      User          @relation("Owner", fields: [ownerId], references: [id])
   // payment    Payment?   // Comentado - para futuras funcionalidades de pago
   review     Review?
+
+  @@index([borrowerId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([itemId])
+  @@index([createdAt(sort: Desc)])
 }
 
 model Review {
@@ -229,6 +251,10 @@ model Review {
   item         Item      @relation(fields: [itemId], references: [id])
   reviewee     User      @relation("Reviewee", fields: [revieweeId], references: [id])
   reviewer     User      @relation("Reviewer", fields: [reviewerId], references: [id])
+
+  @@index([itemId])
+  @@index([revieweeId])
+  @@index([createdAt(sort: Desc)])
 }
 
 // NOTA: Modelo Payment comentado - para futuras funcionalidades de pago integrado
@@ -275,6 +301,10 @@ model Notification {
   actionUrl String?
   // Datos adicionales para el contexto
   metadata  Json?
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt(sort: Desc)])
 }
 
 model Message {

@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client'
+import prisma from "@/lib/prisma"
 import { DashboardStats, DashboardItem, DashboardBooking, DashboardReview, DashboardNotification } from './types'
 
-const prisma = new PrismaClient()
+
 
 export class DashboardService {
   

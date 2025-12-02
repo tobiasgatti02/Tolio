@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Payment, MercadoPagoConfig } from "mercadopago"
-import { PrismaClient } from "@prisma/client"
+import prisma from "@/lib/prisma"
 
-const prisma = new PrismaClient()
+
 
 // Función para mapear status de MercadoPago a nuestro sistema
 function mapPaymentStatus(mpStatus: string): 'PENDING' | 'COMPLETED' | 'REFUNDED' {

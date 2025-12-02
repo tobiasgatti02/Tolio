@@ -40,11 +40,11 @@ export async function GET(
         // Calcular rating promedio
         const averageRating = service.reviews.length > 0
             ? service.reviews.reduce((sum, review) => sum + review.rating, 0) / service.reviews.length
-            : 0
+            : undefined
 
         const formattedService = {
             ...service,
-            averageRating: parseFloat(averageRating.toFixed(1)),
+            averageRating: averageRating !== undefined ? parseFloat(averageRating.toFixed(1)) : undefined,
             reviewCount: service.reviews.length,
         }
 

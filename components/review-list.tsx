@@ -2,9 +2,9 @@ import Image from "next/image"
 import { Star, MessageSquare } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { PrismaClient } from "@prisma/client"
+import prisma from "@/lib/prisma"
 
-const prisma = new PrismaClient()
+
 
 interface ReviewProps {
   itemId: string

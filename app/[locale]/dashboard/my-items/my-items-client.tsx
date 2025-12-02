@@ -201,10 +201,12 @@ export default function MyItemsClient({ userId }: MyItemsClientProps) {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Rating Promedio</p>
                 <p className="text-2xl font-bold">
-                  {items.length > 0 
-                    ? (items.reduce((acc, item) => acc + (item.averageRating || 0), 0) / items.length).toFixed(1)
-                    : "0.0"
-                  }
+                  {(() => {
+                    const withRatings = items.filter(item => item.averageRating !== undefined);
+                    return withRatings.length > 0 
+                      ? (withRatings.reduce((acc, item) => acc + (item.averageRating || 0), 0) / withRatings.length).toFixed(1)
+                      : "0.0";
+                  })()}
                 </p>
               </div>
             </div>

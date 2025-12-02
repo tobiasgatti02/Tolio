@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server'
 import { Payment } from 'mercadopago'
-import { PrismaClient } from '@prisma/client'
+import prisma from "@/lib/prisma"
 import { MercadoPagoConfig } from 'mercadopago'
 
-const prisma = new PrismaClient()
+
 
 // Cliente de Mercado Pago principal (marketplace)
 const mercadopago = new MercadoPagoConfig({

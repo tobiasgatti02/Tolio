@@ -233,8 +233,75 @@ export default function CleanDashboard({
   }
 
   const renderContent = () => {
-    if (pathname.includes('/dashboard') && !pathname.includes('/my-items') && !pathname.includes('/booking') && !pathname.includes('/sales') && !pathname.includes('/expenses') && !pathname.includes('/calendar') && !pathname.includes('/reviews') && !pathname.includes('/settings')) {
+    // Si NO es el overview, renderizar children inmediatamente (cada página maneja su propio loading)
+    if (!(pathname.includes('/dashboard') && !pathname.includes('/my-items') && !pathname.includes('/booking') && !pathname.includes('/sales') && !pathname.includes('/expenses') && !pathname.includes('/calendar') && !pathname.includes('/reviews') && !pathname.includes('/settings'))) {
+      return children
+    }
+
+    // Solo el overview muestra skeleton mientras carga sus datos
+    if (loading) {
       return (
+        <div className="space-y-6">
+          <StripeAccountCheck />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { icon: Package, color: 'bg-blue-100', iconColor: 'text-blue-600' },
+              { icon: Calendar, color: 'bg-green-100', iconColor: 'text-green-600' },
+              { icon: DollarSign, color: 'bg-emerald-100', iconColor: 'text-emerald-600' },
+              { icon: Star, color: 'bg-yellow-100', iconColor: 'text-yellow-600' },
+            ].map((item, i) => (
+              <div key={i} className="bg-white p-6 rounded-xl border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                    <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  </div>
+                  <div className={`w-12 h-12 ${item.color} rounded-lg flex items-center justify-center`}>
+                    <item.icon className={`w-6 h-6 ${item.iconColor}`} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-xl border border-gray-200">
+              <div className="h-6 bg-gray-200 rounded w-40 mb-4 animate-pulse"></div>
+              <div className="space-y-3">
+                {[0, 1, 2].map((j) => (
+                  <div key={j} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-xl border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Acciones rápidas</h3>
+              <div className="space-y-3">
+                <Link href="/items/nuevo" className="flex items-center space-x-3 p-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors">
+                  <Plus className="w-5 h-5" />
+                  <span className="font-medium">Publicar nuevo artículo</span>
+                </Link>
+                <Link href="/dashboard/bookings" className="flex items-center space-x-3 p-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors">
+                  <Calendar className="w-5 h-5" />
+                  <span className="font-medium">Revisar reservas</span>
+                </Link>
+                <Link href="/dashboard/settings" className="flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Settings className="w-5 h-5" />
+                  <span className="font-medium">Configurar cuenta</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // Overview con datos cargados
+    return (
         <div className="space-y-6">
           {/* Error state */}
           {error && (
@@ -382,9 +449,7 @@ export default function CleanDashboard({
           </div>
         </div>
       )
-    }
-
-    return children
+    // Este return ya no se necesita porque el overview está arriba
   }
 
   return (
@@ -508,84 +573,7 @@ export default function CleanDashboard({
         {/* Main content */}
         <div className="flex-1 lg:ml-0">
           <main className="p-6">
-            {loading ? (
-              <div className="space-y-6">
-                {/* Aviso de Stripe - siempre visible */}
-                <StripeAccountCheck />
-
-                {/* Loading skeleton for stats */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {[
-                    { icon: Package, color: 'bg-blue-100', iconColor: 'text-blue-600' },
-                    { icon: Calendar, color: 'bg-green-100', iconColor: 'text-green-600' },
-                    { icon: DollarSign, color: 'bg-emerald-100', iconColor: 'text-emerald-600' },
-                    { icon: Star, color: 'bg-yellow-100', iconColor: 'text-yellow-600' },
-                  ].map((item, i) => (
-                    <div key={i} className="bg-white p-6 rounded-xl border border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-2">
-                          <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
-                          <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
-                        </div>
-                        <div className={`w-12 h-12 ${item.color} rounded-lg flex items-center justify-center`}>
-                          <item.icon className={`w-6 h-6 ${item.iconColor}`} />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                {/* Grid con actividad reciente (skeleton) y acciones rápidas (estático) */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Loading skeleton for recent activity */}
-                  <div className="bg-white p-6 rounded-xl border border-gray-200">
-                    <div className="h-6 bg-gray-200 rounded w-40 mb-4 animate-pulse"></div>
-                    <div className="space-y-3">
-                      {[...Array(3)].map((_, j) => (
-                        <div key={j} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
-                          <div className="flex-1 space-y-2">
-                            <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse"></div>
-                          </div>
-                          <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Acciones rápidas - siempre visible */}
-                  <div className="bg-white p-6 rounded-xl border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Acciones rápidas</h3>
-                    <div className="space-y-3">
-                      <Link
-                        href="/items/nuevo"
-                        className="flex items-center space-x-3 p-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
-                      >
-                        <Plus className="w-5 h-5" />
-                        <span className="font-medium">Publicar nuevo artículo</span>
-                      </Link>
-                      <Link
-                        href="/dashboard/bookings"
-                        className="flex items-center space-x-3 p-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
-                      >
-                        <Calendar className="w-5 h-5" />
-                        <span className="font-medium">Revisar reservas</span>
-                      </Link>
-                      <Link
-                        href="/dashboard/settings"
-                        className="flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <Settings className="w-5 h-5" />
-                        <span className="font-medium">Configurar cuenta</span>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              renderContent()
-            )}
+            {renderContent()}
           </main>
         </div>
       </div>

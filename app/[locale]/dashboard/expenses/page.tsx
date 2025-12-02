@@ -39,13 +39,24 @@ export default function ExpensesPanel() {
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded-2xl" />
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <div className="h-8 w-44 bg-gray-200 rounded animate-pulse mb-1"></div>
+            <div className="h-4 w-52 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-9 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-28 bg-gray-200 rounded-2xl animate-pulse" />
           ))}
         </div>
-        <div className="h-96 bg-gray-200 rounded-2xl" />
+        <div className="h-64 bg-gray-200 rounded-2xl animate-pulse" />
       </div>
     )
   }

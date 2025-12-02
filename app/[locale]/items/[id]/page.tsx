@@ -12,9 +12,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { typography } from '@/lib/design-system'
 import { notFound } from 'next/navigation'
-import { PrismaClient } from '@prisma/client'
+import prisma from "@/lib/prisma"
 
-const prisma = new PrismaClient()
+
 
 interface ItemPageProps {
   params: Promise<{ id: string }>

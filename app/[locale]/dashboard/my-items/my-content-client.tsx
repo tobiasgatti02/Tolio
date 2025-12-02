@@ -208,7 +208,7 @@ export default function MyContentClient({ userId }: MyContentClientProps) {
     paused: [...items, ...services].filter(item => item.status === "PAUSADO").length,
     averageRating: (() => {
       const allContent = [...items, ...services];
-      const withRatings = allContent.filter(item => item.averageRating !== null);
+      const withRatings = allContent.filter(item => item.averageRating !== undefined);
       if (withRatings.length === 0) return 0;
       return withRatings.reduce((sum, item) => sum + (item.averageRating || 0), 0) / withRatings.length;
     })()

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { PrismaClient } from '@prisma/client'
+import prisma from "@/lib/prisma"
 
-const prisma = new PrismaClient()
+
 
 export async function GET() {
   try {
@@ -78,7 +78,7 @@ export async function GET() {
         location: item.location,
         averageRating: item.reviews.length > 0 
           ? item.reviews.reduce((sum, r) => sum + r.rating, 0) / item.reviews.length 
-          : null,
+          : undefined,
         reviewCount: item.reviews.length,
         bookingsCount: item.bookings.length,
         createdAt: item.createdAt.toISOString(),
@@ -107,7 +107,7 @@ export async function GET() {
         serviceArea: service.serviceArea,
         averageRating: service.reviews.length > 0 
           ? service.reviews.reduce((sum, r) => sum + r.rating, 0) / service.reviews.length 
-          : null,
+          : undefined,
         reviewCount: service.reviews.length,
         bookingsCount: service.bookings.length,
         createdAt: service.createdAt.toISOString(),

@@ -87,7 +87,7 @@ export async function GET(request: Request) {
       ...service,
       averageRating: service.reviews.length > 0
         ? service.reviews.reduce((acc, r) => acc + r.rating, 0) / service.reviews.length
-        : 0,
+        : undefined,
       reviewCount: service.reviews.length
     }))
 

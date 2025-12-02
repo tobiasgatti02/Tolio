@@ -40,7 +40,7 @@ const formatDate = (date: Date) => {
 async function getUserReviews(userId: string): Promise<Review[]> {
   try {
     const { PrismaClient } = await import('@prisma/client')
-    const prisma = new PrismaClient()
+    
     
     // Obtener reviews como prestatario y como prestador
     const [reviewsAsLender, reviewsAsBorrower] = await Promise.all([

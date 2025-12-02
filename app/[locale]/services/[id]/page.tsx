@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
-import { PrismaClient } from '@prisma/client'
+import prisma from "@/lib/prisma"
 import { Mail, Phone, MapPin, Award, Clock, DollarSign, Star, Calendar, Shield, MessageCircle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -10,7 +10,7 @@ import BookingFormFree from '@/components/booking-form-free'
 import MapView from '@/components/map-view'
 import { typography } from '@/lib/design-system'
 
-const prisma = new PrismaClient()
+
 
 interface ServicePageProps {
   params: Promise<{ id: string }>

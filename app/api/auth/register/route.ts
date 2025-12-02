@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
-import { PrismaClient } from '@prisma/client'
+import prisma from "@/lib/prisma"
 import { sendVerificationEmail } from "@/lib/email"
 import crypto from "crypto"
 
-const prisma = new PrismaClient()
+
 
 // Validar y normalizar número de teléfono argentino
 function validateAndNormalizePhone(phone: string): { isValid: boolean; normalizedPhone?: string; error?: string } {
