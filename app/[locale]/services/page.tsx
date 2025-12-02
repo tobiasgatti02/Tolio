@@ -308,7 +308,7 @@ export default function ServicesPage() {
                       <h3 className="font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">{service.title}</h3>
                       <div className="flex items-center mb-2">
                         <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                        <span className="text-sm font-medium ml-1">{service.averageRating.toFixed(1)}</span>
+                        <span className="text-sm font-medium ml-1">{service.averageRating?.toFixed(1) || 'N/A'}</span>
                         <span className="text-xs text-gray-500 ml-1">({service.reviewCount} reseñas)</span>
                       </div>
                       <div className="flex items-center text-xs text-gray-500 mb-2">

@@ -526,7 +526,7 @@ export default function MyContentClient({ userId }: MyContentClientProps) {
                           {content.bookingsCount} {content.bookingsCount === 1 ? 'reserva' : 'reservas'}
                         </p>
                       </div>
-                      {content.averageRating !== null && (
+                      {content.averageRating != null && (
                         <div className="flex items-center gap-1">
                           <Star className="h-5 w-5 text-yellow-500 fill-current" />
                           <span className="font-semibold">{content.averageRating.toFixed(1)}</span>

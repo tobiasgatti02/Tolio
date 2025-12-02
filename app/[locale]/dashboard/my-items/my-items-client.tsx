@@ -283,7 +283,7 @@ export default function MyItemsClient({ userId }: MyItemsClientProps) {
                         <p className="text-2xl font-bold text-green-600">
                           ${item.precioPorDia}/día
                         </p>
-                        {item.averageRating && (
+                        {item.averageRating != null && (
                           <div className="flex items-center">
                             <Star className="h-4 w-4 text-yellow-500 mr-1" />
                             <span className="text-sm">{item.averageRating.toFixed(1)}</span>

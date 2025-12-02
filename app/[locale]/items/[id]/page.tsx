@@ -72,7 +72,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
   const isOwnItem = session?.user?.id === item.owner.id
   const averageRating = item.reviews?.length > 0
     ? item.reviews.reduce((acc: number, review: any) => acc + review.rating, 0) / item.reviews.length
-    : 0
+    : undefined
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50/30 via-white to-orange-50/30">
@@ -140,7 +140,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                     {item.title}
                   </h1>
                   <div className="flex items-center gap-4 flex-wrap">
-                    {averageRating > 0 && (
+                    {averageRating != null && averageRating > 0 && (
                       <div className="flex items-center gap-1">
                         <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                         <span className="font-semibold text-gray-900">{averageRating.toFixed(1)}</span>

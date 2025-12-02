@@ -143,7 +143,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                     {service.title}
                   </h1>
                   <div className="flex items-center gap-4 flex-wrap">
-                    {service.averageRating > 0 && (
+                    {service.averageRating != null && service.averageRating > 0 && (
                       <div className="flex items-center gap-1">
                         <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                         <span className="font-semibold text-gray-900">{service.averageRating.toFixed(1)}</span>
