@@ -77,6 +77,20 @@ export default function MapLocationPicker({
     })
   }, [])
 
+  useEffect(() => {
+    // Añadir reglas CSS puntuales para asegurarnos que el mapa y sus controles
+    // no sobrepasen el navbar. Creamos un style tag y lo limpiamos al desmontar.
+    const style = document.createElement('style')
+    style.innerHTML = `
+      /* Limitar z-index de elementos leaflet dentro del contenedor local */
+      .map-container .leaflet-container { z-index: 0 !important; position: relative !important; }
+      .map-container .leaflet-control { z-index: 1 !important; }
+      .map-container { isolation: isolate; overflow: hidden; }
+    `
+    document.head.appendChild(style)
+    return () => { document.head.removeChild(style) }
+  }, [])
+
   const handleMapClick = useCallback(
     (lat: number, lng: number) => {
       setPosition([lat, lng])
@@ -127,7 +141,7 @@ export default function MapLocationPicker({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 z-0">
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-600">
           <MapPin className="inline h-4 w-4 mr-1" />

@@ -82,8 +82,8 @@ export default function CreateItemFormEnhanced() {
     }
   }
 
-  // Tamaño máximo de imagen: 5MB
-  const MAX_IMAGE_SIZE = 5 * 1024 * 1024
+  // Tamaño máximo de imagen: 10MB
+  const MAX_IMAGE_SIZE = 10 * 1024 * 1024
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -101,7 +101,7 @@ export default function CreateItemFormEnhanced() {
         // Validar tamaño de imagen
         if (file.size > MAX_IMAGE_SIZE) {
           const sizeMB = (file.size / (1024 * 1024)).toFixed(2)
-          newImageErrors.push(`"${file.name}": Imagen demasiado grande (${sizeMB}MB). Máximo 5MB.`)
+          newImageErrors.push(`"${file.name}": Imagen demasiado grande (${sizeMB}MB). Máximo 10MB. Comprimí la imagen o elegí otra.`)
           return false
         }
         
@@ -446,6 +446,30 @@ export default function CreateItemFormEnhanced() {
                 </p>
               )}
 
+              {/* Errores de imágenes - mostrar en el paso de imágenes */}
+              {imageErrors.length > 0 && (
+                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-red-800 mb-2">⚠️ Problemas con las imágenes:</p>
+                      <ul className="text-sm text-red-700 space-y-1">
+                        {imageErrors.map((error, index) => (
+                          <li key={index}>• {error}</li>
+                        ))}
+                      </ul>
+                      <button
+                        type="button"
+                        onClick={() => setImageErrors([])}
+                        className="text-sm text-red-600 hover:text-red-800 mt-2 underline"
+                      >
+                        Limpiar errores
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-gray-50 rounded-xl p-4 flex items-start gap-3">
                 <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-gray-600">
@@ -463,7 +487,7 @@ export default function CreateItemFormEnhanced() {
 
           {/* Step 3: Pricing and Location */}
           {currentStep === 3 && (
-            <div className="space-y-6">
+            <div className={`space-y-6 ${isSubmitting ? 'opacity-60 pointer-events-none' : ''}`}>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Precio y Ubicación</h2>
                 <p className="text-gray-600">Últimos detalles de tu herramienta</p>
@@ -612,7 +636,7 @@ export default function CreateItemFormEnhanced() {
                 </p>
                 
                 {showMap && (
-                  <div className="mt-4">
+                  <div className="mt-4 relative z-0">
                     <MapLocationPicker
                       onLocationSelect={(lat, lng) => {
                         setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }))
@@ -624,30 +648,6 @@ export default function CreateItemFormEnhanced() {
                   </div>
                 )}
               </div>
-
-              {/* Errores de imágenes */}
-              {imageErrors.length > 0 && (
-                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-red-800 mb-2">Problemas con las imágenes:</p>
-                      <ul className="text-sm text-red-700 space-y-1">
-                        {imageErrors.map((error, index) => (
-                          <li key={index}>• {error}</li>
-                        ))}
-                      </ul>
-                      <button
-                        type="button"
-                        onClick={() => setImageErrors([])}
-                        className="text-sm text-red-600 hover:text-red-800 mt-2 underline"
-                      >
-                        Limpiar errores
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Features */}
               <div>

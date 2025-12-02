@@ -10,6 +10,7 @@ import {
 import { format, differenceInDays, differenceInWeeks, isPast, isFuture, isToday, addDays } from "date-fns"
 import { es } from "date-fns/locale"
 import ReviewModal from "./review-modal"
+import { DashboardBooking, BookingStatus } from '@/lib/types'
 
 interface BookingItem {
   id: string
@@ -63,7 +64,7 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'active' | 'completed'>('all')
   const [typeFilter, setTypeFilter] = useState<'all' | 'items' | 'services'>('all')
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+  const [selectedBooking, setSelectedBooking] = useState<DashboardBooking | null>(null)
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [confirmModal, setConfirmModal] = useState<{
     show: boolean
@@ -242,7 +243,14 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
   console.log('cancelledBookings:', stats.cancelledBookings);
 
   const openReviewModal = (booking: Booking) => {
-    setSelectedBooking(booking)
+    const mappedBooking: DashboardBooking = {
+      ...booking,
+      status: (booking.status === 'PENDIENTE' ? 'PENDING' :
+               booking.status === 'CONFIRMADA' ? 'CONFIRMED' :
+               booking.status === 'COMPLETADA' ? 'COMPLETED' :
+               'CANCELLED') as BookingStatus
+    }
+    setSelectedBooking(mappedBooking)
     setShowReviewModal(true)
   }
 

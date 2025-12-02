@@ -37,7 +37,8 @@ export class DashboardService {
         totalItems,
         totalServices,
         userBookings,
-        userReviews,
+        itemReviewsAgg,
+        serviceReviewsAgg,
         notifications
       ] = await Promise.all([
         // Total de artículos del usuario
@@ -72,16 +73,22 @@ export class DashboardService {
           }
         }),
         
-        // Reviews del usuario
-        prisma.review.findMany({
+        // Reviews sobre LOS ITEMS que nos pertenecen
+        prisma.review.aggregate({
+          _count: { rating: true },
+          _avg: { rating: true },
+          _sum: { rating: true },
           where: {
-            OR: [
-              { reviewerId: userId },
-              { revieweeId: userId }
-            ]
-          },
-          select: {
-            rating: true
+            item: { ownerId: userId }
+          }
+        }),
+        // Reviews sobre LOS SERVICIOS que ofrecemos
+        prisma.serviceReview.aggregate({
+          _count: { rating: true },
+          _avg: { rating: true },
+          _sum: { rating: true },
+          where: {
+            service: { providerId: userId }
           }
         }),
         
@@ -121,17 +128,24 @@ export class DashboardService {
         .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && new Date(b.createdAt) >= monthStart)
         .reduce((sum, b) => sum + calculateBookingPrice(b.item.price, b.startDate, b.endDate), 0)
 
-      const averageRating = userReviews.length > 0 
-        ? userReviews.reduce((sum, r) => sum + r.rating, 0) / userReviews.length 
-        : 0
+      // Combinar métricas de reviews de items y services para calcular promedio recibido
+      const itemCount = itemReviewsAgg._count?.rating || 0
+      const serviceCount = serviceReviewsAgg._count?.rating || 0
+      const totalReviewsCount = itemCount + serviceCount
+      const itemSum = itemReviewsAgg._sum?.rating || 0
+      const serviceSum = serviceReviewsAgg._sum?.rating || 0
+      const totalRatingSum = (itemSum || 0) + (serviceSum || 0)
 
-      // Calcular trustScore basado en rating promedio, cantidad de reviews y bookings completados
+      const averageRating = totalReviewsCount > 0 ? totalRatingSum / totalReviewsCount : 0
+
+      // Calcular trustScore basado en rating promedio recibido en nuestras publicaciones,
+      // además de contar número de reviews y bookings completados
       let trustScore: number = DASHBOARD_CONFIG.DEFAULT_TRUST_SCORE
       if (averageRating > 0) {
         trustScore = Math.min(
-          DASHBOARD_CONFIG.MAX_TRUST_SCORE, 
-          averageRating * DASHBOARD_CONFIG.TRUST_SCORE_WEIGHTS.RATING + 
-          (userReviews.length / 10) * DASHBOARD_CONFIG.TRUST_SCORE_WEIGHTS.REVIEW_COUNT + 
+          DASHBOARD_CONFIG.MAX_TRUST_SCORE,
+          averageRating * DASHBOARD_CONFIG.TRUST_SCORE_WEIGHTS.RATING +
+          (totalReviewsCount / 10) * DASHBOARD_CONFIG.TRUST_SCORE_WEIGHTS.REVIEW_COUNT +
           (completedBookings / 20) * DASHBOARD_CONFIG.TRUST_SCORE_WEIGHTS.BOOKING_COUNT
         )
       }
