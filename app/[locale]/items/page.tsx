@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useLocale } from 'next-intl'
 import Link from "next/link"
@@ -11,7 +11,10 @@ import { Star, MapPin, Filter, Search, Loader2, Wrench, Plus, Map as MapIcon, Li
 import RadiusControl from "@/components/radius-control"
 
 // Importar MapSearchView dinámicamente
-const MapSearchView = dynamic(() => import("@/components/map-search-view"), { ssr: false })
+const MapSearchView = dynamic(() => import("@/components/map-search-view"), { 
+  ssr: false,
+  loading: () => <div className="h-[500px] bg-gray-100 animate-pulse rounded-lg" />
+})
 
 interface Category {
   id: string;
@@ -50,6 +53,25 @@ const sortOptions = [
   { value: "newest", label: "Más recientes" },
 ]
 
+// Skeleton component for loading state
+function ItemCardSkeleton() {
+  return (
+    <div className="bg-white rounded-xl overflow-hidden shadow-sm animate-pulse">
+      <div className="h-48 bg-gray-200" />
+      <div className="p-4">
+        <div className="h-3 w-16 bg-gray-200 rounded mb-2" />
+        <div className="h-5 w-3/4 bg-gray-200 rounded mb-2" />
+        <div className="h-4 w-20 bg-gray-200 rounded mb-2" />
+        <div className="h-3 w-24 bg-gray-200 rounded mb-2" />
+        <div className="flex justify-between items-center mt-4">
+          <div className="h-5 w-16 bg-gray-200 rounded" />
+          <div className="h-5 w-20 bg-gray-200 rounded-full" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ItemsPage() {
   const locale = useLocale()
   const searchParams = useSearchParams()
@@ -70,7 +92,12 @@ export default function ItemsPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [radius, setRadius] = useState(10)
   const [isLoadingLocation, setIsLoadingLocation] = useState(false)
+  
+  // Track if this is the first render to avoid double fetch
+  const isFirstRender = useRef(true)
+  const hasUserInteracted = useRef(false)
 
+  // Fetch items only when searchParams change (from URL)
   useEffect(() => {
     const fetchItems = async () => {
       setIsLoading(true)
@@ -103,16 +130,26 @@ export default function ItemsPage() {
     fetchCategories()
   }, [])
 
-  const updateSearchParams = (params: Record<string, string | null>) => {
+  const updateSearchParams = useCallback((params: Record<string, string | null>) => {
     const newParams = new URLSearchParams(searchParams.toString())
     Object.entries(params).forEach(([key, value]) => {
       if (value === null || value === "") newParams.delete(key)
       else newParams.set(key, value)
     })
     router.push(`/items?${newParams.toString()}`)
-  }
+  }, [searchParams, router])
 
+  // Apply filters with debounce - only trigger when user interacts with filters
   useEffect(() => {
+    // Skip first render - URL already has the initial params
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    
+    // Only update URL if user has interacted with filters
+    if (!hasUserInteracted.current) return
+    
     const timeoutId = setTimeout(() => {
       updateSearchParams({
         search: searchTerm,
@@ -125,9 +162,9 @@ export default function ItemsPage() {
         userLng: userLocation ? userLocation.lng.toString() : null,
         radius: userLocation ? radius.toString() : null,
       })
-    }, 300)
+    }, 500)
     return () => clearTimeout(timeoutId)
-  }, [searchTerm, location, selectedCategory, minPrice, maxPrice, sortBy, userLocation, radius])
+  }, [searchTerm, location, selectedCategory, minPrice, maxPrice, sortBy, userLocation, radius, updateSearchParams])
 
   // Get user location
   const getUserLocation = () => {
@@ -154,6 +191,7 @@ export default function ItemsPage() {
   }
 
   const clearFilters = () => {
+    hasUserInteracted.current = true
     setSearchTerm("")
     setLocation("")
     setSelectedCategory("")
@@ -161,6 +199,12 @@ export default function ItemsPage() {
     setMaxPrice("")
     setSortBy("relevance")
     setUserLocation(null)
+  }
+
+  // Helper to mark user interaction
+  const handleFilterChange = <T,>(setter: React.Dispatch<React.SetStateAction<T>>) => (value: T) => {
+    hasUserInteracted.current = true
+    setter(value)
   }
 
   return (
@@ -185,11 +229,11 @@ export default function ItemsPage() {
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input type="text" placeholder="Buscar herramientas..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+              <input type="text" placeholder="Buscar herramientas..." value={searchTerm} onChange={(e) => handleFilterChange(setSearchTerm)(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
             </div>
             <div className="flex-1 relative">
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input type="text" placeholder="Ubicación..." value={location} onChange={(e) => setLocation(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+              <input type="text" placeholder="Ubicación..." value={location} onChange={(e) => handleFilterChange(setLocation)(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
             </div>
             <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="md:hidden bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2">
               <Filter className="h-5 w-5" />
@@ -213,7 +257,7 @@ export default function ItemsPage() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
-                  <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                  <select value={selectedCategory} onChange={(e) => handleFilterChange(setSelectedCategory)(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                     <option value="">Todas las categorías</option>
                     {categories.map(cat => (<option key={cat.id} value={cat.nombre}>{cat.nombre}</option>))}
                   </select>
@@ -226,7 +270,7 @@ export default function ItemsPage() {
                       placeholder="Mín"
                       min="0"
                       value={minPrice}
-                      onChange={(e) => setMinPrice(e.target.value)}
+                      onChange={(e) => handleFilterChange(setMinPrice)(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />
                     <input
@@ -234,7 +278,7 @@ export default function ItemsPage() {
                       placeholder="Máx"
                       min="0"
                       value={maxPrice}
-                      onChange={(e) => setMaxPrice(e.target.value)}
+                      onChange={(e) => handleFilterChange(setMaxPrice)(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />
                   </div>
@@ -245,7 +289,7 @@ export default function ItemsPage() {
               <div className="mt-6 pt-6 border-t">
                 <RadiusControl
                   radius={radius}
-                  onRadiusChange={setRadius}
+                  onRadiusChange={handleFilterChange(setRadius)}
                   userLocation={userLocation}
                   onGetLocation={getUserLocation}
                   isLoadingLocation={isLoadingLocation}
@@ -286,15 +330,17 @@ export default function ItemsPage() {
                 </button>
                 
                 {/* Sort */}
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                <select value={sortBy} onChange={(e) => handleFilterChange(setSortBy)(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                   {sortOptions.map(option => (<option key={option.value} value={option.value}>{option.label}</option>))}
                 </select>
               </div>
             </div>
 
             {isLoading ? (
-              <div className="flex justify-center items-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <ItemCardSkeleton key={i} />
+                ))}
               </div>
             ) : items.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-lg">
@@ -325,10 +371,17 @@ export default function ItemsPage() {
               />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {items.map((item) => (
+                {items.map((item, index) => (
                   <Link href={`/${locale}/items/${item.id}`} key={item.id} className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="relative h-48 overflow-hidden">
-                      <Image src={item.images[0] || "/placeholder.svg"} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <div className="relative h-48 overflow-hidden bg-gray-100">
+                      <Image 
+                        src={item.images[0] || "/placeholder.svg"} 
+                        alt={item.title} 
+                        fill 
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading={index < 3 ? "eager" : "lazy"}
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
                     </div>
                     <div className="p-4">
                       <div className="text-xs font-medium text-emerald-600 mb-1">{item.category}</div>

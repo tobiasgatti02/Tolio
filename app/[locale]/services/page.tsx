@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useLocale } from 'next-intl'
 import Link from "next/link"
@@ -10,8 +10,11 @@ import dynamic from "next/dynamic"
 import { Star, MapPin, Filter, Search, Loader2, Briefcase, Plus, Award, Map as MapIcon, List } from "lucide-react"
 import RadiusControl from "@/components/radius-control"
 
-// Importar MapSearchView dinámicamente
-const MapSearchView = dynamic(() => import("@/components/map-search-view"), { ssr: false })
+// Importar MapSearchView dinámicamente con loading state
+const MapSearchView = dynamic(() => import("@/components/map-search-view"), { 
+  ssr: false,
+  loading: () => <div className="h-[500px] bg-gray-100 animate-pulse rounded-lg" />
+})
 
 interface Service {
   id: string;
@@ -47,6 +50,29 @@ const serviceCategories = [
   "Diseño", "Educación", "Otros"
 ]
 
+// Skeleton component for loading state
+function ServiceCardSkeleton() {
+  return (
+    <div className="bg-white rounded-xl overflow-hidden shadow-sm animate-pulse">
+      <div className="h-48 bg-gray-200" />
+      <div className="p-4">
+        <div className="h-3 w-16 bg-gray-200 rounded mb-2" />
+        <div className="h-5 w-3/4 bg-gray-200 rounded mb-2" />
+        <div className="h-4 w-20 bg-gray-200 rounded mb-2" />
+        <div className="h-3 w-24 bg-gray-200 rounded mb-2" />
+        <div className="flex items-center gap-2 mb-2">
+          <div className="h-6 w-6 rounded-full bg-gray-200" />
+          <div className="h-3 w-20 bg-gray-200 rounded" />
+        </div>
+        <div className="flex justify-between items-center mt-4">
+          <div className="h-5 w-16 bg-gray-200 rounded" />
+          <div className="h-5 w-20 bg-gray-200 rounded-full" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ServicesPage() {
   const locale = useLocale()
   const searchParams = useSearchParams()
@@ -65,7 +91,12 @@ export default function ServicesPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [radius, setRadius] = useState(10)
   const [isLoadingLocation, setIsLoadingLocation] = useState(false)
+  
+  // Track if this is the first render to avoid double fetch
+  const isFirstRender = useRef(true)
+  const hasUserInteracted = useRef(false)
 
+  // Fetch services only when searchParams change (from URL)
   useEffect(() => {
     const fetchServices = async () => {
       setIsLoading(true)
@@ -84,16 +115,26 @@ export default function ServicesPage() {
     fetchServices()
   }, [searchParams])
 
-  const updateSearchParams = (params: Record<string, string | null>) => {
+  const updateSearchParams = useCallback((params: Record<string, string | null>) => {
     const newParams = new URLSearchParams(searchParams.toString())
     Object.entries(params).forEach(([key, value]) => {
       if (value === null || value === "") newParams.delete(key)
       else newParams.set(key, value)
     })
     router.push(`/services?${newParams.toString()}`)
-  }
+  }, [searchParams, router])
 
+  // Apply filters with debounce - only trigger when user interacts with filters
   useEffect(() => {
+    // Skip first render - URL already has the initial params
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    
+    // Only update URL if user has interacted with filters
+    if (!hasUserInteracted.current) return
+    
     const timeoutId = setTimeout(() => {
       updateSearchParams({
         search: searchTerm,
@@ -105,9 +146,9 @@ export default function ServicesPage() {
         userLng: userLocation ? userLocation.lng.toString() : null,
         radius: userLocation ? radius.toString() : null,
       })
-    }, 300)
+    }, 500)
     return () => clearTimeout(timeoutId)
-  }, [searchTerm, location, selectedCategory, isProfessionalOnly, sortBy, userLocation, radius])
+  }, [searchTerm, location, selectedCategory, isProfessionalOnly, sortBy, userLocation, radius, updateSearchParams])
 
   // Get user location
   const getUserLocation = () => {
@@ -134,12 +175,19 @@ export default function ServicesPage() {
   }
 
   const clearFilters = () => {
+    hasUserInteracted.current = true
     setSearchTerm("")
     setLocation("")
     setSelectedCategory("")
     setIsProfessionalOnly(false)
     setSortBy("relevance")
     setUserLocation(null)
+  }
+
+  // Helper to mark user interaction
+  const handleFilterChange = <T,>(setter: React.Dispatch<React.SetStateAction<T>>) => (value: T) => {
+    hasUserInteracted.current = true
+    setter(value)
   }
 
   return (
@@ -164,11 +212,11 @@ export default function ServicesPage() {
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input type="text" placeholder="Buscar servicios..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <input type="text" placeholder="Buscar servicios..." value={searchTerm} onChange={(e) => handleFilterChange(setSearchTerm)(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
             </div>
             <div className="flex-1 relative">
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input type="text" placeholder="Ubicación..." value={location} onChange={(e) => setLocation(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <input type="text" placeholder="Ubicación..." value={location} onChange={(e) => handleFilterChange(setLocation)(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
             </div>
             <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="md:hidden bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
               <Filter className="h-5 w-5" />
@@ -192,14 +240,14 @@ export default function ServicesPage() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
-                  <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  <select value={selectedCategory} onChange={(e) => handleFilterChange(setSelectedCategory)(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="">Todas las categorías</option>
                     {serviceCategories.map(cat => (<option key={cat} value={cat}>{cat}</option>))}
                   </select>
                 </div>
                 <div>
                   <label className="flex items-center cursor-pointer">
-                    <input type="checkbox" checked={isProfessionalOnly} onChange={(e) => setIsProfessionalOnly(e.target.checked)} className="rounded text-blue-600 mr-2" />
+                    <input type="checkbox" checked={isProfessionalOnly} onChange={(e) => handleFilterChange(setIsProfessionalOnly)(e.target.checked)} className="rounded text-blue-600 mr-2" />
                     <span className="text-sm font-medium flex items-center gap-1">
                       <Award className="h-4 w-4 text-blue-600" />
                       Solo matriculados
@@ -212,7 +260,7 @@ export default function ServicesPage() {
               <div className="mt-6 pt-6 border-t">
                 <RadiusControl
                   radius={radius}
-                  onRadiusChange={setRadius}
+                  onRadiusChange={handleFilterChange(setRadius)}
                   userLocation={userLocation}
                   onGetLocation={getUserLocation}
                   isLoadingLocation={isLoadingLocation}
@@ -260,8 +308,10 @@ export default function ServicesPage() {
             </div>
 
             {isLoading ? (
-              <div className="flex justify-center items-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <ServiceCardSkeleton key={i} />
+                ))}
               </div>
             ) : services.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-lg">
@@ -292,10 +342,17 @@ export default function ServicesPage() {
               />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {services.map((service) => (
+                {services.map((service, index) => (
                   <Link href={`/${locale}/services/${service.id}`} key={service.id} className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="relative h-48 overflow-hidden">
-                      <Image src={service.images[0] || "/placeholder-service.jpg"} alt={service.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <div className="relative h-48 overflow-hidden bg-gray-100">
+                      <Image 
+                        src={service.images[0] || "/placeholder-service.jpg"} 
+                        alt={service.title} 
+                        fill 
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading={index < 3 ? "eager" : "lazy"}
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
                       {service.isProfessional && (
                         <div className="absolute top-3 right-3 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
                           <Award className="h-3 w-3" />
