@@ -35,6 +35,7 @@ export class DashboardService {
     try {
       const [
         totalItems,
+        totalServices,
         userBookings,
         userReviews,
         notifications
@@ -42,6 +43,11 @@ export class DashboardService {
         // Total de artículos del usuario
         prisma.item.count({
           where: { ownerId: userId }
+        }),
+        
+        // Total de servicios del usuario
+        prisma.service.count({
+          where: { providerId: userId }
         }),
         
         // Reservas del usuario
@@ -131,7 +137,8 @@ export class DashboardService {
       }
 
       return {
-        totalItems,
+        totalItems: totalItems + totalServices, // Items + Services
+        totalServices,
         activeBookings,
         pendingBookings,
         completedBookings,

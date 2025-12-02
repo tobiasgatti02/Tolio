@@ -14,9 +14,10 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { bookingId, itemId, revieweeId, rating, comment, trustFactors } = body
+    const { bookingId, itemId, serviceId, revieweeId, rating, comment, trustFactors } = body
+    const userId = session.user.id
 
-    // Verificar que el usuario puede hacer esta review
+    // Primero buscar en Booking (items)
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
@@ -25,41 +26,72 @@ export async function POST(request: Request) {
       }
     })
 
-    if (!booking) {
+    if (booking) {
+      if (booking.status !== 'COMPLETED') {
+        return NextResponse.json({ message: "Solo se pueden reseñar reservas completadas" }, { status: 400 })
+      }
+
+      if (booking.review) {
+        return NextResponse.json({ message: "Ya existe una reseña para esta reserva" }, { status: 400 })
+      }
+
+      // Verificar que el usuario es parte de esta reserva
+      if (booking.borrowerId !== userId && booking.ownerId !== userId) {
+        return NextResponse.json({ message: "No autorizado para reseñar esta reserva" }, { status: 403 })
+      }
+
+      // Crear la review
+      const review = await prisma.review.create({
+        data: {
+          rating,
+          comment,
+          trustFactors: trustFactors || [],
+          reviewerId: userId,
+          revieweeId,
+          itemId: booking.itemId,
+          bookingId
+        }
+      })
+
+      return NextResponse.json({ success: true, review })
+    }
+
+    // Buscar en ServiceBooking
+    const serviceBooking = await prisma.serviceBooking.findUnique({
+      where: { id: bookingId },
+      include: {
+        service: true,
+        review: true
+      }
+    })
+
+    if (!serviceBooking) {
       return NextResponse.json({ message: "Reserva no encontrada" }, { status: 404 })
     }
 
-    if (booking.status !== 'COMPLETED') {
+    if (serviceBooking.status !== 'COMPLETED') {
       return NextResponse.json({ message: "Solo se pueden reseñar reservas completadas" }, { status: 400 })
     }
 
-    if (booking.review) {
+    if (serviceBooking.review) {
       return NextResponse.json({ message: "Ya existe una reseña para esta reserva" }, { status: 400 })
     }
 
     // Verificar que el usuario es parte de esta reserva
-    const userId = session.user.id
-    if (booking.borrowerId !== userId && booking.ownerId !== userId) {
+    if (serviceBooking.clientId !== userId && serviceBooking.providerId !== userId) {
       return NextResponse.json({ message: "No autorizado para reseñar esta reserva" }, { status: 403 })
     }
 
-    // Crear la review
-    const review = await prisma.review.create({
+    // Crear la review para servicio usando ServiceReview
+    const review = await prisma.serviceReview.create({
       data: {
         rating,
         comment,
-        trustFactors: trustFactors || [],
         reviewerId: userId,
         revieweeId,
-        itemId,
+        serviceId: serviceBooking.serviceId,
         bookingId
       }
-    })
-
-    // Actualizar el estado de la reserva para indicar que fue reseñada
-    await prisma.booking.update({
-      where: { id: bookingId },
-      data: { updatedAt: new Date() }
     })
 
     return NextResponse.json({ success: true, review })

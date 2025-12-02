@@ -45,6 +45,7 @@ interface BookingsStats {
   activeBookings: number
   completedBookings: number
   pendingBookings: number
+  cancelledBookings: number
 }
 
 export default function BookingsClientEnhanced({ userId }: { userId: string }) {
@@ -55,7 +56,8 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
     totalSpent: 0,
     activeBookings: 0,
     completedBookings: 0,
-    pendingBookings: 0
+    pendingBookings: 0,
+    cancelledBookings: 0,
   })
   const [loading, setLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'active' | 'completed'>('all')
@@ -63,6 +65,14 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [showReviewModal, setShowReviewModal] = useState(false)
+  const [confirmModal, setConfirmModal] = useState<{
+    show: boolean
+    bookingId: string
+    action: 'confirm' | 'reject' | 'complete'
+    title: string
+    message: string
+  } | null>(null)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
 
   useEffect(() => {
     fetchBookings()
@@ -107,7 +117,11 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
       booking.status === 'PENDIENTE'
     ).length
 
-    setStats({ totalSpent, activeBookings, completedBookings, pendingBookings })
+    const cancelledBookings = bookingsData.filter(booking =>
+      booking.status === 'CANCELADA'
+    ).length
+
+    setStats({ totalSpent, activeBookings, completedBookings, pendingBookings, cancelledBookings })
   }
 
   const filterBookings = () => {
@@ -225,6 +239,8 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
     return `${format(startDate, "d MMM", { locale: es })} - ${format(endDate, "d MMM yyyy", { locale: es })}`
   }
 
+  console.log('cancelledBookings:', stats.cancelledBookings);
+
   const openReviewModal = (booking: Booking) => {
     setSelectedBooking(booking)
     setShowReviewModal(true)
@@ -241,20 +257,58 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
     setTimeout(() => setToast(null), 4000)
   }
 
-  const handleBookingAction = async (bookingId: string, action: 'confirm' | 'reject' | 'complete') => {
+  const openConfirmModal = (bookingId: string, action: 'confirm' | 'reject' | 'complete') => {
+    const titles = {
+      confirm: '¿Confirmar reserva?',
+      reject: '¿Cancelar reserva?',
+      complete: '¿Completar reserva?'
+    }
+    const messages = {
+      confirm: 'Al confirmar, te comprometes a cumplir con esta reserva.',
+      reject: 'Esta acción cancelará la reserva y notificará al usuario.',
+      complete: 'Al completar, la reserva se marcará como finalizada y podrás recibir una reseña.'
+    }
+    setConfirmModal({
+      show: true,
+      bookingId,
+      action,
+      title: titles[action],
+      message: messages[action]
+    })
+  }
+
+  const handleBookingAction = async () => {
+    if (!confirmModal) return
+    
+    const { bookingId, action } = confirmModal
+    setActionLoading(bookingId)
+    setConfirmModal(null)
+    
     try {
       const response = await fetch(`/api/booking/${bookingId}/${action}`, {
         method: 'PATCH'
       })
       
       if (response.ok) {
-        fetchBookings()
-        const actionMessages = {
-          confirm: 'confirmada',
-          reject: 'cancelada', 
-          complete: 'completada'
+        // Actualizar solo el booking afectado en el estado local
+        const statusMap: Record<string, string> = {
+          confirm: 'CONFIRMADA',
+          reject: 'CANCELADA',
+          complete: 'COMPLETADA'
         }
-        showToast('success', `Reserva ${actionMessages[action]} exitosamente`)
+        
+        setBookings(prev => prev.map(b => 
+          b.id === bookingId 
+            ? { ...b, status: statusMap[action] as Booking['status'], canReview: action === 'complete' }
+            : b
+        ))
+        
+        const actionMessages = {
+          confirm: 'Reserva confirmada',
+          reject: 'Reserva cancelada', 
+          complete: 'Reserva completada'
+        }
+        showToast('success', actionMessages[action])
       } else {
         const errorData = await response.json()
         showToast('error', errorData.error || 'No se pudo procesar la reserva')
@@ -262,6 +316,8 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
     } catch (error) {
       console.error('Error processing booking:', error)
       showToast('error', 'Error al procesar la reserva')
+    } finally {
+      setActionLoading(null)
     }
   }
 
@@ -412,38 +468,39 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex flex-wrap gap-3 items-center">
           {/* Filtros por estado */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-400" />
-            <div className="flex flex-wrap gap-2">
-              {[
-                { key: 'all', label: 'Todas', count: bookings.length },
-                { key: 'pending', label: 'Pendientes', count: stats.pendingBookings },
-                { key: 'active', label: 'Activas', count: stats.activeBookings },
-                { key: 'completed', label: 'Finalizadas', count: stats.completedBookings }
-              ].map((filter) => (
-                <button
-                  key={filter.key}
-                  onClick={() => setActiveFilter(filter.key as any)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    activeFilter === filter.key
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {filter.label} ({filter.count})
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Filter className="w-5 h-5 text-gray-400 flex-shrink-0" />
+            {[
+              { key: 'all', label: 'Todas', count: bookings.length },
+              { key: 'pending', label: 'Pendientes', count: stats.pendingBookings },
+              { key: 'active', label: 'Activas', count: stats.activeBookings },
+              { key: 'completed' , label: 'Finalizadas', count: stats.completedBookings + stats.cancelledBookings }
+
+            ].map((filter) => (
+              <button
+                key={filter.key}
+                onClick={() => setActiveFilter(filter.key as any)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                  activeFilter === filter.key
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {filter.label} ({filter.count})
+              </button>
+            ))}
           </div>
+
+          <div className="h-6 w-px bg-gray-200 hidden sm:block"></div>
 
           {/* Filtros por tipo */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setTypeFilter('all')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 typeFilter === 'all'
                   ? 'bg-gray-900 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -453,37 +510,37 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
             </button>
             <button
               onClick={() => setTypeFilter('items')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1 ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1 ${
                 typeFilter === 'items'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               <Wrench className="w-4 h-4" />
-              Herramientas
+              <span className="hidden sm:inline">Herramientas</span>
             </button>
             <button
               onClick={() => setTypeFilter('services')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1 ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1 ${
                 typeFilter === 'services'
                   ? 'bg-purple-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               <Briefcase className="w-4 h-4" />
-              Servicios
+              <span className="hidden sm:inline">Servicios</span>
             </button>
           </div>
 
           {/* Búsqueda */}
-          <div className="relative w-full lg:w-64">
+          <div className="relative flex-1 min-w-[200px] ml-auto">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar reservas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             />
           </div>
         </div>
@@ -668,15 +725,17 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
                             {isOwner && isPending && (
                               <>
                                 <button
-                                  onClick={() => handleBookingAction(booking.id, 'confirm')}
-                                  className="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                                  onClick={() => openConfirmModal(booking.id, 'confirm')}
+                                  disabled={actionLoading === booking.id}
+                                  className="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
                                 >
                                   <CheckCircle className="w-4 h-4 mr-1" />
                                   Aceptar
                                 </button>
                                 <button
-                                  onClick={() => handleBookingAction(booking.id, 'reject')}
-                                  className="inline-flex items-center px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+                                  onClick={() => openConfirmModal(booking.id, 'reject')}
+                                  disabled={actionLoading === booking.id}
+                                  className="inline-flex items-center px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
                                 >
                                   <XCircle className="w-4 h-4 mr-1" />
                                   Rechazar
@@ -686,8 +745,9 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
 
                             {!isOwner && isPending && (
                               <button
-                                onClick={() => handleBookingAction(booking.id, 'reject')}
-                                className="inline-flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
+                                onClick={() => openConfirmModal(booking.id, 'reject')}
+                                disabled={actionLoading === booking.id}
+                                className="inline-flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors disabled:opacity-50"
                               >
                                 <XCircle className="w-4 h-4 mr-1" />
                                 Cancelar
@@ -697,15 +757,17 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
                             {isOwner && isConfirmed && (
                               <>
                                 <button
-                                  onClick={() => handleBookingAction(booking.id, 'complete')}
-                                  className="inline-flex items-center px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
+                                  onClick={() => openConfirmModal(booking.id, 'complete')}
+                                  disabled={actionLoading === booking.id}
+                                  className="inline-flex items-center px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50"
                                 >
                                   <CheckCircle className="w-4 h-4 mr-1" />
                                   Completar
                                 </button>
                                 <button
-                                  onClick={() => handleBookingAction(booking.id, 'reject')}
-                                  className="inline-flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
+                                  onClick={() => openConfirmModal(booking.id, 'reject')}
+                                  disabled={actionLoading === booking.id}
+                                  className="inline-flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors disabled:opacity-50"
                                 >
                                   <XCircle className="w-4 h-4 mr-1" />
                                   Cancelar
@@ -751,6 +813,51 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
           userId={userId}
           onClose={closeReviewModal}
         />
+      )}
+
+      {/* Modal de confirmación */}
+      {confirmModal?.show && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <div className="text-center">
+              <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                confirmModal.action === 'reject' 
+                  ? 'bg-red-100' 
+                  : confirmModal.action === 'complete'
+                    ? 'bg-green-100'
+                    : 'bg-blue-100'
+              }`}>
+                {confirmModal.action === 'reject' ? (
+                  <XCircle className={`w-8 h-8 text-red-600`} />
+                ) : (
+                  <CheckCircle className={`w-8 h-8 ${confirmModal.action === 'complete' ? 'text-green-600' : 'text-blue-600'}`} />
+                )}
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">{confirmModal.title}</h3>
+              <p className="text-gray-600 mb-6">{confirmModal.message}</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmModal(null)}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleBookingAction}
+                  className={`flex-1 px-4 py-3 text-white font-medium rounded-xl transition-colors ${
+                    confirmModal.action === 'reject'
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : confirmModal.action === 'complete'
+                        ? 'bg-green-600 hover:bg-green-700'
+                        : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {confirmModal.action === 'confirm' ? 'Confirmar' : confirmModal.action === 'complete' ? 'Completar' : 'Cancelar reserva'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

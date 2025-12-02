@@ -82,7 +82,9 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: `${user.firstName} ${user.lastName}`,
-          image: user.profileImage,
+          // No incluir profileImage en el token para evitar cookies muy grandes
+          // La imagen se cargará desde la DB cuando se necesite
+          image: null,
         };
       },
     }),
@@ -155,7 +157,8 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
-        token.picture = user.image;
+        // No guardar la imagen en el token para evitar cookies grandes
+        token.picture = null;
         
         // Para OAuth, marcar como verificado automáticamente
         if (account?.provider !== "credentials") {
@@ -169,6 +172,12 @@ export const authOptions: NextAuthOptions = {
           token.isVerified = dbUser?.isVerified || false;
         }
       }
+      
+      // Limpiar imagen si es muy grande (base64)
+      if (token.picture && typeof token.picture === 'string' && token.picture.length > 500) {
+        token.picture = null;
+      }
+      
       return token;
     },
   },

@@ -307,7 +307,7 @@ export default function UnifiedDashboard({
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-semibold text-gray-900">{stats.totalItems}</p>
-                  <p className="text-xs text-gray-500">Artículos</p>
+                  <p className="text-xs text-gray-500">Publicaciones</p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-semibold text-gray-900">${stats.totalEarnings.toLocaleString()}</p>
@@ -337,6 +337,11 @@ export default function UnifiedDashboard({
                     {item.id === 'overview' && stats.notifications > 0 && (
                       <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">
                         {stats.notifications}
+                      </span>
+                    )}
+                    {item.id === 'items' && stats.totalItems > 0 && (
+                      <span className="ml-auto bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full">
+                        {stats.totalItems}
                       </span>
                     )}
                   </button>
