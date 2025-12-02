@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useCallback, useRef, memo } from "react"
+import { useState, useEffect, useCallback, useRef, memo, useMemo } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useLocale } from 'next-intl'
 import Link from "next/link"
@@ -285,6 +285,9 @@ export default function ItemsPage() {
     setter(value)
   }
 
+  // Memoized filtered items to prevent unnecessary recalculations
+  const filteredItems = useMemo(() => items, [items])
+
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-8 sm:py-12">
@@ -420,7 +423,7 @@ export default function ItemsPage() {
                   <ItemCardSkeleton key={i} />
                 ))}
               </div>
-            ) : items.length === 0 ? (
+            ) : filteredItems.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-lg">
                 <Wrench className="h-16 w-16 mx-auto text-gray-400 mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No se encontraron herramientas</h3>
@@ -432,7 +435,7 @@ export default function ItemsPage() {
               </div>
             ) : viewMode === 'map' ? (
               <MapSearchView
-                items={items.map(item => ({
+                items={filteredItems.map(item => ({
                   id: item.id,
                   title: item.title,
                   latitude: item.latitude || 0,
@@ -449,51 +452,8 @@ export default function ItemsPage() {
               />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {items.map((item, index) => (
-                  <Link href={`/${locale}/items/${item.id}`} key={item.id} className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="relative h-48 overflow-hidden bg-gray-100">
-                      <Image 
-                        src={item.images[0] || "/placeholder.svg"} 
-                        alt={item.title} 
-                        fill 
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading={index < 3 ? "eager" : "lazy"}
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <div className="text-xs font-medium text-emerald-600 mb-1">{item.category}</div>
-                      <h3 className="font-bold text-gray-900 mb-1 group-hover:text-emerald-600 transition-colors">{item.title}</h3>
-                      <div className="flex items-center mb-2">
-                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                        <span className="text-sm font-medium ml-1">{(item.averageRating || 0).toFixed(1)}</span>
-                        <span className="text-xs text-gray-500 ml-1">({item.reviewCount || 0} reseñas)</span>
-                      </div>
-                      <div className="flex items-center text-xs text-gray-500 mb-2">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        {item.location}
-                      </div>
-                      {item.distance !== undefined && (
-                        <div className="text-xs text-emerald-600 font-medium mb-2">
-                          📍 {item.distance.toFixed(1)} km de distancia
-                        </div>
-                      )}
-                      {item.owner && (
-                        <div className="flex items-center gap-2 mb-2">
-                          {item.owner.profileImage ? (
-                            <Image src={item.owner.profileImage} alt={`${item.owner.firstName} ${item.owner.lastName}`} width={24} height={24} className="rounded-full" />
-                          ) : (
-                            <div className="h-6 w-6 rounded-full bg-gray-300" />
-                          )}
-                          <span className="text-xs text-gray-600">{item.owner.firstName} {item.owner.lastName}</span>
-                        </div>
-                      )}
-                      <div className="mt-auto flex justify-between items-center">
-                        <div className="text-gray-900 font-bold">${item.price}<span className="text-gray-500 font-normal text-sm">/día</span></div>
-                        <div className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full">Disponible</div>
-                      </div>
-                    </div>
-                  </Link>
+                {filteredItems.map((item, index) => (
+                  <ItemCard key={item.id} item={item} locale={locale} priority={index < 3} />
                 ))}
               </div>
             )}
