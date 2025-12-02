@@ -252,12 +252,11 @@ export default function BookingDetailsPage() {
   const steps = [
     { key: 'PENDING', label: 'Solicitada', icon: <Clock className="w-5 h-5" /> },
     { key: 'CONFIRMED', label: 'Confirmada', icon: <CheckCircle className="w-5 h-5" /> },
-    { key: 'IN_PROGRESS', label: 'En curso', icon: <Package className="w-5 h-5" /> },
     { key: 'COMPLETED', label: 'Completada', icon: <CheckCircle className="w-5 h-5" /> },
   ]
 
   const getStepStatus = (stepKey: string) => {
-    const order = ['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED']
+    const order = ['PENDING', 'CONFIRMED', 'COMPLETED']
     const currentIndex = order.indexOf(booking.status === 'CANCELLED' ? 'PENDING' : booking.status)
     const stepIndex = order.indexOf(stepKey)
     
@@ -329,7 +328,7 @@ export default function BookingDetailsPage() {
                     className="h-full bg-green-500 transition-all duration-500"
                     style={{ 
                       width: booking.status === 'PENDING' ? '0%' : 
-                             booking.status === 'CONFIRMED' ? '33%' : 
+                             booking.status === 'CONFIRMED' ? '50%' : 
                              booking.status === 'COMPLETED' ? '100%' : '0%' 
                     }}
                   />

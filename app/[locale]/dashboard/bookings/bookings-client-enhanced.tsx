@@ -5,7 +5,7 @@ import Link from "next/link"
 import { 
   Calendar, Clock, CheckCircle, XCircle, AlertTriangle,
   Filter, Search, Star, Eye, MessageCircle, Package,
-  Wrench, Briefcase, ChevronRight, Timer
+  Wrench, Briefcase, ChevronRight
 } from "lucide-react"
 import { format, differenceInDays, differenceInWeeks, isPast, isFuture, isToday, addDays } from "date-fns"
 import { es } from "date-fns/locale"
@@ -33,7 +33,7 @@ interface Booking {
   fechaInicio: string
   fechaFin: string
   total: number
-  status: 'PENDIENTE' | 'CONFIRMADA' | 'EN_PROGRESO' | 'COMPLETADA' | 'CANCELADA'
+  status: 'PENDIENTE' | 'CONFIRMADA' | 'COMPLETADA' | 'CANCELADA'
   createdAt: string
   canReview: boolean
   hasReviewed: boolean
@@ -95,7 +95,7 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
       .reduce((sum, booking) => sum + booking.total, 0)
     
     const activeBookings = bookingsData.filter(booking => 
-      ['CONFIRMADA', 'EN_PROGRESO'].includes(booking.status)
+      booking.status === 'CONFIRMADA'
     ).length
     
     const completedBookings = bookingsData.filter(booking => 
@@ -116,7 +116,7 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
     if (activeFilter === 'pending') {
       filtered = filtered.filter(booking => booking.status === 'PENDIENTE')
     } else if (activeFilter === 'active') {
-      filtered = filtered.filter(booking => ['CONFIRMADA', 'EN_PROGRESO'].includes(booking.status))
+      filtered = filtered.filter(booking => booking.status === 'CONFIRMADA')
     } else if (activeFilter === 'completed') {
       filtered = filtered.filter(booking => ['COMPLETADA', 'CANCELADA'].includes(booking.status))
     }
@@ -180,7 +180,7 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
     }
 
     // Si está en progreso
-    return { text: 'En progreso', color: 'text-yellow-600', icon: <Timer className="w-4 h-4" /> }
+    return { text: 'En progreso', color: 'text-yellow-600', icon: <Clock className="w-4 h-4" /> }
   }
 
   const getStatusInfo = (status: string) => {
@@ -208,12 +208,6 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
           color: "bg-blue-100 text-blue-800 border-blue-200",
           text: "Completada",
           icon: <CheckCircle className="w-4 h-4" />,
-        }
-      case "EN_PROGRESO":
-        return {
-          color: "bg-purple-100 text-purple-800 border-purple-200",
-          text: "En Progreso",
-          icon: <Timer className="w-4 h-4" />,
         }
       default:
         return {
@@ -566,7 +560,7 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
                                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                                     booking.status === 'PENDIENTE' 
                                       ? 'bg-yellow-500 text-white ring-4 ring-yellow-100' 
-                                      : 'bg-gray-300 text-white'
+                                      : 'bg-green-500 text-white'
                                   }`}>
                                     <Clock className="w-4 h-4" />
                                   </div>
@@ -575,7 +569,7 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
                                 
                                 {/* Línea */}
                                 <div className={`flex-1 h-1 rounded-full ${
-                                  ['CONFIRMADA', 'EN_PROGRESO'].includes(booking.status) 
+                                  booking.status === 'CONFIRMADA' 
                                     ? 'bg-green-500' 
                                     : 'bg-gray-200'
                                 }`}></div>
@@ -585,32 +579,11 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
                                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                                     booking.status === 'CONFIRMADA' 
                                       ? 'bg-green-500 text-white ring-4 ring-green-100' 
-                                      : ['EN_PROGRESO'].includes(booking.status)
-                                      ? 'bg-green-500 text-white'
                                       : 'bg-gray-300 text-white'
                                   }`}>
                                     <CheckCircle className="w-4 h-4" />
                                   </div>
                                   <span className="text-xs text-gray-600 text-center">Confirmada</span>
-                                </div>
-
-                                {/* Línea */}
-                                <div className={`flex-1 h-1 rounded-full ${
-                                  booking.status === 'EN_PROGRESO' 
-                                    ? 'bg-purple-500' 
-                                    : 'bg-gray-200'
-                                }`}></div>
-
-                                {/* En Progreso */}
-                                <div className="flex flex-col items-center gap-1 flex-1">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                    booking.status === 'EN_PROGRESO' 
-                                      ? 'bg-purple-500 text-white ring-4 ring-purple-100' 
-                                      : 'bg-gray-300 text-white'
-                                  }`}>
-                                    <Timer className="w-4 h-4" />
-                                  </div>
-                                  <span className="text-xs text-gray-600 text-center">En Curso</span>
                                 </div>
                               </div>
                             </div>

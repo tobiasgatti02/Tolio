@@ -51,7 +51,7 @@ export default function Home() {
             </Link>
           </div>
           {/* Feature Icons */}
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 text-white animate-fade-in-up animation-delay-600">
+          <div className="mt-16 grid grid-cols-2 md:grid-cols-3 gap-8 text-white animate-fade-in-up animation-delay-600">
             <div className="flex flex-col items-center space-y-4 hover:scale-110 transition-transform duration-300">
               <div className="bg-white/20 backdrop-blur-sm p-4 rounded-2xl mb-2 shadow-lg">
                 <Search className="h-8 w-8" />
@@ -70,11 +70,7 @@ export default function Home() {
               </div>
               <span className="text-lg font-semibold">Comunidad confiable</span>
             </div>
-            <div className="flex flex-col items-center space-y-4 hover:scale-110 transition-transform duration-300">
-              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-2xl mb-2 shadow-lg">
-              </div>
-              <span className="text-lg font-semibold">Publica gratis</span>
-            </div>
+           
           </div>
         </div>
 
