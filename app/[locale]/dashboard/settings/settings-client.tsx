@@ -285,13 +285,30 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           </div>
 
           <div>
-            <Label htmlFor="phoneNumber">Teléfono</Label>
+            <Label htmlFor="phoneNumber">Teléfono (WhatsApp)</Label>
             <Input
               id="phoneNumber"
               value={formData.phoneNumber || ''}
-              onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+              onChange={(e) => {
+                let value = e.target.value
+                // Si el usuario intenta borrar el prefijo, lo mantenemos
+                if (!value.startsWith('+54 9 ')) {
+                  if (value === '+54 9' || value === '+54 ' || value === '+54') {
+                    value = '+54 9 '
+                  } else if (value.length < 6) {
+                     // Si borra todo, permitimos que quede vacío o reseteamos
+                     value = '+54 9 '
+                  }
+                }
+                setFormData({ ...formData, phoneNumber: value })
+              }}
+              onFocus={() => {
+                if (!formData.phoneNumber) {
+                  setFormData({ ...formData, phoneNumber: '+54 9 ' })
+                }
+              }}
               disabled={!isEditing}
-              placeholder="+52 55 1234 5678"
+              placeholder="+54 9 11 1234 5678"
             />
           </div>
 

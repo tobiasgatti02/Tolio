@@ -96,7 +96,24 @@ export default function PersonalInfoStep({
             type="tel"
             id="phone"
             value={formData.phone}
-            onChange={(e) => updateFormData({ phone: e.target.value })}
+            onChange={(e) => {
+              let value = e.target.value
+              // Si el usuario intenta borrar el prefijo, lo mantenemos
+              if (!value.startsWith('+54 9 ')) {
+                if (value === '+54 9' || value === '+54 ' || value === '+54') {
+                  value = '+54 9 '
+                } else if (value.length < 6) {
+                   // Si borra todo, permitimos que quede vacío o reseteamos
+                   value = '+54 9 '
+                }
+              }
+              updateFormData({ phone: value })
+            }}
+            onFocus={() => {
+              if (!formData.phone) {
+                updateFormData({ phone: '+54 9 ' })
+              }
+            }}
             className={`block w-full rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 ${
               errors.phone ? 'border-red-300' : 'border-gray-300'
             }`}
