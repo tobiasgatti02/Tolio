@@ -11,6 +11,7 @@ import {
   User, MessageCircle, MapPin, Package, Briefcase,
   AlertCircle
 } from "lucide-react"
+import BookingTimeline from "@/components/booking-timeline"
 
 interface BookingDetails {
   id: string
@@ -352,45 +353,18 @@ export default function BookingDetailsPage() {
             </div>
           </div>
 
-          {/* Timeline */}
+          {/* Enhanced Timeline */}
           {booking.status !== 'CANCELLED' ? (
-            <div className="p-6 bg-gray-50 border-b border-gray-100">
-              <div className="flex items-center justify-between relative">
-                {/* Progress line */}
-                <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200">
-                  <div 
-                    className="h-full bg-green-500 transition-all duration-500"
-                    style={{ 
-                      width: booking.status === 'PENDING' ? '0%' : 
-                             booking.status === 'CONFIRMED' ? '50%' : 
-                             booking.status === 'COMPLETED' ? '100%' : '0%' 
-                    }}
-                  />
-                </div>
-                
-                {steps.map((step, index) => {
-                  const stepStatus = getStepStatus(step.key)
-                  return (
-                    <div key={step.key} className="flex flex-col items-center relative z-10">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                        stepStatus === 'completed' ? 'bg-green-500 text-white' :
-                        stepStatus === 'current' ? 'bg-blue-500 text-white ring-4 ring-blue-100' :
-                        'bg-white border-2 border-gray-200 text-gray-400'
-                      }`}>
-                        {step.icon}
-                      </div>
-                      <span className={`text-xs mt-2 font-medium ${
-                        stepStatus === 'completed' || stepStatus === 'current' ? 'text-gray-900' : 'text-gray-400'
-                      }`}>
-                        {step.label}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
+            <div className="px-6 py-2">
+              <BookingTimeline
+                currentStatus={booking.status as 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'}
+                createdAt={new Date(booking.createdAt)}
+                confirmedAt={booking.status === 'CONFIRMED' || booking.status === 'COMPLETED' ? new Date(booking.updatedAt) : undefined}
+                completedAt={booking.status === 'COMPLETED' ? new Date(booking.updatedAt) : undefined}
+              />
             </div>
           ) : (
-            <div className="p-4 bg-red-50 border-b border-red-100">
+            <div className="p-6 bg-red-50 border-b border-red-100">
               <p className="text-center text-red-700 font-medium">
                 <XCircle className="w-4 h-4 inline mr-2" />
                 Esta reserva fue cancelada

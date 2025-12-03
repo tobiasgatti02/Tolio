@@ -118,7 +118,7 @@ export default function BookingFormFree({
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Error al crear la reserva")
+        throw new Error(data?.error || "Error al crear la reserva")
       }
 
       setSuccess(true)

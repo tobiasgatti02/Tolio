@@ -21,6 +21,7 @@ import { STATUS_COLORS, BOOKING_STATUS, ERROR_MESSAGES } from "@/lib/dashboard-c
 import { DashboardBooking, DashboardStats, DashboardItem, DashboardReview, DashboardNotification } from "@/lib/types"
 import StripeAccountCheck from "@/components/stripe-account-check"
 import { useOnboarding } from "@/components/onboarding"
+import BookingPreviewCard from "@/components/booking-preview-card"
 
 interface MenuItem {
   id: string
@@ -398,6 +399,43 @@ export default function CleanDashboard({
             </div>
           </div>
 
+          {/* Próximas Reservas - Show if there are active or pending bookings */}
+          {(stats.activeBookings > 0 || stats.pendingBookings > 0) && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">📅 Próximas Reservas</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Tienes {stats.activeBookings + stats.pendingBookings} reserva{stats.activeBookings + stats.pendingBookings !== 1 ? 's' : ''} activa{stats.activeBookings + stats.pendingBookings !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <Link
+                  href="/dashboard/bookings"
+                  className="text-orange-600 hover:text-orange-700 font-medium text-sm flex items-center gap-1 group"
+                >
+                  Ver todas
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                {bookings
+                  .filter(b => b.status === 'PENDING' || b.status === 'CONFIRMED')
+                  .slice(0, 3)
+                  .map((booking) => {
+                    // Map status to Spanish format expected by BookingPreviewCard
+                    const mappedBooking = {
+                      ...booking,
+                      status: (booking.status === 'PENDING' ? 'PENDIENTE' :
+                               booking.status === 'CONFIRMED' ? 'CONFIRMADA' :
+                               booking.status === 'COMPLETED' ? 'COMPLETADA' : 'CANCELADA') as 'PENDIENTE' | 'CONFIRMADA' | 'COMPLETADA' | 'CANCELADA'
+                    }
+                    return <BookingPreviewCard key={booking.id} booking={mappedBooking} />
+                  })}
+              </div>
+            </div>
+          )}
+
           {/* Actividad reciente */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white p-6 rounded-xl border border-gray-200">
@@ -470,11 +508,17 @@ export default function CleanDashboard({
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Header móvil */}
       <div className="lg:hidden">
-        <div className="flex items-center justify-between p-4 bg-white border-b">
-          <h1 className="text-lg font-semibold text-gray-900">Panel de usuario</h1>
+        <div className="flex items-center justify-between p-4 bg-white border-b shadow-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white font-bold">
+              T
+            </div>
+            <h1 className="text-lg font-bold text-gray-900">Panel</h1>
+          </div>
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+            aria-label="Abrir menú"
           >
             <Menu className="w-6 h-6" />
           </button>
@@ -533,6 +577,7 @@ export default function CleanDashboard({
               <div key={item.id}>
                 <div className="flex items-center">
                   <Link
+                    id={`sidebar-link-${item.id}`}
                     href={item.path}
                     className={`flex-1 flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                       activeSection === item.id

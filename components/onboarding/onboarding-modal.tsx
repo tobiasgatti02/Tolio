@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useLocale } from "next-intl"
+import SpotlightOverlay from "./spotlight-overlay"
 
 interface OnboardingStep {
   id: number
@@ -25,6 +26,7 @@ interface OnboardingStep {
   icon: React.ReactNode
   image?: string
   highlight?: string
+  spotlightSelector?: string
   tips: string[]
 }
 
@@ -132,8 +134,19 @@ interface OnboardingModalProps {
 export default function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModalProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [direction, setDirection] = useState(0)
+  const [showSpotlight, setShowSpotlight] = useState(false)
   const router = useRouter()
   const locale = useLocale()
+
+  // Activate spotlight after modal animation
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => setShowSpotlight(true), 400)
+      return () => clearTimeout(timer)
+    } else {
+      setShowSpotlight(false)
+    }
+  }, [isOpen, currentStep])
 
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
@@ -189,11 +202,23 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
 
   return (
     <AnimatePresence>
+      {/* Spotlight overlay */}
+      <SpotlightOverlay 
+        targetSelector={step.spotlightSelector}
+        isActive={showSpotlight && !!step.spotlightSelector}
+        padding={12}
+        borderRadius={16}
+      />
+      
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4"
+        style={{ 
+          backgroundColor: step.spotlightSelector ? 'transparent' : 'rgba(0, 0, 0, 0.7)',
+          backdropFilter: step.spotlightSelector ? 'none' : 'blur(8px)'
+        }}
         onClick={(e: React.MouseEvent) => e.target === e.currentTarget && handleSkip()}
       >
         <motion.div

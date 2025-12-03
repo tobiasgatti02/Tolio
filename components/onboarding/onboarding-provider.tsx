@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { useSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
-import OnboardingModal from "./onboarding-modal"
+import GuidedTour from "./guided-tour"
 
 interface OnboardingContextType {
   showOnboarding: () => void
@@ -39,13 +39,22 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     setIsComplete(completed === "true")
     
     // Check if user just registered (via URL param)
-    const showOnboarding = searchParams?.get("onboarding") === "true"
+    const showOnboardingParam = searchParams?.get("onboarding") === "true"
     
-    // If user just registered and hasn't completed onboarding, show it
-    if (showOnboarding && completed !== "true" && session?.user) {
+    // ONLY show automatically if:
+    // 1. URL has onboarding=true (just registered)
+    // 2. User hasn't completed it before
+    // 3. User is logged in
+    if (showOnboardingParam && completed !== "true" && session?.user) {
       // Small delay for smooth transition after page load
       const timer = setTimeout(() => {
         setIsOpen(true)
+        // Remove the URL parameter after triggering to prevent re-triggering on refresh
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href)
+          url.searchParams.delete('onboarding')
+          window.history.replaceState({}, '', url.toString())
+        }
       }, 800)
       return () => clearTimeout(timer)
     }
@@ -62,16 +71,15 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
 
   const handleClose = () => {
     setIsOpen(false)
-    // Mark as completed even if skipped to prevent showing again
-    if (!isComplete) {
-      handleComplete()
-    }
+    // Mark as completed when closed/skipped to prevent automatic re-showing
+    // User can still manually trigger it via "Ver tutorial" button
+    handleComplete()
   }
 
   return (
     <OnboardingContext.Provider value={{ showOnboarding: showOnboardingManual, isOnboardingComplete: isComplete }}>
       {children}
-      <OnboardingModal 
+      <GuidedTour 
         isOpen={isOpen} 
         onClose={handleClose} 
         onComplete={handleComplete} 
