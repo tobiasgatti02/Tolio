@@ -35,17 +35,7 @@ export default function ContactPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Información de Contacto</h2>
             
             <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <Mail className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Email</h3>
-                  <p className="text-gray-600">soporte@tolio.app</p>
-                  <p className="text-sm text-gray-500 mt-1">Te respondemos en menos de 24 horas</p>
-                </div>
-              </div>
-
+    
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-purple-100 rounded-lg">
                   <MessageSquare className="h-6 w-6 text-purple-600" />
@@ -70,20 +60,11 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Ubicación</h3>
-                  <p className="text-gray-600">Bahía Blanca, Argentina</p>
+                  <p className="text-gray-600">Argentina</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <Clock className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Horario de atención</h3>
-                  <p className="text-gray-600">Lunes a Viernes</p>
-                  <p className="text-sm text-gray-500">9:00 - 18:00 (Argentina)</p>
-                </div>
-              </div>
+              
             </div>
           </div>
 

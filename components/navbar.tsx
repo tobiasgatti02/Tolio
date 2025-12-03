@@ -55,7 +55,14 @@ export default function Navbar() {
               >
                 {t('howItWorks')}
               </Link>
-
+              {session && (
+                <Link
+                  href={`/${locale}/dashboard/bookings`}
+                  className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
+                >
+                  Mis Reservas
+                </Link>
+              )}
             </nav>
           </div>
           <div className="hidden md:flex items-center space-x-4">
@@ -161,15 +168,48 @@ export default function Navbar() {
             </Link>
 
             {session && (
-              <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  setIsPublishModalOpen(true);
-                }}
-                className="block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all text-base font-medium mt-2 w-full text-center"
-              >
-                {t('publish.label')}
-              </button>
+              <>
+                {/* Dashboard and Bookings - Mobile Only */}
+                <div className="border-t border-gray-200 mt-2 pt-2">
+                  <Link
+                    href={`/${locale}/dashboard`}
+                    className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {t('myPanel')}
+                  </Link>
+                  <Link
+                    href={`/${locale}/dashboard/bookings`}
+                    className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Mis Reservas
+                  </Link>
+                  {/* Notifications - Mobile */}
+                  {session.user?.id && (
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsNotificationsOpen(true);
+                      }}
+                      className="flex items-center gap-2 w-full text-left text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
+                    >
+                      <Bell className="h-5 w-5" />
+                      Notificaciones
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsPublishModalOpen(true);
+                  }}
+                  className="block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all text-base font-medium mt-2 w-full text-center"
+                >
+                  {t('publish.label')}
+                </button>
+              </>
             )}
             {session ? (
               <>

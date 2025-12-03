@@ -4,6 +4,7 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import Navbar from '@/components/navbar';
 import Footer from '@/components/footer';
+import FloatingFaqButton from '@/components/floating-faq-button';
 import Providers from '../providers';
 
 export default async function LocaleLayout(props: {
@@ -18,6 +19,7 @@ export default async function LocaleLayout(props: {
       <Providers>
         <Navbar />
         <main className="min-h-screen">{props.children}</main>
+        <FloatingFaqButton />
       </Providers>
       <Footer />
     </NextIntlClientProvider>

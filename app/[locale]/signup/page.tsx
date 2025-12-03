@@ -181,7 +181,7 @@ export default function SignupPage() {
 
             {/* Botones */}
             <div className="flex gap-3">
-              <Link href="/login" className="flex-1">
+              <Link href="/login?onboarding=true" className="flex-1">
                 <button className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl">
                   Ir al inicio de sesión
                 </button>
@@ -410,7 +410,7 @@ export default function SignupPage() {
           <div className="space-y-3">
             <button
               type="button"
-              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+              onClick={() => signIn("google", { callbackUrl: "/dashboard?onboarding=true" })}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all font-medium text-gray-700"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">

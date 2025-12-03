@@ -134,15 +134,7 @@ export default function TermsPage() {
             </p>
           </section>
 
-          <section className="mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">11. Contacto</h2>
-            <p className="text-gray-600 leading-relaxed">
-              Si tienes preguntas sobre estos Términos de Servicio, puedes contactarnos en{" "}
-              <a href="mailto:soporte@tolio.app" className="text-blue-600 hover:text-blue-700">
-                soporte@tolio.app
-              </a>
-            </p>
-          </section>
+          
         </div>
       </div>
     </div>
