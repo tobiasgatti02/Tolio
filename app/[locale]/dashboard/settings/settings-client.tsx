@@ -141,8 +141,8 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   const handleSave = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/user/update', {
-        method: 'POST',
+      const response = await fetch('/api/user/profile', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })

@@ -21,9 +21,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(bookings)
   } catch (error) {
-    console.error('Error in dashboard bookings API:', error)
+    console.error('Error in dashboard bookings API:', error instanceof Error ? error.message : error)
     return NextResponse.json(
-      { message: "Error interno del servidor" }, 
+      { 
+        message: "Error interno del servidor",
+        error: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      }, 
       { status: 500 }
     )
   }

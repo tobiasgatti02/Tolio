@@ -49,13 +49,14 @@ export class DashboardService {
           where: { providerId: userId }
         }),
         
-        // Reservas del usuario
+        // Reservas del usuario (solo con items existentes)
         prisma.booking.findMany({
           where: {
             OR: [
               { borrowerId: userId },
               { ownerId: userId }
-            ]
+            ],
+            item: { isNot: null } // Solo bookings con items existentes
           },
           select: {
             status: true,
@@ -99,32 +100,35 @@ export class DashboardService {
         })
       ])
 
-      const activeBookings = userBookings.filter(b => b.status === 'CONFIRMED').length
-      const pendingBookings = userBookings.filter(b => b.status === 'PENDING').length
-      const completedBookings = userBookings.filter(b => b.status === 'COMPLETED').length
+      // Filtrar bookings válidos (con item existente)
+      const validBookings = userBookings.filter(b => b.item !== null)
+      
+      const activeBookings = validBookings.filter(b => b.status === 'CONFIRMED').length
+      const pendingBookings = validBookings.filter(b => b.status === 'PENDING').length
+      const completedBookings = validBookings.filter(b => b.status === 'COMPLETED').length
       
       // Ganancias (como prestador)
-      const totalEarnings = userBookings
-        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId)
-        .reduce((sum, b) => sum + calculateBookingPrice(b.item.price, b.startDate, b.endDate), 0)
+      const totalEarnings = validBookings
+        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && b.item)
+        .reduce((sum, b) => sum + calculateBookingPrice(b.item!.price, b.startDate, b.endDate), 0)
       
       // Gastos (como prestatario)
-      const totalSpent = userBookings
-        .filter(b => b.status === 'COMPLETED' && b.borrowerId === userId)
-        .reduce((sum, b) => sum + calculateBookingPrice(b.item.price, b.startDate, b.endDate), 0)
+      const totalSpent = validBookings
+        .filter(b => b.status === 'COMPLETED' && b.borrowerId === userId && b.item)
+        .reduce((sum, b) => sum + calculateBookingPrice(b.item!.price, b.startDate, b.endDate), 0)
 
       // Ganancias de hoy
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      const todayEarnings = userBookings
-        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && new Date(b.createdAt) >= today)
-        .reduce((sum, b) => sum + calculateBookingPrice(b.item.price, b.startDate, b.endDate), 0)
+      const todayEarnings = validBookings
+        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && b.item && new Date(b.createdAt) >= today)
+        .reduce((sum, b) => sum + calculateBookingPrice(b.item!.price, b.startDate, b.endDate), 0)
 
       // Ganancias del mes
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-      const monthlyEarnings = userBookings
-        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && new Date(b.createdAt) >= monthStart)
-        .reduce((sum, b) => sum + calculateBookingPrice(b.item.price, b.startDate, b.endDate), 0)
+      const monthlyEarnings = validBookings
+        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && b.item && new Date(b.createdAt) >= monthStart)
+        .reduce((sum, b) => sum + calculateBookingPrice(b.item!.price, b.startDate, b.endDate), 0)
 
       // Combinar métricas de reviews de items y services para calcular promedio recibido
       const itemCount = itemReviewsAgg._count?.rating || 0
@@ -239,6 +243,7 @@ export class DashboardService {
               { borrowerId: userId },
               { ownerId: userId }
             ],
+            item: { isNot: null }, // Solo bookings con items existentes
             ...statusFilter
           },
           include: {
@@ -276,6 +281,7 @@ export class DashboardService {
               { clientId: userId },
               { providerId: userId }
             ],
+            service: { isNot: null }, // Solo bookings con servicios existentes
             ...statusFilter
           },
           include: {
@@ -309,20 +315,22 @@ export class DashboardService {
         })
       ])
 
-      // Mapear reservas de items
-      const mappedItemBookings: DashboardBooking[] = itemBookings.map(booking => {
+      // Mapear reservas de items (filtrar los que tienen item null por seguridad)
+      const mappedItemBookings: DashboardBooking[] = itemBookings
+        .filter(booking => booking.item !== null)
+        .map(booking => {
         const isBorrower = booking.borrowerId === userId
         const hasReviewed = booking.review !== null
-        const totalPrice = calculateBookingPrice(booking.item.price, booking.startDate, booking.endDate)
+        const totalPrice = calculateBookingPrice(booking.item!.price, booking.startDate, booking.endDate)
         
         return {
           id: booking.id,
           type: 'item' as const,
           item: {
-            id: booking.item.id,
-            nombre: booking.item.title,
-            imagenes: booking.item.images,
-            precioPorDia: booking.item.price,
+            id: booking.item!.id,
+            nombre: booking.item!.title,
+            imagenes: booking.item!.images,
+            precioPorDia: booking.item!.price,
             type: 'item'
           },
           borrower: isBorrower ? undefined : {
@@ -346,20 +354,22 @@ export class DashboardService {
         }
       })
 
-      // Mapear reservas de servicios
-      const mappedServiceBookings: DashboardBooking[] = serviceBookings.map(booking => {
+      // Mapear reservas de servicios (filtrar los que tienen service null por seguridad)
+      const mappedServiceBookings: DashboardBooking[] = serviceBookings
+        .filter(booking => booking.service !== null)
+        .map(booking => {
         const isClient = booking.clientId === userId
         const hasReviewed = booking.review !== null
-        const totalPrice = booking.service.pricePerHour || 0
+        const totalPrice = booking.service!.pricePerHour || 0
         
         return {
           id: booking.id,
           type: 'service' as const,
           item: {
-            id: booking.service.id,
-            nombre: booking.service.title,
-            imagenes: booking.service.images,
-            precioPorDia: booking.service.pricePerHour || 0,
+            id: booking.service!.id,
+            nombre: booking.service!.title,
+            imagenes: booking.service!.images,
+            precioPorDia: booking.service!.pricePerHour || 0,
             type: 'service'
           },
           borrower: isClient ? undefined : {

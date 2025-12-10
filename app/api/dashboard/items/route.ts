@@ -15,9 +15,12 @@ export async function GET() {
 
     return NextResponse.json({ items })
   } catch (error) {
-    console.error('Error in dashboard items API:', error)
+    console.error('Error in dashboard items API:', error instanceof Error ? error.message : error)
     return NextResponse.json(
-      { message: "Error interno del servidor" }, 
+      { 
+        message: "Error interno del servidor",
+        error: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      }, 
       { status: 500 }
     )
   }
