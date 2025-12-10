@@ -86,8 +86,8 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     // Initial fetch
     forceRefresh()
 
-    // Polling every 30 seconds
-    const interval = setInterval(forceRefresh, 30000)
+    // Polling every 3 minutes
+    const interval = setInterval(forceRefresh, 180000)
 
     return () => {
       clearInterval(interval)
