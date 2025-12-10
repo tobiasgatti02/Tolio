@@ -7,8 +7,9 @@ import Image from "next/image"
 import { signIn } from "next-auth/react"
 import { 
   Mail, Lock, Eye, EyeOff, ArrowRight,
-  Loader2, AlertCircle, User, Phone, CheckCircle
+  Loader2, AlertCircle, User, CheckCircle
 } from "lucide-react"
+import { PhoneInput } from "@/components/ui/phone-input"
 
 export default function SignupPage() {
   const router = useRouter()
@@ -40,6 +41,10 @@ export default function SignupPage() {
   const validateForm = () => {
     if (!formData.email || !formData.password || !formData.firstName || !formData.lastName) {
       setError("Por favor completa todos los campos obligatorios")
+      return false
+    }
+    if (!formData.phone || formData.phone.length < 10) {
+      setError("Por favor ingresa un número de teléfono válido")
       return false
     }
     if (formData.password.length < 6) {
@@ -290,20 +295,14 @@ export default function SignupPage() {
             {/* Teléfono */}
             <div>
               <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
-                Teléfono (opcional)
+                Teléfono *
               </label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
-                  placeholder="+54 9 11 1234-5678"
-                />
-              </div>
+              <PhoneInput
+                value={formData.phone}
+                onChange={(value) => setFormData(prev => ({ ...prev, phone: value }))}
+                placeholder="11 1234 5678"
+                defaultCountry="AR"
+              />
             </div>
 
             {/* Contraseña */}

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Loader2 } from 'lucide-react'
 import type { SignupFormData } from "../signup-form"
+import { PhoneInput } from "@/components/ui/phone-input"
 
 interface PersonalInfoStepProps {
   formData: SignupFormData
@@ -92,34 +93,13 @@ export default function PersonalInfoStep({
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
             Teléfono
           </label>
-          <input
-            type="tel"
-            id="phone"
+          <PhoneInput
             value={formData.phone}
-            onChange={(e) => {
-              let value = e.target.value
-              // Si el usuario intenta borrar el prefijo, lo mantenemos
-              if (!value.startsWith('+54 9 ')) {
-                if (value === '+54 9' || value === '+54 ' || value === '+54') {
-                  value = '+54 9 '
-                } else if (value.length < 6) {
-                   // Si borra todo, permitimos que quede vacío o reseteamos
-                   value = '+54 9 '
-                }
-              }
-              updateFormData({ phone: value })
-            }}
-            onFocus={() => {
-              if (!formData.phone) {
-                updateFormData({ phone: '+54 9 ' })
-              }
-            }}
-            className={`block w-full rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 ${
-              errors.phone ? 'border-red-300' : 'border-gray-300'
-            }`}
-            placeholder="+54 9 11 1234-5678"
+            onChange={(value) => updateFormData({ phone: value })}
+            error={errors.phone}
+            placeholder="11 1234 5678"
+            defaultCountry="AR"
           />
-          {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
         </div>
         
         <div>
