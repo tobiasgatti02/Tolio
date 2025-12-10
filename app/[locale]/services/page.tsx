@@ -191,16 +191,30 @@ export default function ServicesPage() {
 
     const fetchServices = async () => {
       setIsLoading(true)
+      const startTime = performance.now() // ⏱️ TIMER START
+      console.log('⏱️ [SERVICES] Iniciando fetch de servicios...')
+      
       try {
         const response = await fetch(`/api/services?${searchParams.toString()}`, {
           signal: controller.signal,
           // Enable browser cache
           cache: 'default',
         })
+        
+        const fetchTime = performance.now() - startTime
+        console.log(`⏱️ [SERVICES] Response recibida en: ${fetchTime.toFixed(2)}ms`)
+        
         if (!response.ok) throw new Error('Failed to fetch services')
         const data = await response.json()
+        
+        const parseTime = performance.now() - startTime
+        console.log(`⏱️ [SERVICES] JSON parseado en: ${parseTime.toFixed(2)}ms`)
+        console.log(`⏱️ [SERVICES] Total servicios: ${data.length}`)
+        
         if (!controller.signal.aborted) {
           setServices(data)
+          const totalTime = performance.now() - startTime
+          console.log(`✅ [SERVICES] Servicios cargados y renderizados en: ${totalTime.toFixed(2)}ms`)
         }
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
@@ -210,6 +224,8 @@ export default function ServicesPage() {
       } finally {
         if (!controller.signal.aborted) {
           setIsLoading(false)
+          const finalTime = performance.now() - startTime
+          console.log(`⏱️ [SERVICES] Tiempo total hasta isLoading=false: ${finalTime.toFixed(2)}ms`)
         }
       }
     }

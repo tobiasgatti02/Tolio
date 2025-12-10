@@ -7,83 +7,298 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                        String           @id @default(uuid())
-  email                     String           @unique
-  password                  String?          // Ahora es opcional para usuarios OAuth
-  firstName                 String?          // Opcional para OAuth
-  lastName                  String?          // Opcional para OAuth
-  name                      String? // Para NextAuth
-  emailVerified             DateTime? // Para NextAuth
-  image                     String? // Para NextAuth
-  profileImage              String?
-  bio                       String?
-  phoneNumber               String?
-  createdAt                 DateTime         @default(now())
-  updatedAt                 DateTime         @updatedAt
-  isVerified                Boolean          @default(false)
-  verifiedIdentity          Boolean          @default(false) // Verificación de identidad con DNI
-  verificationToken         String?
-  resetToken                String?
-  resetTokenExpiry          DateTime?
-  // Stripe Connect fields
-  stripeAccountId           String?          @unique // Stripe Connect account ID
-  stripeOnboarded           Boolean          @default(false) // Si completó el onboarding de Stripe
-  stripeCustomerId          String?          @unique // Stripe Customer ID para pagos
-  // MercadoPago OAuth fields
-  mercadopagoAccessToken    String?          @unique // Access token del vendedor para recibir pagos
-  mercadopagoRefreshToken   String? // Refresh token para renovar el access token
-  mercadopagoUserId         String? // User ID en MercadoPago
-  mercadopagoConnected      Boolean          @default(false) // Si completó la autorización
-  mercadopagoConnectedAt    DateTime? // Cuándo se conectó
-  // NextAuth Relations
-  accounts                  Account[]
-  sessions                  Session[]
-  // Relations - Items
-  bookings                  Booking[]        @relation("Borrower")
-  receivedBookings          Booking[]        @relation("Owner")
-  ownedItems                Item[]
-  // Relations - Services
-  servicesProvided          Service[]
-  serviceBookingsAsClient   ServiceBooking[] @relation("ServiceClient")
-  serviceBookingsAsProvider ServiceBooking[] @relation("ServiceProvider")
-  serviceReviewsGiven       ServiceReview[]  @relation("ServiceReviewsGiven")
-  serviceReviewsReceived    ServiceReview[]  @relation("ServiceReviewsReceived")
-  // Relations - General
-  receivedMessages          Message[]        @relation("Receiver")
-  messages                  Message[]        @relation("Sender")
-  notifications             Notification[]
-  receivedReviews           Review[]         @relation("Reviewee")
-  reviews                   Review[]         @relation("Reviewer")
-  verifications             Verification[]
-}
-
-// NextAuth.js Models
 model Account {
-  id                String  @id @default(cuid())
+  id                String  @id
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
 
+model Booking {
+  id                            String        @id
+  startDate                     DateTime
+  endDate                       DateTime
+  status                        BookingStatus @default(PENDING)
+  createdAt                     DateTime      @default(now())
+  updatedAt                     DateTime
+  itemId                        String
+  borrowerId                    String
+  ownerId                       String
+  totalPrice                    Float         @default(0)
+  User_Booking_borrowerIdToUser User          @relation("Booking_borrowerIdToUser", fields: [borrowerId], references: [id])
+  Item                          Item          @relation(fields: [itemId], references: [id])
+  User_Booking_ownerIdToUser    User          @relation("Booking_ownerIdToUser", fields: [ownerId], references: [id])
+  Review                        Review?
+
+  @@index([borrowerId])
+  @@index([createdAt(sort: Desc)])
+  @@index([itemId])
+  @@index([ownerId])
+  @@index([status])
+}
+
+model Category {
+  id          String        @id
+  nombre      String        @unique
+  descripcion String?
+  imagen      String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime
+  Subcategory Subcategory[]
+}
+
+model Item {
+  id          String    @id
+  title       String
+  description String
+  category    String
+  location    String
+  features    String[]
+  images      String[]
+  isAvailable Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  ownerId     String
+  subcategory String?
+  deposit     Float     @default(0)
+  price       Float
+  priceType   String    @default("day")
+  latitude    Float?
+  longitude   Float?
+  Booking     Booking[]
+  User        User      @relation(fields: [ownerId], references: [id])
+  Review      Review[]
+
+  @@index([category])
+  @@index([createdAt(sort: Desc)])
+  @@index([isAvailable])
+  @@index([ownerId])
+}
+
+model Message {
+  id                            String   @id
+  content                       String
+  isRead                        Boolean  @default(false)
+  createdAt                     DateTime @default(now())
+  senderId                      String
+  receiverId                    String
+  bookingId                     String?
+  User_Message_receiverIdToUser User     @relation("Message_receiverIdToUser", fields: [receiverId], references: [id])
+  User_Message_senderIdToUser   User     @relation("Message_senderIdToUser", fields: [senderId], references: [id])
+}
+
+model Notification {
+  id        String           @id
+  type      NotificationType
+  content   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  userId    String
+  actionUrl String?
+  bookingId String?
+  itemId    String?
+  metadata  Json?
+  title     String
+  User      User             @relation(fields: [userId], references: [id])
+
+  @@index([createdAt(sort: Desc)])
+  @@index([isRead])
+  @@index([userId])
+}
+
+model Review {
+  id                           String    @id
+  rating                       Int
+  comment                      String
+  createdAt                    DateTime  @default(now())
+  itemId                       String
+  reviewerId                   String
+  revieweeId                   String
+  bookingId                    String    @unique
+  response                     String?
+  responseDate                 DateTime?
+  Booking                      Booking   @relation(fields: [bookingId], references: [id])
+  Item                         Item      @relation(fields: [itemId], references: [id])
+  User_Review_revieweeIdToUser User      @relation("Review_revieweeIdToUser", fields: [revieweeId], references: [id])
+  User_Review_reviewerIdToUser User      @relation("Review_reviewerIdToUser", fields: [reviewerId], references: [id])
+
+  @@index([createdAt(sort: Desc)])
+  @@index([itemId])
+  @@index([revieweeId])
+}
+
+model Service {
+  id             String           @id
+  title          String
+  description    String
+  pricePerHour   Float?
+  priceType      String           @default("hour")
+  isProfessional Boolean          @default(false)
+  category       String
+  subcategory    String?
+  location       String
+  latitude       Float?
+  longitude      Float?
+  serviceArea    String?
+  features       String[]
+  images         String[]
+  isAvailable    Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  providerId     String
+  User           User             @relation(fields: [providerId], references: [id])
+  ServiceBooking ServiceBooking[]
+  ServiceReview  ServiceReview[]
+
+  @@index([category])
+  @@index([createdAt(sort: Desc)])
+  @@index([isAvailable])
+  @@index([providerId])
+}
+
+model ServiceBooking {
+  id                                   String         @id
+  startDate                            DateTime
+  endDate                              DateTime?
+  hours                                Float?
+  customPrice                          Float?
+  status                               BookingStatus  @default(PENDING)
+  createdAt                            DateTime       @default(now())
+  updatedAt                            DateTime
+  serviceId                            String
+  clientId                             String
+  providerId                           String
+  User_ServiceBooking_clientIdToUser   User           @relation("ServiceBooking_clientIdToUser", fields: [clientId], references: [id])
+  User_ServiceBooking_providerIdToUser User           @relation("ServiceBooking_providerIdToUser", fields: [providerId], references: [id])
+  Service                              Service        @relation(fields: [serviceId], references: [id])
+  ServiceReview                        ServiceReview?
+
+  @@index([clientId])
+  @@index([createdAt(sort: Desc)])
+  @@index([providerId])
+  @@index([serviceId])
+  @@index([status])
+}
+
+model ServiceReview {
+  id                                  String         @id
+  rating                              Int
+  comment                             String
+  response                            String?
+  responseDate                        DateTime?
+  createdAt                           DateTime       @default(now())
+  serviceId                           String
+  reviewerId                          String
+  revieweeId                          String
+  bookingId                           String         @unique
+  ServiceBooking                      ServiceBooking @relation(fields: [bookingId], references: [id])
+  User_ServiceReview_revieweeIdToUser User           @relation("ServiceReview_revieweeIdToUser", fields: [revieweeId], references: [id])
+  User_ServiceReview_reviewerIdToUser User           @relation("ServiceReview_reviewerIdToUser", fields: [reviewerId], references: [id])
+  Service                             Service        @relation(fields: [serviceId], references: [id])
+}
+
 model Session {
-  id           String   @id @default(cuid())
+  id           String   @id
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subcategory {
+  id          String   @id
+  nombre      String
+  descripcion String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  categoryId  String
+  Category    Category @relation(fields: [categoryId], references: [id])
+}
+
+model User {
+  id                                             String           @id
+  email                                          String           @unique
+  password                                       String?
+  firstName                                      String?
+  lastName                                       String?
+  profileImage                                   String?
+  bio                                            String?
+  phoneNumber                                    String?
+  createdAt                                      DateTime         @default(now())
+  updatedAt                                      DateTime
+  isVerified                                     Boolean          @default(false)
+  verificationToken                              String?
+  resetToken                                     String?
+  resetTokenExpiry                               DateTime?
+  stripeAccountId                                String?          @unique
+  stripeCustomerId                               String?          @unique
+  stripeOnboarded                                Boolean          @default(false)
+  mercadopagoAccessToken                         String?          @unique
+  mercadopagoConnected                           Boolean          @default(false)
+  mercadopagoConnectedAt                         DateTime?
+  mercadopagoRefreshToken                        String?
+  mercadopagoUserId                              String?
+  verifiedIdentity                               Boolean          @default(false)
+  emailVerified                                  DateTime?
+  image                                          String?
+  name                                           String?
+  Account                                        Account[]
+  Booking_Booking_borrowerIdToUser               Booking[]        @relation("Booking_borrowerIdToUser")
+  Booking_Booking_ownerIdToUser                  Booking[]        @relation("Booking_ownerIdToUser")
+  Item                                           Item[]
+  Message_Message_receiverIdToUser               Message[]        @relation("Message_receiverIdToUser")
+  Message_Message_senderIdToUser                 Message[]        @relation("Message_senderIdToUser")
+  Notification                                   Notification[]
+  Review_Review_revieweeIdToUser                 Review[]         @relation("Review_revieweeIdToUser")
+  Review_Review_reviewerIdToUser                 Review[]         @relation("Review_reviewerIdToUser")
+  Service                                        Service[]
+  ServiceBooking_ServiceBooking_clientIdToUser   ServiceBooking[] @relation("ServiceBooking_clientIdToUser")
+  ServiceBooking_ServiceBooking_providerIdToUser ServiceBooking[] @relation("ServiceBooking_providerIdToUser")
+  ServiceReview_ServiceReview_revieweeIdToUser   ServiceReview[]  @relation("ServiceReview_revieweeIdToUser")
+  ServiceReview_ServiceReview_reviewerIdToUser   ServiceReview[]  @relation("ServiceReview_reviewerIdToUser")
+  Session                                        Session[]
+  Verification                                   Verification[]
+}
+
+model Verification {
+  id               String             @id
+  userId           String
+  type             VerificationType
+  status           VerificationStatus @default(PENDING)
+  documentType     String?
+  documentNumber   String?
+  firstName        String?
+  lastName         String?
+  birthDate        String?
+  gender           String?
+  expirationDate   String?
+  selfieUrl        String?
+  documentFrontUrl String?
+  documentBackUrl  String?
+  pdf417Data       String?
+  faceMatchScore   Float?
+  livenessScore    Float?
+  verifiedAt       DateTime?
+  rejectedAt       DateTime?
+  rejectionReason  String?
+  metadata         Json?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  User             User               @relation(fields: [userId], references: [id])
+
+  @@index([status])
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -94,236 +309,21 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Item {
-  id          String    @id @default(uuid())
-  title       String
-  description String
-  price       Float
-  priceType   String    @default("day") // "hour" o "day" - para herramientas
-  deposit     Float     @default(0)
-  category    String
-  subcategory String?
-  location    String
-  latitude    Float?
-  longitude   Float?
-  features    String[]
-  images      String[]
-  isAvailable Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  ownerId     String
-  bookings    Booking[]
-  owner       User      @relation(fields: [ownerId], references: [id])
-  reviews     Review[]
-
-  @@index([ownerId])
-  @@index([category])
-  @@index([isAvailable])
-  @@index([createdAt(sort: Desc)])
-}
-
-model Service {
-  id             String           @id @default(uuid())
-  title          String
-  description    String
-  pricePerHour   Float? // Precio por hora (opcional si es precio variable)
-  priceType      String           @default("hour") // "hour" o "custom" (depende del trabajo)
-  isProfessional Boolean          @default(false) // Badge de matriculado/profesional
-  category       String
-  subcategory    String?
-  location       String
-  latitude       Float?
-  longitude      Float?
-  serviceArea    String? // Radio o zona de servicio
-  features       String[]
-  images         String[]
-  isAvailable    Boolean          @default(true)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  providerId     String
-  bookings       ServiceBooking[]
-  provider       User             @relation(fields: [providerId], references: [id])
-  reviews        ServiceReview[]
-
-  @@index([providerId])
-  @@index([category])
-  @@index([isAvailable])
-  @@index([createdAt(sort: Desc)])
-}
-
-model ServiceBooking {
-  id          String         @id @default(uuid())
-  startDate   DateTime
-  endDate     DateTime? // Opcional para servicios
-  hours       Float? // Horas estimadas
-  customPrice Float? // Precio acordado si es custom
-  status      BookingStatus  @default(PENDING)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  serviceId   String
-  clientId    String
-  providerId  String
-  client      User           @relation("ServiceClient", fields: [clientId], references: [id])
-  service     Service        @relation(fields: [serviceId], references: [id])
-  provider    User           @relation("ServiceProvider", fields: [providerId], references: [id])
-  review      ServiceReview?
-
-  @@index([clientId])
-  @@index([providerId])
-  @@index([status])
-  @@index([serviceId])
-  @@index([createdAt(sort: Desc)])
-}
-
-model ServiceReview {
-  id           String         @id @default(uuid())
-  rating       Int
-  comment      String
-  response     String?
-  responseDate DateTime?
-  createdAt    DateTime       @default(now())
-  serviceId    String
-  reviewerId   String
-  revieweeId   String
-  bookingId    String         @unique
-  booking      ServiceBooking @relation(fields: [bookingId], references: [id])
-  service      Service        @relation(fields: [serviceId], references: [id])
-  reviewer     User           @relation("ServiceReviewsGiven", fields: [reviewerId], references: [id])
-  reviewee     User           @relation("ServiceReviewsReceived", fields: [revieweeId], references: [id])
-}
-
-model Category {
-  id            String        @id @default(uuid())
-  nombre        String        @unique
-  descripcion   String?
-  imagen        String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  subcategorias Subcategory[]
-}
-
-model Subcategory {
-  id          String   @id @default(uuid())
-  nombre      String
-  descripcion String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-}
-
-model Booking {
-  id         String        @id @default(uuid())
-  startDate  DateTime
-  endDate    DateTime
-  totalPrice Float         @default(0)
-  status     BookingStatus @default(PENDING)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  itemId     String
-  borrowerId String
-  ownerId    String
-  borrower   User          @relation("Borrower", fields: [borrowerId], references: [id])
-  item       Item          @relation(fields: [itemId], references: [id])
-  owner      User          @relation("Owner", fields: [ownerId], references: [id])
-  // payment    Payment?   // Comentado - para futuras funcionalidades de pago
-  review     Review?
-
-  @@index([borrowerId])
-  @@index([ownerId])
-  @@index([status])
-  @@index([itemId])
-  @@index([createdAt(sort: Desc)])
-}
-
-model Review {
-  id           String    @id @default(uuid())
-  rating       Int
-  comment      String
-  response     String?
-  responseDate DateTime?
-  createdAt    DateTime  @default(now())
-  itemId       String
-  reviewerId   String
-  revieweeId   String
-  bookingId    String    @unique
-  booking      Booking   @relation(fields: [bookingId], references: [id])
-  item         Item      @relation(fields: [itemId], references: [id])
-  reviewee     User      @relation("Reviewee", fields: [revieweeId], references: [id])
-  reviewer     User      @relation("Reviewer", fields: [reviewerId], references: [id])
-
-  @@index([itemId])
-  @@index([revieweeId])
-  @@index([createdAt(sort: Desc)])
-}
-
-// NOTA: Modelo Payment comentado - para futuras funcionalidades de pago integrado
-// model Payment {
-//   id                    String        @id @default(uuid())
-//   amount                Float         // Monto total del pago
-//   status                PaymentStatus @default(PENDING)
-//   // Stripe fields
-//   stripePaymentIntentId String?       @unique // Stripe PaymentIntent ID
-//   stripeTransferId      String?       // Stripe Transfer ID al owner
-//   stripeChargeId        String?       // Stripe Charge ID
-//   capturedAt            DateTime?     // Cuándo se capturó el pago
-//   refundedAt            DateTime?     // Cuándo se hizo refund
-//   refundAmount          Float?        // Monto reembolsado
-//   // MercadoPago fields
-//   mercadopagoPreferenceId String?     // ID de preferencia de MercadoPago
-//   mercadopagoPaymentId    String?     @unique // ID del pago en MercadoPago
-//   mercadopagoStatus       String?     // Estado del pago en MP (approved, pending, rejected, etc)
-//   // Marketplace fields
-//   marketplaceFee        Float?        // Comisión del marketplace (5%)
-//   ownerAmount           Float?        // Monto que recibe el propietario
-//   marketplaceAmount     Float?        // Monto que recibe el marketplace
-//   // General fields
-//   paymentProvider       String        @default("stripe") // "stripe" | "mercadopago"
-//   paidAt                DateTime?
-//   createdAt             DateTime      @default(now())
-//   updatedAt             DateTime      @updatedAt
-//   bookingId             String        @unique
-//   booking               Booking       @relation(fields: [bookingId], references: [id])
-// }
-
-model Notification {
-  id        String           @id @default(uuid())
-  type      NotificationType
-  title     String
-  content   String
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id])
-  // Enlaces relacionados
-  bookingId String?
-  itemId    String?
-  actionUrl String?
-  // Datos adicionales para el contexto
-  metadata  Json?
-
-  @@index([userId])
-  @@index([isRead])
-  @@index([createdAt(sort: Desc)])
-}
-
-model Message {
-  id         String   @id @default(uuid())
-  content    String
-  isRead     Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  senderId   String
-  receiverId String
-  bookingId  String? // Para asociar mensajes con reservas
-  receiver   User     @relation("Receiver", fields: [receiverId], references: [id])
-  sender     User     @relation("Sender", fields: [senderId], references: [id])
-}
-
 enum BookingStatus {
   PENDING
   CONFIRMED
   CANCELLED
   COMPLETED
+}
+
+enum NotificationType {
+  BOOKING_REQUEST
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  PAYMENT_RECEIVED
+  REVIEW_RECEIVED
+  MESSAGE_RECEIVED
+  BOOKING_COMPLETED
 }
 
 enum PaymentStatus {
@@ -333,23 +333,6 @@ enum PaymentStatus {
   FAILED
 }
 
-enum NotificationType {
-  BOOKING_REQUEST
-  BOOKING_CONFIRMED
-  BOOKING_CANCELLED
-  BOOKING_COMPLETED
-  PAYMENT_RECEIVED
-  REVIEW_RECEIVED
-  MESSAGE_RECEIVED
-}
-
-enum VerificationType {
-  IDENTITY
-  DNI
-  EMAIL
-  PHONE
-}
-
 enum VerificationStatus {
   PENDING
   APPROVED
@@ -357,37 +340,9 @@ enum VerificationStatus {
   EXPIRED
 }
 
-model Verification {
-  id               String             @id @default(uuid())
-  userId           String
-  type             VerificationType
-  status           VerificationStatus @default(PENDING)
-  // Datos del documento
-  documentType     String? // DNI, Pasaporte, etc
-  documentNumber   String?
-  firstName        String?
-  lastName         String?
-  birthDate        String?
-  gender           String?
-  expirationDate   String?
-  // URLs de imágenes
-  selfieUrl        String?
-  documentFrontUrl String?
-  documentBackUrl  String?
-  // Datos del PDF417
-  pdf417Data       String?            @db.Text
-  // Resultados de verificación
-  faceMatchScore   Float? // Score de coincidencia facial (0-1)
-  livenessScore    Float? // Score de liveness detection (0-1)
-  // Metadata
-  verifiedAt       DateTime?
-  rejectedAt       DateTime?
-  rejectionReason  String?
-  metadata         Json?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  user             User               @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([status])
+enum VerificationType {
+  IDENTITY
+  DNI
+  EMAIL
+  PHONE
 }

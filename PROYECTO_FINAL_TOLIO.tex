@@ -1,0 +1,1497 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{}
+
+\begin{document}
+
+{
+\setcounter{tocdepth}{3}
+\tableofcontents
+}
+\section{Tolio: Plataforma Web de Economía Colaborativa para Préstamo de
+Herramientas y
+Servicios}\label{tolio-plataforma-web-de-economuxeda-colaborativa-para-pruxe9stamo-de-herramientas-y-servicios}
+
+\textbf{Proyecto Final de Licenciatura en Ciencias de la Computación}\\
+\textbf{Autor:} Tobias Gatti (LU: 136467)\\
+\textbf{Universidad Nacional del Sur}\\
+\textbf{Departamento de Ciencias e Ingeniería de la Computación}\\
+\textbf{Año:} 2024
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{Índice}\label{uxedndice}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \hyperref[1-introducciuxf3n-al-marketplace]{Introducción al
+  Marketplace}
+\item
+  \hyperref[2-mecanismos-de-pagos]{Mecanismos de Pagos}
+\item
+  \hyperref[3-mi-propuesta-tolio]{Mi Propuesta: Tolio}
+\item
+  \hyperref[4-implementaciuxf3n-y-consideraciones-tuxe9cnicas]{Implementación
+  y Consideraciones Técnicas}
+\item
+  \hyperref[5-conclusiones-y-trabajo-futuro]{Conclusiones y Trabajo
+  Futuro}
+\end{enumerate}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{1. Introducción al
+Marketplace}\label{introducciuxf3n-al-marketplace}
+
+\subsubsection{1.1 Definición y
+Concepto}\label{definiciuxf3n-y-concepto}
+
+Un \textbf{marketplace} (mercado digital) es una plataforma en línea que
+actúa como intermediario entre múltiples vendedores o prestadores de
+servicios y compradores o usuarios. A diferencia de una tienda en línea
+tradicional donde una única empresa vende sus propios productos, un
+marketplace permite que diversos proveedores independientes ofrezcan sus
+bienes o servicios en un espacio común, beneficiándose de la
+infraestructura tecnológica, el tráfico y la confianza que proporciona
+la plataforma.
+
+El marketplace digital representa la evolución natural del concepto
+milenario de ``mercado'' físico, donde comerciantes se congregaban en un
+espacio común para ofrecer sus productos. La transformación digital de
+este concepto ha democratizado el comercio, permitiendo que cualquier
+persona con un producto o servicio pueda acceder a una audiencia global
+sin necesidad de invertir en infraestructura propia.
+
+\subsubsection{1.2 Historia y Evolución}\label{historia-y-evoluciuxf3n}
+
+La historia del marketplace digital moderno comenzó a mediados de la
+década de 1990 y principios de los 2000, marcando una revolución en la
+forma en que las personas compran y venden bienes y servicios.
+
+\paragraph{Pioneros del Marketplace
+Digital}\label{pioneros-del-marketplace-digital}
+
+\textbf{eBay (1995)}\\
+Fundado por Pierre Omidyar, eBay fue uno de los primeros marketplaces en
+línea y revolucionó el concepto de subastas en internet. Con más de 25
+años de existencia, eBay permitió que particulares vendieran
+directamente a otros particulares (modelo C2C - Consumer-to-Consumer),
+creando un ecosistema de comercio electrónico descentralizado. En 2002,
+la adquisición de PayPal fortaleció significativamente su capacidad de
+procesamiento de pagos, consolidando su posición como líder del mercado.
+
+\textbf{Amazon (2000-2006)}\\
+Aunque Amazon comenzó como una librería en línea en 1994, su
+transformación en marketplace ocurrió alrededor del año 2000. Jeff Bezos
+tuvo la visión de trasladar el modelo de un centro comercial físico al
+mundo digital, permitiendo que terceros vendieran sus productos en la
+plataforma de Amazon. Este cambio estratégico permitió que Amazon pasara
+de ser un minorista a convertirse en una plataforma que integra
+catálogos de múltiples vendedores, ofreciendo una variedad prácticamente
+ilimitada de productos.
+
+\textbf{Mercado Libre (1999)}\\
+Fundado en Argentina por Marcos Galperín, Mercado Libre se convirtió en
+el marketplace líder de América Latina. Comenzando en 1999, la
+plataforma se expandió rápidamente por toda la región, adaptando el
+modelo de marketplace a las particularidades del mercado
+latinoamericano, incluyendo métodos de pago locales y logística adaptada
+a las necesidades regionales.
+
+\textbf{Alibaba (1999)}\\
+Jack Ma fundó Alibaba observando el éxito de Amazon y eBay, pero
+enfocándose inicialmente en el comercio B2B (Business-to-Business).
+Alibaba conectó fabricantes chinos con compradores internacionales,
+democratizando el acceso al comercio internacional y convirtiéndose en
+el marketplace más grande del mundo en términos de volumen de
+transacciones.
+
+\subsubsection{1.3 Modelos Funcionales de
+Marketplace}\label{modelos-funcionales-de-marketplace}
+
+Los marketplaces pueden clasificarse según diferentes criterios, cada
+uno con características y dinámicas particulares:
+
+\paragraph{Por Tipo de Transacción}\label{por-tipo-de-transacciuxf3n}
+
+\textbf{B2C (Business-to-Consumer)}\\
+Empresas o profesionales venden productos o servicios directamente a
+consumidores finales. Ejemplos: Amazon, Asos, Uber. Este modelo es ideal
+para negocios establecidos que buscan ampliar su alcance sin invertir en
+infraestructura propia de e-commerce.
+
+\textbf{B2B (Business-to-Business)}\\
+Transacciones entre empresas. Alibaba.com es el ejemplo más prominente,
+conectando fabricantes con distribuidores y empresas que necesitan
+insumos o productos al por mayor.
+
+\textbf{C2C (Consumer-to-Consumer)}\\
+Permite a particulares vender productos a otros particulares. Facebook
+Marketplace, eBay y Mercado Libre (en su modalidad de venta entre
+particulares) son ejemplos claros de este modelo, que democratiza el
+comercio y permite monetizar bienes usados o artesanales.
+
+\textbf{Modelos Mixtos}\\
+Plataformas como Amazon Prime combinan elementos B2C y C2C, permitiendo
+que tanto empresas establecidas como vendedores individuales ofrezcan
+productos en la misma plataforma.
+
+\paragraph{Por Modelo de
+Monetización}\label{por-modelo-de-monetizaciuxf3n}
+
+\textbf{Modelo de Comisiones}\\
+El más popular en la actualidad. El marketplace recibe un porcentaje de
+cada transacción realizada en la plataforma. Este modelo alinea los
+incentivos de la plataforma con el éxito de los vendedores, ya que ambos
+se benefician del volumen de ventas.
+
+\textbf{Tarifas por Anuncios}\\
+Los vendedores pagan por publicitar sus productos o servicios, ya sea
+por clic (CPC) o por impresiones (CPM). Este modelo es común en
+marketplaces con alto tráfico donde la visibilidad es valiosa.
+
+\textbf{Suscripciones}\\
+Los vendedores o compradores pagan una tarifa recurrente (mensual o
+anual) por acceder a la plataforma o a funciones premium. Amazon Seller
+Central utiliza este modelo para vendedores profesionales.
+
+\textbf{Tarifas de Listado}\\
+Los vendedores pagan por publicar sus productos en la plataforma,
+independientemente de si se venden o no. Este modelo es menos común en
+marketplaces modernos debido a que puede desincentivar la participación.
+
+\textbf{Modelo Freemium}\\
+Ofrece acceso básico gratuito con funciones limitadas, cobrando por
+características avanzadas como mejor posicionamiento, análisis
+detallados o herramientas de marketing.
+
+\paragraph{Por Modelo Operativo}\label{por-modelo-operativo}
+
+\textbf{Marketplace Administrado}\\
+El intermediario verifica vendedores, gestiona procesos logísticos y de
+mantenimiento, garantizando calidad y confianza. Amazon FBA (Fulfillment
+by Amazon) es un ejemplo donde Amazon maneja el almacenamiento y envío.
+
+\textbf{Marketplace On Demand}\\
+Ofrecen servicios bajo demanda inmediata del consumidor. Uber, Rappi y
+Glovo son ejemplos donde el servicio se solicita y se presta en tiempo
+real.
+
+\textbf{Marketplace de Nicho}\\
+Se especializan en un sector o grupo demográfico específico. Etsy
+(artesanías), Airbnb (alojamiento) y Upwork (freelancers) son ejemplos
+de marketplaces que dominan nichos específicos.
+
+\subsubsection{1.4 Características Clave de un Marketplace
+Exitoso}\label{caracteruxedsticas-clave-de-un-marketplace-exitoso}
+
+Para que un marketplace funcione efectivamente, debe incorporar ciertos
+elementos fundamentales:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Efecto de Red}: El valor de la plataforma aumenta
+  exponencialmente con cada nuevo usuario (tanto vendedores como
+  compradores).
+\item
+  \textbf{Confianza y Seguridad}: Sistemas de verificación, reseñas,
+  calificaciones y garantías que protejan a ambas partes.
+\item
+  \textbf{Facilidad de Uso}: Interfaz intuitiva que permita a usuarios
+  con diferentes niveles de habilidad técnica participar fácilmente.
+\item
+  \textbf{Procesamiento de Pagos Seguro}: Integración con pasarelas de
+  pago confiables que protejan la información financiera.
+\item
+  \textbf{Sistema de Reputación}: Mecanismos que permitan construir
+  confianza a través de historial de transacciones y valoraciones.
+\item
+  \textbf{Resolución de Disputas}: Procesos claros para manejar
+  conflictos entre compradores y vendedores.
+\end{enumerate}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{2. Mecanismos de Pagos}\label{mecanismos-de-pagos}
+
+\subsubsection{2.1 Panorama de Pagos en Argentina
+2024}\label{panorama-de-pagos-en-argentina-2024}
+
+Argentina ha experimentado una transformación digital acelerada en su
+ecosistema de pagos durante los últimos años. En 2024, el país se
+caracteriza por una fuerte tendencia hacia la digitalización y la
+consolidación de las billeteras virtuales como protagonistas principales
+del sistema de pagos.
+
+\paragraph{Estadísticas Clave}\label{estaduxedsticas-clave}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{75\%} de los argentinos mayores de 18 años posee al menos una
+  billetera digital, igualando la tenencia de tarjetas de débito.
+\item
+  \textbf{73\%} de los adultos utiliza dos o más billeteras digitales.
+\item
+  Los pagos con código QR crecieron un \textbf{53\%} en 2024.
+\item
+  Las transferencias inmediatas aumentaron un \textbf{43\%} interanual.
+\item
+  Las tarjetas prepago experimentaron un crecimiento del \textbf{97.3\%}
+  en cantidad de operaciones.
+\end{itemize}
+
+\subsubsection{2.2 Métodos de Pago
+Dominantes}\label{muxe9todos-de-pago-dominantes}
+
+\paragraph{Billeteras Digitales
+(E-wallets)}\label{billeteras-digitales-e-wallets}
+
+Las billeteras digitales son el motor de la transformación digital de
+los pagos en Argentina:
+
+\textbf{Mercado Pago}\\
+La plataforma dominante en Argentina, con la mayor variedad de métodos
+de pago y fácil integración con plataformas de e-commerce. Ofrece: -
+Pagos con tarjetas de crédito y débito - Transferencias bancarias -
+Pagos en cuotas sin interés - Códigos QR interoperables - Links de pago
+- Integración con múltiples plataformas (WooCommerce, Tienda Nube,
+Shopify)
+
+\textbf{MODO}\\
+Impulsada por más de 30 bancos argentinos, MODO permite la
+interoperabilidad entre múltiples entidades bancarias y plataformas. Es
+la segunda billetera más usada (31.6\% de la población) y se destaca
+por: - Transferencias gratuitas entre usuarios - Pagos QR en comercios -
+Respaldo del sistema bancario tradicional
+
+\textbf{Ualá}\\
+Con su tarjeta prepaga Mastercard y aplicación móvil, Ualá se enfoca en
+la inclusión financiera. Es la tercera billetera más utilizada (20.6\%)
+y ofrece: - Tarjeta prepaga sin costos de mantenimiento - Inversiones en
+fondos comunes - Préstamos personales - Solución para negocios (Ualá
+Bis)
+
+\textbf{Cuenta DNI y BNA+}\\
+Billeteras respaldadas por bancos estatales (Banco Provincia y Banco
+Nación) que buscan promover la inclusión financiera de sectores no
+bancarizados.
+
+\paragraph{Pagos con Código QR}\label{pagos-con-cuxf3digo-qr}
+
+Los pagos QR han revolucionado la experiencia de pago en Argentina. El
+Banco Central (BCRA) ha impulsado la interoperabilidad de los pagos QR,
+lo que significa que todos los lectores QR deben aceptar pagos de todas
+las tarjetas y billeteras digitales. Esto ha eliminado la fragmentación
+del mercado y facilitado la adopción masiva.
+
+\paragraph{Transferencias 3.0 (Pagos
+A2A)}\label{transferencias-3.0-pagos-a2a}
+
+El sistema de Transferencias 3.0 ha impulsado fuertemente los pagos de
+cuenta a cuenta (Account-to-Account), facilitando transacciones entre
+comercios y usuarios mediante códigos QR. El 73.8\% de las
+transferencias inmediatas utilizan CVU (Clave Virtual Uniforme), el
+identificador de las billeteras digitales.
+
+\paragraph{Tarjetas de Crédito y
+Débito}\label{tarjetas-de-cruxe9dito-y-duxe9bito}
+
+Aunque las billeteras digitales están ganando terreno, las tarjetas
+siguen siendo fundamentales:
+
+\textbf{En e-commerce:} - Tarjetas de crédito: 35-39\% de las
+transacciones - Tarjetas de débito: 13.5-18\% de las transacciones - La
+preferencia por el pago en cuotas sin interés es un factor clave para el
+uso de tarjetas de crédito en Argentina
+
+\textbf{En puntos de venta físicos:} - Efectivo: 27\% - Tarjetas de
+crédito: 25\% - Tarjetas de débito: 25\% - Billeteras digitales: 18\%
+
+\subsubsection{2.3 Pasarelas de Pago Disponibles en
+Argentina}\label{pasarelas-de-pago-disponibles-en-argentina}
+
+Las pasarelas de pago son intermediarios esenciales que permiten a los
+negocios recibir pagos de manera segura y eficiente en línea.
+
+\paragraph{Principales Pasarelas}\label{principales-pasarelas}
+
+\textbf{Mercado Pago}\\
+- \textbf{Ventajas}: Mayor adopción, múltiples opciones de integración,
+cuotas, links de pago, QR - \textbf{Desventajas}: Comisiones elevadas
+(pueden llegar al 6-8\%), posibles retenciones fiscales - \textbf{Ideal
+para}: Pequeños y medianos negocios, marketplaces
+
+\textbf{Todo Pago (Payway SPS)}\\
+- \textbf{Ventajas}: Respaldada por Prisma/Visa, seguridad antifraude
+avanzada, promociones bancarias - \textbf{Desventajas}: Proceso de
+integración más complejo - \textbf{Ideal para}: Negocios establecidos
+que buscan seguridad y respaldo bancario
+
+\textbf{Payway (Decidir)}\\
+- \textbf{Ventajas}: Gateway de alto nivel, costos bajos por
+transacción, flexibilidad para desarrollos a medida -
+\textbf{Desventajas}: Requiere mayor conocimiento técnico -
+\textbf{Ideal para}: Empresas grandes con equipos de desarrollo
+
+\textbf{Rebill}\\
+- \textbf{Ventajas}: Integración de diversas formas de pago (tarjetas,
+transferencias, efectivo, billeteras), pagos en cuotas, Transferencias
+3.0 - \textbf{Desventajas}: Menor reconocimiento de marca que Mercado
+Pago - \textbf{Ideal para}: Negocios que buscan flexibilidad en métodos
+de pago
+
+\textbf{PayU}\\
+- \textbf{Ventajas}: Presencia internacional, acepta tarjetas y
+transferencias - \textbf{Desventajas}: Comisiones variables según el
+método de pago - \textbf{Ideal para}: Negocios con operaciones
+internacionales
+
+\subsubsection{2.4 Consideraciones Legales y
+Regulatorias}\label{consideraciones-legales-y-regulatorias}
+
+El Banco Central de la República Argentina (BCRA) regula el sistema de
+pagos y mantiene un registro de Proveedores de Servicios de Pago (PSP),
+incluyendo adquirentes y proveedores de cuentas de pago. Las principales
+regulaciones incluyen:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Interoperabilidad obligatoria} de códigos QR
+\item
+  \textbf{Límites de comisiones} para ciertos tipos de transacciones
+\item
+  \textbf{Requisitos de seguridad} para el procesamiento de pagos
+\item
+  \textbf{Protección al consumidor} en transacciones digitales
+\item
+  \textbf{Declaración obligatoria} de ingresos por alquileres ante AFIP
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{3. Mi Propuesta: Tolio}\label{mi-propuesta-tolio}
+
+\subsubsection{3.1 Identificación del
+Problema}\label{identificaciuxf3n-del-problema}
+
+En la actualidad, existe una paradoja en el consumo de herramientas y
+equipos: muchas personas necesitan herramientas específicas para
+proyectos ocasionales, pero la compra de estas herramientas representa
+una inversión económica significativa para un uso esporádico.
+Simultáneamente, millones de herramientas permanecen inactivas en
+garajes y depósitos, representando capital inmovilizado que podría
+generar valor.
+
+\paragraph{Problemas Específicos
+Identificados:}\label{problemas-especuxedficos-identificados}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Barrera Económica}: Herramientas profesionales (taladros,
+  amoladoras, equipos de jardinería) pueden costar entre \$50,000 y
+  \$500,000 ARS, un gasto difícil de justificar para un uso ocasional.
+\item
+  \textbf{Desperdicio de Recursos}: Se estima que las herramientas
+  domésticas se utilizan menos del 5\% de su vida útil, representando un
+  desperdicio masivo de recursos.
+\item
+  \textbf{Falta de Acceso a Servicios Profesionales}: Encontrar
+  profesionales confiables para changas (plomería, electricidad,
+  carpintería) es difícil, especialmente sin referencias personales.
+\item
+  \textbf{Desconfianza en Transacciones P2P}: Las plataformas existentes
+  no ofrecen suficientes garantías de seguridad, verificación de
+  identidad o protección en caso de daños.
+\item
+  \textbf{Impacto Ambiental}: La producción excesiva de herramientas que
+  se usan mínimamente contribuye significativamente a la huella de
+  carbono global.
+\end{enumerate}
+
+\subsubsection{3.2 Solución Propuesta:
+Tolio}\label{soluciuxf3n-propuesta-tolio}
+
+Tolio es una plataforma web de economía colaborativa que conecta a
+propietarios de herramientas y prestadores de servicios con usuarios que
+necesitan acceder temporalmente a estos recursos. La plataforma facilita
+todo el proceso desde la publicación, búsqueda y reserva, hasta la
+gestión de transacciones y reputación.
+
+\paragraph{Propuesta de Valor}\label{propuesta-de-valor}
+
+\textbf{Para Propietarios/Prestadores:} - Monetizar herramientas y
+equipos inactivos - Generar ingresos pasivos sin esfuerzo adicional -
+Contribuir a la economía circular y sostenibilidad - Control total sobre
+disponibilidad y precios - Protección mediante sistema de verificación
+de usuarios
+
+\textbf{Para Usuarios/Solicitantes:} - Acceso económico a herramientas
+sin necesidad de comprarlas - Búsqueda geolocalizada de herramientas
+cercanas - Acceso a profesionales verificados para servicios - Sistema
+de reseñas para tomar decisiones informadas - Comunicación directa con
+propietarios
+
+\textbf{Para la Sociedad:} - Reducción del consumo excesivo y la
+producción innecesaria - Optimización del uso de recursos existentes -
+Disminución de la huella de carbono - Fortalecimiento de la economía
+local y colaborativa - Generación de confianza en transacciones entre
+particulares
+
+\subsubsection{3.3 Modelo de Negocio}\label{modelo-de-negocio}
+
+Tolio opera bajo un modelo de marketplace bidireccional, donde tanto la
+oferta (propietarios/prestadores) como la demanda
+(usuarios/solicitantes) son igualmente importantes para el éxito de la
+plataforma.
+
+\paragraph{Estrategia de
+Monetización}\label{estrategia-de-monetizaciuxf3n}
+
+Actualmente, Tolio se encuentra en fase de desarrollo y validación de
+mercado, por lo que \textbf{no implementa comisiones ni procesamiento de
+pagos integrado}. Esta decisión estratégica se basa en varios factores:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Enfoque en Adopción}: Priorizar el crecimiento de la base de
+  usuarios sin fricciones económicas adicionales.
+\item
+  \textbf{Validación del Modelo}: Confirmar que existe demanda real
+  antes de implementar infraestructura de pagos compleja.
+\item
+  \textbf{Simplicidad Operativa}: Evitar complejidades legales,
+  contables y fiscales en la etapa inicial.
+\item
+  \textbf{Flexibilidad para Usuarios}: Permitir que usuarios y
+  propietarios acuerden términos de pago que les resulten más
+  convenientes.
+\end{enumerate}
+
+\textbf{Modelo de Monetización Futuro:}
+
+Una vez validado el producto-mercado fit, Tolio podría implementar: -
+\textbf{Comisión por transacción}: 5-10\% sobre el valor del alquiler -
+\textbf{Suscripciones premium}: Funcionalidades avanzadas para usuarios
+frecuentes - \textbf{Publicidad destacada}: Posicionamiento premium de
+publicaciones - \textbf{Servicios adicionales}: Seguros, verificaciones
+premium, logística
+
+\subsubsection{3.4 Diferenciación: ¿Por Qué No Implementar Pagos
+Integrados?}\label{diferenciaciuxf3n-por-quuxe9-no-implementar-pagos-integrados}
+
+Esta decisión merece una explicación detallada, ya que es una de las
+características distintivas de Tolio frente a competidores
+internacionales como Hygglio.
+
+\paragraph{Razones Técnicas y de
+Producto}\label{razones-tuxe9cnicas-y-de-producto}
+
+\textbf{1. Complejidad de Implementación}\\
+Integrar un sistema de pagos robusto requiere: - Cumplimiento de
+normativas PCI-DSS para seguridad de datos de tarjetas - Integración con
+múltiples pasarelas de pago - Manejo de diferentes métodos de pago
+(tarjetas, transferencias, billeteras) - Sistema de escrow (retención de
+fondos) para proteger a ambas partes - Gestión de reembolsos y disputas
+- Infraestructura de reconciliación contable
+
+\textbf{2. Consideraciones Legales en Argentina}\\
+El alquiler de bienes entre particulares en Argentina presenta desafíos
+legales específicos:
+
+\begin{itemize}
+\item
+  \textbf{Responsabilidad Civil}: Según el Código Civil y Comercial
+  argentino, el locador (propietario) es responsable de conservar el
+  inmueble o bien y reparar deterioros no imputables al inquilino. Sin
+  un seguro de responsabilidad civil adecuado, la plataforma podría
+  enfrentar riesgos legales.
+\item
+  \textbf{Seguros Obligatorios}: Para alquileres formales, se requieren
+  seguros de caución o garantías. Implementar esto para cada transacción
+  de herramientas sería prohibitivamente complejo y costoso.
+\item
+  \textbf{Declaración ante AFIP}: Los contratos de alquiler deben ser
+  declarados ante la Administración Federal de Ingresos Públicos. Esto
+  añade una capa de complejidad administrativa que no es práctica para
+  alquileres de corto plazo de herramientas.
+\item
+  \textbf{Retenciones Fiscales}: Las plataformas que procesan pagos
+  deben actuar como agentes de retención, lo que implica obligaciones
+  fiscales complejas.
+\end{itemize}
+
+\textbf{3. Inspiración en Modelos Exitosos: Hygglio}\\
+Hygglio, la plataforma líder de alquiler P2P en los países nórdicos,
+procesa pagos internamente y toma una comisión del 20\% (50\% para
+drones). Sin embargo, opera en un contexto legal y cultural diferente:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Marco Legal Claro}: Los países nórdicos tienen regulaciones
+  claras sobre economía colaborativa
+\item
+  \textbf{Cultura de Confianza}: Alta confianza social que reduce
+  riesgos de fraude
+\item
+  \textbf{Seguros Integrados}: Hygglio Care ofrece seguros automáticos
+  en cada transacción
+\item
+  \textbf{Verificación con BankID}: Sistema de identificación digital
+  gubernamental
+\end{itemize}
+
+En Argentina, estas condiciones no se cumplen completamente, lo que hace
+más riesgoso procesar pagos sin la infraestructura legal y de seguros
+adecuada.
+
+\textbf{4. Enfoque en el Valor Principal}\\
+Al no procesar pagos, Tolio puede enfocarse en: - Perfeccionar la
+experiencia de búsqueda y descubrimiento - Construir un sistema de
+reputación robusto - Desarrollar funcionalidades de verificación de
+identidad - Optimizar la comunicación entre usuarios - Mejorar la
+geolocalización y búsqueda por proximidad
+
+\textbf{5. Flexibilidad para los Usuarios}\\
+Permitir que usuarios acuerden pagos directamente ofrece ventajas: -
+Pueden usar el método de pago que prefieran (efectivo, transferencia,
+Mercado Pago, etc.) - Evitan comisiones de la plataforma - Mayor
+flexibilidad en negociaciones de precio - Posibilidad de acuerdos
+informales para vecinos o conocidos
+
+\subsubsection{3.5 Inspiración y
+Referencias}\label{inspiraciuxf3n-y-referencias}
+
+Tolio se inspira en plataformas exitosas de economía colaborativa:
+
+\textbf{Hygglio (Países Nórdicos)}\\
+- Modelo P2P puro para alquiler de herramientas - Sistema de seguridad
+``Hygglio Care'' - Verificación de identidad con BankID - Comisión del
+20\% sobre transacciones
+
+\textbf{Airbnb}\\
+- Marketplace bidireccional exitoso - Sistema de reseñas bidireccional -
+Verificación de identidad robusta - Gestión de confianza en
+transacciones de alto valor
+
+\textbf{Mercado Libre}\\
+- Adaptación a las particularidades del mercado latinoamericano -
+Sistema de reputación basado en calificaciones - Múltiples métodos de
+pago locales - Resolución de disputas
+
+\textbf{Wallapop/Facebook Marketplace}\\
+- Modelo de transacciones directas entre usuarios - La plataforma
+facilita la conexión, no procesa pagos - Enfoque en simplicidad y
+adopción masiva
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{4. Implementación y Consideraciones
+Técnicas}\label{implementaciuxf3n-y-consideraciones-tuxe9cnicas}
+
+\subsubsection{4.1 Arquitectura del
+Sistema}\label{arquitectura-del-sistema}
+
+Tolio está construido sobre una arquitectura moderna de aplicación web
+full-stack, siguiendo las mejores prácticas de desarrollo de software y
+priorizando escalabilidad, seguridad y experiencia de usuario.
+
+\paragraph{Arquitectura de Alto Nivel}\label{arquitectura-de-alto-nivel}
+
+\begin{verbatim}
+┌─────────────────────────────────────────────────────────────┐
+│                     CAPA DE PRESENTACIÓN                     │
+│  Next.js 15 (App Router) + React 19 + TypeScript            │
+│  - Páginas Server-Side Rendered (SSR)                        │
+│  - Componentes Client-Side para interactividad              │
+│  - Internacionalización (next-intl)                          │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      CAPA DE LÓGICA                          │
+│  API Routes (Next.js) + Server Actions                       │
+│  - Autenticación (NextAuth.js)                               │
+│  - Validación (Zod)                                          │
+│  - Manejo de errores                                         │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    CAPA DE PERSISTENCIA                      │
+│  Prisma ORM + PostgreSQL                                     │
+│  - Modelos de datos relacionales                             │
+│  - Migraciones versionadas                                   │
+│  - Índices optimizados                                       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   SERVICIOS EXTERNOS                         │
+│  - AWS S3 (almacenamiento de imágenes)                       │
+│  - Vercel Blob (almacenamiento alternativo)                  │
+│  - Resend (emails transaccionales)                           │
+│  - Leaflet + OpenStreetMap (mapas)                           │
+│  - Face-API.js (verificación facial)                         │
+└─────────────────────────────────────────────────────────────┘
+\end{verbatim}
+
+\subsubsection{4.2 Stack Tecnológico}\label{stack-tecnoluxf3gico}
+
+\paragraph{Frontend}\label{frontend}
+
+\textbf{Next.js 15 (App Router)}\\
+Framework de React que permite renderizado del lado del servidor (SSR),
+generación estática (SSG) y rutas API integradas. Beneficios: - SEO
+optimizado mediante renderizado del lado del servidor - Carga inicial
+rápida con hidratación progresiva - Optimización automática de imágenes
+y fuentes - Code splitting automático para mejor performance
+
+\textbf{React 19}\\
+Biblioteca de JavaScript para construir interfaces de usuario
+interactivas con un modelo de componentes reutilizables.
+
+\textbf{TypeScript}\\
+Superset de JavaScript que añade tipado estático, reduciendo errores en
+tiempo de desarrollo y mejorando la mantenibilidad del código.
+
+\textbf{Tailwind CSS}\\
+Framework de CSS utility-first que permite desarrollo rápido con diseño
+consistente y responsive.
+
+\textbf{shadcn/ui}\\
+Colección de componentes de UI accesibles y personalizables construidos
+con Radix UI y Tailwind CSS.
+
+\textbf{React Hook Form + Zod}\\
+Gestión de formularios con validación de esquemas, proporcionando una
+experiencia de usuario fluida con validación en tiempo real.
+
+\paragraph{Backend}\label{backend}
+
+\textbf{Next.js API Routes}\\
+Endpoints de API serverless integrados en Next.js, permitiendo lógica
+del lado del servidor sin necesidad de un servidor separado.
+
+\textbf{Prisma ORM}\\
+Object-Relational Mapping moderno que proporciona: - Type-safety
+completo en consultas a la base de datos - Migraciones automáticas y
+versionadas - Introspección de esquema - Cliente de base de datos
+optimizado
+
+\textbf{PostgreSQL}\\
+Base de datos relacional robusta y escalable, ideal para datos
+estructurados con relaciones complejas.
+
+\textbf{NextAuth.js}\\
+Solución completa de autenticación para Next.js que soporta: - Múltiples
+proveedores OAuth (Google, GitHub, etc.) - Autenticación con
+credenciales - Sesiones seguras - Protección CSRF
+
+\paragraph{Servicios Externos y APIs}\label{servicios-externos-y-apis}
+
+\textbf{AWS S3 / Vercel Blob}\\
+Almacenamiento de objetos para imágenes de perfil, fotos de productos y
+documentos de verificación.
+
+\textbf{Resend}\\
+Servicio de emails transaccionales para notificaciones, confirmaciones
+de reserva y comunicaciones del sistema.
+
+\textbf{Leaflet + React-Leaflet}\\
+Biblioteca de mapas interactivos de código abierto, integrada con
+OpenStreetMap para: - Visualización de ubicaciones de items/servicios -
+Búsqueda por proximidad geográfica - Marcadores personalizados - Cálculo
+de distancias
+
+\textbf{Face-API.js}\\
+Biblioteca de reconocimiento facial basada en TensorFlow.js para
+verificación de identidad mediante comparación de selfies con
+documentos.
+
+\textbf{NSFWJS}\\
+Modelo de machine learning para detectar contenido inapropiado en
+imágenes subidas por usuarios.
+
+\subsubsection{4.3 Modelo de Datos}\label{modelo-de-datos}
+
+El esquema de base de datos de Tolio está diseñado para soportar las
+funcionalidades principales de la plataforma de manera eficiente y
+escalable.
+
+\paragraph{Entidades Principales}\label{entidades-principales}
+
+\textbf{User (Usuario)}\\
+Almacena información de usuarios, incluyendo: - Datos personales
+(nombre, email, teléfono) - Credenciales de autenticación - Estado de
+verificación de identidad - Imagen de perfil y biografía - Conexiones
+con servicios de pago (Stripe, MercadoPago) - preparado para futuro -
+Relaciones con items, servicios, reservas, mensajes, notificaciones
+
+\textbf{Item (Herramienta/Equipo)}\\
+Representa herramientas o equipos disponibles para alquiler: -
+Información básica (título, descripción, categoría) - Precio y tipo de
+precio (por hora/día) - Depósito de seguridad - Ubicación geográfica
+(latitud, longitud) - Características y fotos - Estado de disponibilidad
+
+\textbf{Service (Servicio Profesional)}\\
+Representa servicios ofrecidos por profesionales: - Información del
+servicio (título, descripción, categoría) - Precio por hora o
+personalizado - Badge de profesional matriculado - Área de servicio
+geográfica - Disponibilidad y características
+
+\textbf{Booking (Reserva de Item)}\\
+Gestiona reservas de herramientas: - Fechas de inicio y fin - Precio
+total - Estado (PENDING, CONFIRMED, CANCELLED, COMPLETED) - Relaciones
+con item, borrower (inquilino) y owner (propietario)
+
+\textbf{ServiceBooking (Reserva de Servicio)}\\
+Gestiona contrataciones de servicios: - Fecha de inicio y fin (opcional)
+- Horas estimadas - Precio personalizado si aplica - Estado de la
+reserva - Relaciones con servicio, cliente y proveedor
+
+\textbf{Review (Reseña)}\\
+Sistema de reputación bidireccional: - Calificación (1-5 estrellas) -
+Comentario textual - Respuesta del propietario/prestador - Vinculación
+con reserva específica para evitar reseñas falsas
+
+\textbf{Notification (Notificación)}\\
+Sistema de notificaciones en tiempo real: - Tipo de notificación
+(solicitud de reserva, confirmación, mensaje, etc.) - Contenido y título
+- Estado de lectura - Enlaces a recursos relacionados - Metadata
+adicional en formato JSON
+
+\textbf{Message (Mensaje)}\\
+Sistema de mensajería entre usuarios: - Contenido del mensaje - Estado
+de lectura - Relación con reserva (opcional) - Sender y receiver
+
+\textbf{Verification (Verificación de Identidad)}\\
+Gestiona el proceso de verificación de identidad: - Tipo de verificación
+(DNI, selfie, etc.) - Estado (PENDING, APPROVED, REJECTED) - Datos del
+documento - URLs de imágenes (selfie, frente y dorso del documento) -
+Scores de coincidencia facial y liveness detection - Metadata del
+proceso de verificación
+
+\paragraph{Relaciones Clave}\label{relaciones-clave}
+
+El modelo de datos implementa relaciones complejas para garantizar
+integridad referencial:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Un usuario} puede tener múltiples items, servicios, reservas
+  (como borrower y como owner), mensajes y notificaciones
+\item
+  \textbf{Un item} pertenece a un usuario y puede tener múltiples
+  reservas y reseñas
+\item
+  \textbf{Una reserva} está vinculada a un item, un borrower y un owner,
+  y puede tener una reseña
+\item
+  \textbf{Las reseñas} están vinculadas a una reserva específica para
+  garantizar que solo usuarios que completaron una transacción puedan
+  dejar reseñas
+\end{itemize}
+
+\subsubsection{4.4 Funcionalidades
+Principales}\label{funcionalidades-principales}
+
+\paragraph{1. Autenticación y Gestión de
+Usuarios}\label{autenticaciuxf3n-y-gestiuxf3n-de-usuarios}
+
+\textbf{Registro y Login}\\
+- Registro con email y contraseña - Autenticación OAuth con Google y
+GitHub - Verificación de email mediante tokens - Recuperación de
+contraseña - Sesiones seguras con NextAuth.js
+
+\textbf{Verificación de Identidad}\\
+Proceso de verificación en múltiples pasos: 1. Usuario sube selfie en
+tiempo real 2. Usuario escanea código PDF417 del DNI argentino 3.
+Usuario sube fotos del frente y dorso del DNI 4. Sistema extrae datos
+del PDF417 (nombre, apellido, número de documento, fecha de nacimiento)
+5. Face-API.js compara la selfie con la foto del DNI 6. Se calcula un
+score de coincidencia facial 7. Administrador revisa y aprueba/rechaza
+la verificación
+
+Este proceso garantiza que los usuarios son quienes dicen ser,
+aumentando la confianza en la plataforma.
+
+\paragraph{2. Publicación de Items y
+Servicios}\label{publicaciuxf3n-de-items-y-servicios}
+
+\textbf{Creación de Publicaciones}\\
+Formulario multi-paso para publicar items o servicios: - Información
+básica (título, descripción, categoría) - Precio y condiciones -
+Ubicación (opcional, con mapa interactivo) - Características y
+especificaciones - Carga de múltiples imágenes con preview - Validación
+de contenido inapropiado con NSFWJS
+
+\textbf{Gestión de Publicaciones}\\
+- Edición de publicaciones existentes - Activación/desactivación de
+disponibilidad - Eliminación con confirmación - Vista previa de cómo se
+verá la publicación
+
+\paragraph{3. Búsqueda y
+Descubrimiento}\label{buxfasqueda-y-descubrimiento}
+
+\textbf{Búsqueda Avanzada}\\
+- Búsqueda por texto (título, descripción, características) - Filtros
+por categoría y subcategoría - Filtro por rango de precio - Filtro por
+tipo de precio (hora/día) - Ordenamiento (más reciente, precio,
+popularidad)
+
+\textbf{Búsqueda Geolocalizada}\\
+- Mapa interactivo con marcadores de items/servicios - Búsqueda por
+radio de distancia - Cálculo de distancia desde la ubicación del usuario
+- Filtros combinados (categoría + ubicación + precio)
+
+\textbf{Navegación por Categorías}\\
+- Categorías principales con iconos visuales - Subcategorías para
+refinamiento - Contadores de items disponibles por categoría
+
+\paragraph{4. Sistema de Reservas}\label{sistema-de-reservas}
+
+\textbf{Flujo de Reserva para Items}\\
+1. Usuario selecciona fechas de inicio y fin 2. Sistema calcula precio
+total basado en días/horas 3. Usuario envía solicitud de reserva 4.
+Propietario recibe notificación 5. Propietario acepta o rechaza la
+reserva 6. Si se acepta, ambas partes reciben confirmación 7. Al
+finalizar el período, propietario marca como completada 8. Ambas partes
+pueden dejar reseñas
+
+\textbf{Flujo de Reserva para Servicios}\\
+1. Usuario describe el trabajo necesario 2. Selecciona fecha preferida y
+horas estimadas 3. Envía solicitud al prestador 4. Prestador puede
+proponer precio personalizado 5. Cliente acepta o negocia 6. Se confirma
+la reserva 7. Al completarse, se marca como completada 8. Sistema de
+reseñas bidireccional
+
+\textbf{Gestión de Disponibilidad}\\
+- Calendario visual de disponibilidad - Bloqueo automático de fechas
+reservadas - Prevención de reservas superpuestas - Notificaciones de
+nuevas solicitudes
+
+\paragraph{5. Sistema de Mensajería}\label{sistema-de-mensajeruxeda}
+
+\textbf{Chat Integrado}\\
+- Mensajería en tiempo real entre usuarios - Vinculación de
+conversaciones con reservas específicas - Indicadores de mensajes no
+leídos - Historial de conversaciones - Notificaciones de nuevos mensajes
+
+\paragraph{6. Sistema de Reseñas y
+Reputación}\label{sistema-de-reseuxf1as-y-reputaciuxf3n}
+
+\textbf{Reseñas Verificadas}\\
+- Solo usuarios que completaron una transacción pueden dejar reseñas -
+Calificación de 1 a 5 estrellas - Comentario textual opcional -
+Respuesta del propietario/prestador - Timestamp de creación
+
+\textbf{Cálculo de Reputación}\\
+- Promedio de calificaciones recibidas - Número total de reseñas -
+Visualización de distribución de calificaciones - Badge de
+``verificado'' para usuarios con identidad confirmada
+
+\paragraph{7. Panel de Control
+(Dashboard)}\label{panel-de-control-dashboard}
+
+\textbf{Para Propietarios/Prestadores}\\
+- Resumen de ganancias (preparado para futuro) - Lista de reservas
+pendientes, confirmadas y completadas - Gestión de publicaciones -
+Estadísticas de visualizaciones - Calendario de disponibilidad
+
+\textbf{Para Usuarios/Solicitantes}\\
+- Historial de reservas - Gastos (preparado para futuro) -
+Items/servicios favoritos - Mensajes y notificaciones
+
+\paragraph{8. Sistema de
+Notificaciones}\label{sistema-de-notificaciones}
+
+\textbf{Tipos de Notificaciones}\\
+- Nueva solicitud de reserva - Reserva confirmada - Reserva cancelada -
+Reserva completada - Nuevo mensaje recibido - Nueva reseña recibida -
+Recordatorios de devolución
+
+\textbf{Canales de Notificación}\\
+- Notificaciones in-app con contador - Emails transaccionales
+(preparado) - Push notifications (futuro)
+
+\subsubsection{4.5 Seguridad y Privacidad}\label{seguridad-y-privacidad}
+
+\paragraph{Medidas de Seguridad
+Implementadas}\label{medidas-de-seguridad-implementadas}
+
+\textbf{Autenticación y Autorización}\\
+- Contraseñas hasheadas con bcrypt (12 rounds) - Tokens JWT seguros para
+sesiones - Protección CSRF en formularios - Validación de permisos en
+cada endpoint - Rate limiting para prevenir ataques de fuerza bruta
+
+\textbf{Protección de Datos}\\
+- Validación de entrada con Zod en todos los formularios - Sanitización
+de datos antes de almacenar en base de datos - Encriptación de datos
+sensibles - HTTPS obligatorio en producción - Headers de seguridad (CSP,
+X-Frame-Options, etc.)
+
+\textbf{Privacidad}\\
+- Ubicación exacta opcional (usuarios pueden compartir solo
+ciudad/barrio) - Datos de contacto ocultos hasta confirmar reserva -
+Opción de eliminar cuenta y datos personales - Cumplimiento con
+principios de GDPR (aunque no es obligatorio en Argentina)
+
+\textbf{Verificación de Contenido}\\
+- Detección automática de contenido inapropiado en imágenes con NSFWJS -
+Moderación de reseñas para detectar lenguaje ofensivo - Sistema de
+reportes de usuarios
+
+\subsubsection{4.6 Desafíos Técnicos y
+Soluciones}\label{desafuxedos-tuxe9cnicos-y-soluciones}
+
+\paragraph{Desafío 1: Verificación de Identidad
+Confiable}\label{desafuxedo-1-verificaciuxf3n-de-identidad-confiable}
+
+\textbf{Problema}: Garantizar que los usuarios son quienes dicen ser sin
+requerir procesos manuales costosos.
+
+\textbf{Solución Implementada}: - Integración de Face-API.js para
+reconocimiento facial - Lectura de código PDF417 del DNI argentino con
+ZXing - Comparación automática de selfie con foto del documento -
+Cálculo de score de coincidencia facial - Revisión manual final para
+casos ambiguos
+
+\textbf{Resultado}: Sistema de verificación robusto que balancea
+automatización con supervisión humana.
+
+\paragraph{Desafío 2: Búsqueda Geolocalizada
+Eficiente}\label{desafuxedo-2-buxfasqueda-geolocalizada-eficiente}
+
+\textbf{Problema}: Permitir búsquedas por proximidad geográfica sin
+comprometer la privacidad ni el rendimiento.
+
+\textbf{Solución Implementada}: - Almacenamiento de coordenadas
+(latitud, longitud) en base de datos - Índices en campos de ubicación
+para consultas rápidas - Cálculo de distancia usando fórmula de
+Haversine - Integración con Leaflet para visualización en mapa -
+Geocodificación con OpenStreetMap Nominatim
+
+\textbf{Resultado}: Búsquedas geográficas rápidas con visualización
+intuitiva en mapa.
+
+\paragraph{Desafío 3: Prevención de Reservas
+Conflictivas}\label{desafuxedo-3-prevenciuxf3n-de-reservas-conflictivas}
+
+\textbf{Problema}: Evitar que un item sea reservado por múltiples
+usuarios en las mismas fechas.
+
+\textbf{Solución Implementada}: - Validación de disponibilidad antes de
+crear reserva - Transacciones atómicas en base de datos - Bloqueo
+optimista con timestamps - Actualización en tiempo real del calendario
+de disponibilidad
+
+\textbf{Resultado}: Sistema robusto que previene conflictos de reservas.
+
+\paragraph{Desafío 4: Escalabilidad de
+Imágenes}\label{desafuxedo-4-escalabilidad-de-imuxe1genes}
+
+\textbf{Problema}: Almacenar y servir múltiples imágenes de alta calidad
+sin impactar el rendimiento.
+
+\textbf{Solución Implementada}: - Almacenamiento en AWS S3 / Vercel Blob
+- Optimización automática de imágenes con Next.js Image - Lazy loading
+de imágenes - Compresión antes de subir - CDN para distribución global
+
+\textbf{Resultado}: Carga rápida de imágenes con costos de
+almacenamiento optimizados.
+
+\paragraph{Desafío 5:
+Internacionalización}\label{desafuxedo-5-internacionalizaciuxf3n}
+
+\textbf{Problema}: Preparar la plataforma para múltiples idiomas y
+regiones.
+
+\textbf{Solución Implementada}: - Integración de next-intl para i18n -
+Archivos de traducción en JSON - Detección automática de idioma del
+navegador - Selector de idioma en UI - Formateo de fechas y monedas
+según locale
+
+\textbf{Resultado}: Plataforma preparada para expansión internacional.
+
+\subsubsection{4.7 Decisiones de Diseño
+Clave}\label{decisiones-de-diseuxf1o-clave}
+
+\paragraph{Decisión 1: Next.js App Router vs Pages
+Router}\label{decisiuxf3n-1-next.js-app-router-vs-pages-router}
+
+\textbf{Elección}: App Router (Next.js 15)
+
+\textbf{Justificación}: - Server Components por defecto para mejor
+performance - Layouts anidados para mejor organización - Streaming y
+Suspense para carga progresiva - Mejor integración con React 19 - Futuro
+de Next.js
+
+\paragraph{Decisión 2: PostgreSQL vs
+MongoDB}\label{decisiuxf3n-2-postgresql-vs-mongodb}
+
+\textbf{Elección}: PostgreSQL
+
+\textbf{Justificación}: - Datos altamente relacionales (usuarios, items,
+reservas, reseñas) - Necesidad de integridad referencial - Consultas
+complejas con JOINs - Transacciones ACID para reservas - Mejor soporte
+de Prisma para SQL
+
+\paragraph{Decisión 3: Prisma vs
+TypeORM}\label{decisiuxf3n-3-prisma-vs-typeorm}
+
+\textbf{Elección}: Prisma
+
+\textbf{Justificación}: - Type-safety superior - Developer experience
+excepcional - Migraciones automáticas - Prisma Studio para debugging -
+Mejor documentación y comunidad
+
+\paragraph{Decisión 4: Autenticación Propia vs
+NextAuth.js}\label{decisiuxf3n-4-autenticaciuxf3n-propia-vs-nextauth.js}
+
+\textbf{Elección}: NextAuth.js
+
+\textbf{Justificación}: - Solución battle-tested y segura - Soporte para
+múltiples proveedores OAuth - Gestión de sesiones integrada - Menor
+superficie de ataque - Mantenimiento por la comunidad
+
+\paragraph{Decisión 5: Mapas: Google Maps vs Leaflet +
+OpenStreetMap}\label{decisiuxf3n-5-mapas-google-maps-vs-leaflet-openstreetmap}
+
+\textbf{Elección}: Leaflet + OpenStreetMap
+
+\textbf{Justificación}: - Completamente gratuito y open-source - Sin
+límites de uso ni costos - Personalización completa - Comunidad activa -
+Datos de OpenStreetMap de alta calidad
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{5. Conclusiones y Trabajo
+Futuro}\label{conclusiones-y-trabajo-futuro}
+
+\subsubsection{5.1 Logros Alcanzados}\label{logros-alcanzados}
+
+El desarrollo de Tolio ha cumplido exitosamente con los objetivos
+planteados al inicio del proyecto:
+
+\paragraph{Objetivos Técnicos
+Cumplidos}\label{objetivos-tuxe9cnicos-cumplidos}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Plataforma Web Funcional}: Se desarrolló una aplicación web
+  completa y funcional que permite a usuarios publicar, buscar y
+  reservar herramientas y servicios.
+\item
+  \textbf{Sistema de Autenticación Robusto}: Implementación de
+  NextAuth.js con soporte para múltiples proveedores OAuth y
+  autenticación con credenciales.
+\item
+  \textbf{Verificación de Identidad}: Sistema de verificación biométrica
+  que combina reconocimiento facial, lectura de PDF417 y validación
+  manual.
+\item
+  \textbf{Búsqueda Geolocalizada}: Integración de mapas interactivos con
+  búsqueda por proximidad geográfica.
+\item
+  \textbf{Sistema de Reputación}: Implementación de reseñas verificadas
+  vinculadas a transacciones completadas.
+\item
+  \textbf{Arquitectura Escalable}: Diseño modular y escalable que
+  permite crecimiento futuro sin refactorización mayor.
+\end{enumerate}
+
+\paragraph{Aprendizajes Técnicos}\label{aprendizajes-tuxe9cnicos}
+
+\textbf{Desarrollo Full-Stack Moderno}\\
+El proyecto permitió profundizar en tecnologías de vanguardia como
+Next.js 15, React 19, TypeScript y Prisma, adquiriendo experiencia
+práctica en desarrollo full-stack moderno.
+
+\textbf{Integración de Servicios Externos}\\
+Experiencia integrando múltiples APIs y servicios externos (AWS S3,
+Resend, OpenStreetMap, Face-API.js), comprendiendo los desafíos de
+dependencias externas.
+
+\textbf{Diseño de Bases de Datos Relacionales}\\
+Modelado de datos complejos con múltiples relaciones, índices
+optimizados y transacciones atómicas.
+
+\textbf{Seguridad en Aplicaciones Web}\\
+Implementación de mejores prácticas de seguridad: autenticación,
+autorización, validación de entrada, protección CSRF, hashing de
+contraseñas.
+
+\textbf{UX/UI y Accesibilidad}\\
+Diseño de interfaces intuitivas y accesibles utilizando shadcn/ui,
+Tailwind CSS y principios de diseño responsive.
+
+\subsubsection{5.2 Lecciones Aprendidas}\label{lecciones-aprendidas}
+
+\paragraph{Lección 1: La Importancia de la Validación de
+Mercado}\label{lecciuxf3n-1-la-importancia-de-la-validaciuxf3n-de-mercado}
+
+Inicialmente, el proyecto contemplaba implementar procesamiento de pagos
+integrado. Sin embargo, la investigación sobre aspectos legales,
+fiscales y de seguros en Argentina reveló que esta funcionalidad
+añadiría complejidad significativa sin validar primero la demanda del
+mercado.
+
+\textbf{Aprendizaje}: Es fundamental validar el producto-mercado fit
+antes de invertir en funcionalidades complejas. El enfoque MVP (Minimum
+Viable Product) permite iterar rápidamente basándose en feedback real de
+usuarios.
+
+\paragraph{Lección 2: El Balance entre Automatización y Supervisión
+Humana}\label{lecciuxf3n-2-el-balance-entre-automatizaciuxf3n-y-supervisiuxf3n-humana}
+
+El sistema de verificación de identidad combina automatización
+(reconocimiento facial, lectura de PDF417) con revisión manual.
+Inicialmente se consideró un sistema completamente automatizado, pero se
+identificó que la supervisión humana es necesaria para casos ambiguos.
+
+\textbf{Aprendizaje}: La automatización completa no siempre es la mejor
+solución. Un enfoque híbrido puede ofrecer mejor balance entre
+eficiencia y precisión.
+
+\paragraph{Lección 3: La Complejidad de la Economía
+Colaborativa}\label{lecciuxf3n-3-la-complejidad-de-la-economuxeda-colaborativa}
+
+Desarrollar una plataforma de economía colaborativa implica no solo
+desafíos técnicos, sino también consideraciones legales, de confianza y
+de diseño de incentivos.
+
+\textbf{Aprendizaje}: Las plataformas de dos lados (two-sided
+marketplaces) requieren equilibrar cuidadosamente las necesidades de
+ambos grupos de usuarios (oferta y demanda) y construir mecanismos de
+confianza robustos.
+
+\paragraph{Lección 4: Open Source como Ventaja
+Competitiva}\label{lecciuxf3n-4-open-source-como-ventaja-competitiva}
+
+La decisión de usar tecnologías open-source (Leaflet, OpenStreetMap,
+PostgreSQL) en lugar de alternativas comerciales (Google Maps, MongoDB
+Atlas) resultó en: - Cero costos de licenciamiento - Mayor control y
+personalización - Independencia de proveedores - Comunidad activa para
+soporte
+
+\textbf{Aprendizaje}: Las soluciones open-source de calidad pueden
+ofrecer ventajas significativas para startups y proyectos con
+presupuesto limitado.
+
+\subsubsection{5.3 Trabajo Futuro}\label{trabajo-futuro}
+
+\paragraph{Corto Plazo (3-6 meses)}\label{corto-plazo-3-6-meses}
+
+\textbf{1. Lanzamiento Beta y Validación de Mercado}\\
+- Lanzar versión beta con usuarios seleccionados - Recopilar feedback
+cualitativo y cuantitativo - Iterar sobre funcionalidades basándose en
+uso real - Medir métricas clave: tasa de conversión, retención, NPS
+
+\textbf{2. Optimización de Performance}\\
+- Implementar caching con Redis - Optimizar consultas a base de datos -
+Implementar lazy loading y code splitting adicional - Monitoreo de
+performance con Vercel Analytics
+
+\textbf{3. Mejoras en Búsqueda}\\
+- Implementar búsqueda full-text con PostgreSQL o Algolia - Filtros
+avanzados (disponibilidad, calificación mínima, distancia) - Búsqueda
+por voz - Recomendaciones personalizadas basadas en historial
+
+\textbf{4. Sistema de Notificaciones Mejorado}\\
+- Implementar push notifications con service workers - Notificaciones
+por email con templates personalizados - Preferencias de notificación
+granulares - Resumen diario/semanal de actividad
+
+\paragraph{Mediano Plazo (6-12 meses)}\label{mediano-plazo-6-12-meses}
+
+\textbf{1. Implementación de Pagos Integrados} (si se valida demanda)\\
+- Integración con Mercado Pago y/o Stripe - Sistema de escrow para
+proteger a ambas partes - Gestión de comisiones de plataforma -
+Facturación automática - Cumplimiento fiscal (retenciones, declaraciones
+AFIP)
+
+\textbf{2. Sistema de Seguros}\\
+- Asociación con aseguradoras para ofrecer seguros opcionales - Seguro
+de responsabilidad civil para propietarios - Seguro de daños para items
+de alto valor - Proceso de reclamos integrado
+
+\textbf{3. Aplicación Móvil Nativa}\\
+- Desarrollo de app iOS y Android con React Native - Notificaciones push
+nativas - Acceso a cámara para verificación de identidad -
+Geolocalización en tiempo real - Modo offline para consultar reservas
+
+\textbf{4. Gamificación y Engagement}\\
+- Sistema de badges y logros - Programa de referidos con incentivos -
+Niveles de usuario (bronce, plata, oro, platino) - Descuentos por
+fidelidad - Comunidad y foros
+
+\paragraph{Largo Plazo (1-2 años)}\label{largo-plazo-1-2-auxf1os}
+
+\textbf{1. Expansión Geográfica}\\
+- Lanzamiento en otras ciudades de Argentina - Expansión a países
+vecinos (Uruguay, Chile, Paraguay) - Adaptación a regulaciones locales -
+Partnerships con empresas de logística
+
+\textbf{2. Categorías Adicionales}\\
+- Alquiler de espacios (estudios de fotografía, salas de ensayo) -
+Alquiler de vehículos entre particulares - Equipamiento deportivo y
+recreativo - Equipos electrónicos y tecnología
+
+\textbf{3. Marketplace B2B}\\
+- Sección para empresas que alquilan equipamiento industrial - Contratos
+de largo plazo - Facturación B2B - Gestión de flotas de herramientas
+
+\textbf{4. Inteligencia Artificial y Machine Learning}\\
+- Recomendaciones personalizadas con ML - Detección de fraude con
+anomaly detection - Pricing dinámico basado en demanda - Chatbot de
+atención al cliente con NLP - Moderación automática de contenido
+
+\textbf{5. Sostenibilidad y Impacto Social}\\
+- Métricas de impacto ambiental (CO2 ahorrado, productos no fabricados)
+- Certificación B Corp - Programa de donación de herramientas a
+comunidades - Educación sobre economía circular
+
+\subsubsection{5.4 Impacto Potencial}\label{impacto-potencial}
+
+\paragraph{Impacto Económico}\label{impacto-econuxf3mico}
+
+\textbf{Para Usuarios Individuales}\\
+- \textbf{Ahorro estimado}: Un usuario que alquila en lugar de comprar
+puede ahorrar entre 60-80\% del costo de adquisición. -
+\textbf{Generación de ingresos}: Propietarios pueden generar ingresos
+pasivos de \$10,000-\$50,000 ARS mensuales alquilando herramientas
+inactivas.
+
+\textbf{Para la Economía Local}\\
+- Creación de microemprendimientos - Optimización del uso de capital
+existente - Reducción de barreras de entrada para proyectos de mejora
+del hogar - Fomento de la economía colaborativa
+
+\paragraph{Impacto Ambiental}\label{impacto-ambiental}
+
+\textbf{Reducción de Consumo}\\
+- \textbf{Producción evitada}: Si 1000 usuarios alquilan en lugar de
+comprar, se evita la producción de \textasciitilde1000 herramientas. -
+\textbf{Emisiones de CO2}: La producción de herramientas eléctricas
+genera \textasciitilde50-100 kg CO2 por unidad. Evitar 1000 producciones
+= 50-100 toneladas de CO2 ahorradas. - \textbf{Residuos electrónicos}:
+Reducción de e-waste al extender la vida útil de herramientas
+existentes.
+
+\textbf{Economía Circular}\\
+- Promoción de modelos de acceso sobre propiedad - Incentivo para
+fabricantes de diseñar productos más duraderos - Conciencia sobre
+consumo responsable
+
+\paragraph{Impacto Social}\label{impacto-social}
+
+\textbf{Inclusión Económica}\\
+- Acceso a herramientas profesionales para personas de bajos ingresos -
+Oportunidades de emprendimiento sin inversión inicial alta -
+Democratización del acceso a servicios profesionales
+
+\textbf{Construcción de Comunidad}\\
+- Fortalecimiento de lazos vecinales - Confianza en transacciones entre
+particulares - Cultura de colaboración sobre competencia
+
+\textbf{Educación y Capacitación}\\
+- Aprendizaje de nuevas habilidades al acceder a herramientas
+especializadas - Transferencia de conocimiento entre usuarios -
+Empoderamiento para proyectos DIY (Do It Yourself)
+
+\subsubsection{5.5 Reflexiones Finales}\label{reflexiones-finales}
+
+El desarrollo de Tolio ha sido un proyecto ambicioso que integra
+múltiples áreas de las ciencias de la computación: ingeniería de
+software, bases de datos, seguridad informática, interfaces de usuario,
+desarrollo web full-stack e integración de sistemas. Más allá de los
+desafíos técnicos, el proyecto aborda una problemática real con
+potencial de impacto social, económico y ambiental significativo.
+
+La decisión de no implementar procesamiento de pagos en la versión
+inicial, aunque pueda parecer contraintuitiva para un marketplace,
+refleja un enfoque pragmático que prioriza la validación de mercado, la
+simplicidad operativa y el cumplimiento legal. Esta decisión está
+inspirada en el principio de ``hacer cosas que no escalan'' en las
+etapas tempranas, permitiendo aprender rápidamente de usuarios reales
+antes de invertir en infraestructura compleja.
+
+El proyecto Tolio demuestra que es posible crear plataformas
+tecnológicas sofisticadas utilizando herramientas open-source y
+modernas, sin depender de grandes inversiones iniciales. La arquitectura
+escalable y modular permite evolucionar la plataforma basándose en
+feedback real y necesidades emergentes del mercado.
+
+Finalmente, Tolio representa una oportunidad de contribuir a la
+transición hacia modelos de consumo más sostenibles y colaborativos,
+demostrando que la tecnología puede ser un habilitador de cambio social
+positivo cuando se diseña con propósito y consideración por las
+necesidades reales de las personas.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{Referencias}\label{referencias}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Marketplaces y Economía Colaborativa}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Sviokla, J. (1996). ``Marketspace: Creating Value in the Digital
+    Age''
+  \item
+    Hagiu, A., \& Wright, J. (2015). ``Multi-sided platforms''.
+    International Journal of Industrial Organization
+  \item
+    Parker, G., Van Alstyne, M., \& Choudary, S. P. (2016). ``Platform
+    Revolution''
+  \end{itemize}
+\item
+  \textbf{Sistemas de Pago en Argentina}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Banco Central de la República Argentina (BCRA). ``Registro de
+    Proveedores de Servicios de Pago''
+  \item
+    PaymentsCMI. (2024). ``Argentina Payment Methods Report 2024''
+  \item
+    Rebill. (2024). ``Métodos de Pago en Argentina''
+  \end{itemize}
+\item
+  \textbf{Aspectos Legales}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Código Civil y Comercial de la Nación Argentina
+  \item
+    Ley 27.551 - Ley de Alquileres (modificada por Ley 27.737)
+  \item
+    Argentina.gob.ar. ``Contratos de alquiler: derechos y obligaciones''
+  \end{itemize}
+\item
+  \textbf{Tecnologías Utilizadas}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Next.js Documentation. https://nextjs.org/docs
+  \item
+    Prisma Documentation. https://www.prisma.io/docs
+  \item
+    NextAuth.js Documentation. https://next-auth.js.org
+  \item
+    Leaflet Documentation. https://leafletjs.com
+  \item
+    Face-API.js. https://github.com/justadudewhohacks/face-api.js
+  \end{itemize}
+\item
+  \textbf{Casos de Estudio}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Hygglio. ``The Nordic Sharing Economy Platform''
+  \item
+    Airbnb. ``Building Trust in a Two-Sided Marketplace''
+  \item
+    Mercado Libre. ``E-commerce in Latin America''
+  \end{itemize}
+\end{enumerate}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\textbf{Anexos}
+
+\begin{itemize}
+\tightlist
+\item
+  Anexo A: Diagramas de Arquitectura Detallados
+\item
+  Anexo B: Esquema Completo de Base de Datos
+\item
+  Anexo C: Capturas de Pantalla de la Plataforma
+\item
+  Anexo D: Código de Componentes Clave
+\item
+  Anexo E: Resultados de Testing y Validación
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\textbf{Agradecimientos}
+
+Agradezco al Departamento de Ciencias e Ingeniería de la Computación de
+la Universidad Nacional del Sur por la formación académica recibida, a
+los profesores que guiaron este proyecto, y a la comunidad open-source
+cuyas herramientas hicieron posible este desarrollo.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\emph{Documento generado el 7 de Diciembre de 2024}\\
+\emph{Tolio - Compartir es Crecer}
+
+\end{document}

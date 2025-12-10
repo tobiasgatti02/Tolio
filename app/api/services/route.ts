@@ -12,6 +12,9 @@ const CACHE_HEADERS = {
 }
 
 export async function GET(request: Request) {
+  const apiStartTime = performance.now()
+  console.log('⏱️ [API/SERVICES] Iniciando GET request...')
+  
   try {
     const { searchParams } = new URL(request.url)
 
@@ -31,12 +34,10 @@ export async function GET(request: Request) {
     // Build WHERE clause efficiently
     const where: any = { isAvailable: true }
 
-    // Use exact match for category (more efficient than contains)
     if (category) {
       where.category = category
     }
 
-    // Only add search if provided (expensive operation)
     if (search && search.length >= 2) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
@@ -56,7 +57,7 @@ export async function GET(request: Request) {
       where.isProfessional = true
     }
 
-    // Determine order efficiently
+    // Determine order
     let orderBy: any
     switch (sort) {
       case "price-low":
@@ -65,15 +66,13 @@ export async function GET(request: Request) {
       case "price-high":
         orderBy = { pricePerHour: "desc" }
         break
-      case "rating":
-        // For rating sort, we'll do it in-memory after aggregation
-        orderBy = { createdAt: "desc" }
-        break
       default:
         orderBy = { createdAt: "desc" }
     }
 
-    // OPTIMIZED QUERY: Only select fields we need, use aggregation for reviews
+    const queryStartTime = performance.now()
+    
+    // SINGLE OPTIMIZED QUERY: Get services with provider and review aggregation
     const services = await prisma.service.findMany({
       where,
       orderBy,
@@ -96,32 +95,24 @@ export async function GET(request: Request) {
             profileImage: true,
           }
         },
-        // Use _count for efficiency instead of fetching all reviews
-        _count: {
-          select: { reviews: true }
+        reviews: {
+          select: {
+            rating: true
+          }
         }
       },
-      take: hasGeoFilter ? 100 : 40, // Reduced limit for faster queries
+      take: hasGeoFilter ? 100 : 40,
     })
+    
+    console.log(`⏱️ [API/SERVICES] Query principal: ${(performance.now() - queryStartTime).toFixed(2)}ms - ${services.length} servicios`)
 
-    // Get average ratings in a single query using raw aggregation
-    const serviceIds = services.map(s => s.id)
-    const ratingsData = serviceIds.length > 0 
-      ? await prisma.serviceReview.groupBy({
-          by: ['serviceId'],
-          where: { serviceId: { in: serviceIds } },
-          _avg: { rating: true },
-        })
-      : []
-
-    // Create a Map for O(1) lookup
-    const ratingsMap = new Map(
-      ratingsData.map(r => [r.serviceId, r._avg.rating])
-    )
-
-    // Transform services efficiently
+    // Transform services - calculate ratings in-memory (faster than separate query)
     let formattedServices = services.map(service => {
-      const avgRating = ratingsMap.get(service.id)
+      const reviews = service.reviews || []
+      const avgRating = reviews.length > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        : 0
+      
       return {
         id: service.id,
         title: service.title,
@@ -135,11 +126,11 @@ export async function GET(request: Request) {
         isProfessional: service.isProfessional,
         provider: service.provider,
         averageRating: avgRating ? parseFloat(avgRating.toFixed(1)) : 0,
-        reviewCount: service._count.reviews,
+        reviewCount: reviews.length,
       }
     })
 
-    // Sort by rating if requested (now we have the data)
+    // Sort by rating if requested
     if (sort === "rating") {
       formattedServices.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
     }
@@ -165,6 +156,9 @@ export async function GET(request: Request) {
       }
     }
 
+    const totalTime = performance.now() - apiStartTime
+    console.log(`✅ [API/SERVICES] Request completada en: ${totalTime.toFixed(2)}ms`)
+    
     return NextResponse.json(formattedServices, { headers: CACHE_HEADERS })
   } catch (error) {
     console.error("Error fetching services:", error)
