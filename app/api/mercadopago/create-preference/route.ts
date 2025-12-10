@@ -27,9 +27,9 @@ export async function POST(request: NextRequest) {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        item: {
+        Item: {
           include: {
-            owner: {
+            User: {
               select: {
                 id: true,
                 email: true,
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
             },
           },
         },
-        borrower: {
+        User_Booking_borrowerIdToUser: {
           select: {
             id: true,
             email: true,
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que el usuario sea el borrower
-    if (booking.borrower.email !== session.user.email) {
+    if (booking.User_Booking_borrowerIdToUser.email !== session.user.email) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
@@ -72,25 +72,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar si el owner tiene MercadoPago configurado para marketplace split
-    const ownerAccessToken = booking.item.owner.mercadopagoConnected && booking.item.owner.mercadopagoAccessToken
-      ? booking.item.owner.mercadopagoAccessToken
+    const ownerAccessToken = booking.Item.User.mercadopagoConnected && booking.Item.User.mercadopagoAccessToken
+      ? booking.Item.User.mercadopagoAccessToken
       : undefined;
 
     console.log('[MercadoPago Create Preference]', {
       bookingId,
-      ownerId: booking.item.owner.id,
+      ownerId: booking.Item.User.id,
       hasOwnerToken: !!ownerAccessToken,
       willUseMarketplaceSplit: !!ownerAccessToken,
     });
 
     // Crear preferencia de MercadoPago
     const preference = await createPaymentPreference({
-      title: `Alquiler de ${booking.item.title}`,
+      title: `Alquiler de ${booking.Item.title}`,
       quantity: 1,
       unit_price: booking.totalPrice,
       bookingId: booking.id,
-      userId: booking.borrower.id,
-      itemId: booking.item.id,
+      userId: booking.User_Booking_borrowerIdToUser.id,
+      itemId: booking.Item.id,
       ownerAccessToken, // Si existe, se usará marketplace split con 5% fee
     });
 

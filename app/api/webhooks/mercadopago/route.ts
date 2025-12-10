@@ -89,20 +89,20 @@ export async function POST(request: NextRequest) {
             const booking = await prisma.booking.findUnique({
               where: { id: bookingId },
               include: {
-                item: {
+                Item: {
                   include: {
-                    owner: true
+                    User: true
                   }
                 }
               }
             })
             
-            if (booking?.item?.owner?.marketplaceAccessToken) {
+            if (booking?.Item?.User?.marketplaceAccessToken) {
               console.log('🔄 Trying with owner access token...')
               
               // Crear cliente con el access token del owner
               const ownerMercadoPago = new MercadoPagoConfig({
-                accessToken: booking.item.owner.marketplaceAccessToken
+                accessToken: booking.Item.User.marketplaceAccessToken
               })
               
               payment = await new Payment(ownerMercadoPago).get({id: paymentId})

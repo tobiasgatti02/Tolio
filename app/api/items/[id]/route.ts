@@ -15,14 +15,14 @@ export async function GET(
         const item = await prisma.item.findUnique({
             where: { id },
             include: {
-                reviews: {
+                Review: {
                     select: {
                         rating: true,
                         comment: true,
                         createdAt: true,
                     },
                 },
-                owner: {
+                User: {
                     select: {
                         id: true,
                         firstName: true,
@@ -42,18 +42,18 @@ export async function GET(
         }
 
         // Calcular rating promedio
-        const averageRating = item.reviews.length > 0
-            ? item.reviews.reduce((sum, review) => sum + review.rating, 0) / item.reviews.length
+        const averageRating = item.Review.length > 0
+            ? item.Review.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0) / item.Review.length
             : undefined
 
         const formattedItem = {
             ...item,
             averageRating: averageRating !== undefined ? parseFloat(averageRating.toFixed(1)) : undefined,
-            reviewCount: item.reviews.length,
+            reviewCount: item.Review.length,
             owner: {
-                id: item.owner.id,
-                name: `${item.owner.firstName} ${item.owner.lastName}`.trim(),
-                image: item.owner.profileImage,
+                id: item.User.id,
+                name: `${item.User.firstName} ${item.User.lastName}`.trim(),
+                image: item.User.profileImage,
             },
         }
 

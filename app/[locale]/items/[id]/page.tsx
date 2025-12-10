@@ -24,7 +24,7 @@ async function getItem(id: string) {
   const item = await prisma.item.findUnique({
     where: { id },
     include: {
-      owner: {
+      User: {
         select: {
           id: true,
           firstName: true,
@@ -35,13 +35,13 @@ async function getItem(id: string) {
           createdAt: true,
         }
       },
-      reviews: {
+      Review: {
         select: {
           id: true,
           rating: true,
           comment: true,
           createdAt: true,
-          reviewer: {
+          User_Review_reviewerIdToUser: {
             select: {
               firstName: true,
               lastName: true,
@@ -69,9 +69,9 @@ export default async function ItemPage({ params }: ItemPageProps) {
     notFound()
   }
 
-  const isOwnItem = session?.user?.id === item.owner.id
-  const averageRating = item.reviews?.length > 0
-    ? item.reviews.reduce((acc: number, review: any) => acc + review.rating, 0) / item.reviews.length
+  const isOwnItem = session?.user?.id === item.User.id
+  const averageRating = item.Review?.length > 0
+    ? item.Review.reduce((acc: number, review: any) => acc + review.rating, 0) / item.Review.length
     : undefined
 
   return (
@@ -144,7 +144,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                       <div className="flex items-center gap-1">
                         <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                         <span className="font-semibold text-gray-900">{averageRating.toFixed(1)}</span>
-                        <span className="text-gray-500">({item.reviews?.length} reseñas)</span>
+                        <span className="text-gray-500">({item.Review?.length} reseñas)</span>
                       </div>
                     )}
                     <div className="flex items-center gap-1 text-gray-600">
@@ -162,8 +162,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
                   itemId={resolvedParams.id}
                   itemTitle={item.title}
                   itemType="item"
-                  reportedUserId={item.owner.id}
-                  reportedUserName={`${item.owner.firstName} ${item.owner.lastName}`}
+                  reportedUserId={item.User.id}
+                  reportedUserName={`${item.User.firstName} ${item.User.lastName}`}
                 />
               </div>
 
@@ -223,10 +223,10 @@ export default async function ItemPage({ params }: ItemPageProps) {
             </div>
 
             {/* Reviews */}
-            {item.reviews && item.reviews.length > 0 && (
+            {item.Review && item.Review.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                  Reseñas ({item.reviews.length})
+                  Reseñas ({item.Review.length})
                 </h2>
                 <Suspense fallback={<ReviewListSkeleton />}>
                   <ReviewList itemId={resolvedParams.id} />
@@ -244,43 +244,43 @@ export default async function ItemPage({ params }: ItemPageProps) {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Propietario</h3>
                 <div className="flex items-start gap-4 mb-6">
                   <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-indigo-400 flex-shrink-0">
-                    {item.owner.profileImage ? (
+                    {item.User.profileImage ? (
                       <Image
-                        src={item.owner.profileImage}
-                        alt={`${item.owner.firstName} ${item.owner.lastName}` || 'Propietario'}
+                        src={item.User.profileImage}
+                        alt={`${item.User.firstName} ${item.User.lastName}` || 'Propietario'}
                         fill
                         className="object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
-                        {(item.owner.firstName || 'P')[0].toUpperCase()}
+                        {(item.User.firstName || 'P')[0].toUpperCase()}
                       </div>
                     )}
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900 text-lg">
-                      {`${item.owner.firstName} ${item.owner.lastName}`.trim()}
+                      {`${item.User.firstName} ${item.User.lastName}`.trim()}
                     </h4>
                     <p className="text-sm text-gray-500">
-                      Miembro desde {new Date(item.owner.createdAt).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}
+                      Miembro desde {new Date(item.User.createdAt).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  {item.owner.phoneNumber && (
+                  {item.User.phoneNumber && (
                     <>
                       <a
-                        href={`tel:${item.owner.phoneNumber}`}
+                        href={`tel:${item.User.phoneNumber}`}
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
                       >
                         <Phone className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                         <span className="text-sm text-gray-700 group-hover:text-blue-600 transition-colors">
-                          {item.owner.phoneNumber}
+                          {item.User.phoneNumber}
                         </span>
                       </a>
                       <a
-                        href={`https://wa.me/${item.owner.phoneNumber.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola! Me interesa tu item "${item.title}" que vi en Tolio.`)}`}
+                        href={`https://wa.me/${item.User.phoneNumber.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola! Me interesa tu item "${item.title}" que vi en Tolio.`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-green-50 transition-colors group"
@@ -301,7 +301,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                   <BookingFormFree 
                     itemId={resolvedParams.id}
                     itemTitle={item.title}
-                    ownerName={`${item.owner.firstName} ${item.owner.lastName}`}
+                    ownerName={`${item.User.firstName} ${item.User.lastName}`}
                     ownerAddress={item.location}
                     price={item.price}
                     type="item"
@@ -313,7 +313,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                       Contacta al propietario antes de reservar
                     </p>
                     <Link
-                      href={`/messages/${item.owner.id}`}
+                      href={`/messages/${item.User.id}`}
                       className="block w-full py-3 px-4 bg-white text-blue-600 rounded-xl font-semibold text-center hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 shadow-md"
                     >
                       Enviar mensaje

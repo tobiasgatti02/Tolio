@@ -21,10 +21,10 @@ export async function PATCH(
     let booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        item: {
-          include: { owner: true }
+        Item: {
+          include: { User: true }
         },
-        borrower: true
+        User_Booking_borrowerIdToUser: true
       }
     })
 
@@ -33,10 +33,10 @@ export async function PATCH(
       const serviceBooking = await prisma.serviceBooking.findUnique({
         where: { id: bookingId },
         include: {
-          service: {
-            include: { provider: true }
+          Service: {
+            include: { User: true }
           },
-          client: true
+          User_ServiceBooking_clientIdToUser: true
         }
       })
 
@@ -45,7 +45,7 @@ export async function PATCH(
       }
 
       // Verificar que el usuario es el proveedor del servicio
-      if (serviceBooking.service.providerId !== session.user.id) {
+      if (serviceBooking.Service.providerId !== session.user.id) {
         return NextResponse.json({ error: "No autorizado" }, { status: 403 })
       }
 
@@ -66,8 +66,8 @@ export async function PATCH(
         {
           bookingId,
           itemId: serviceBooking.serviceId,
-          itemTitle: serviceBooking.service.title,
-          ownerName: `${serviceBooking.service.provider.firstName} ${serviceBooking.service.provider.lastName}`.trim()
+          itemTitle: serviceBooking.Service.title,
+          ownerName: `${serviceBooking.Service.User.firstName} ${serviceBooking.Service.User.lastName}`.trim()
         }
       )
 
@@ -75,7 +75,7 @@ export async function PATCH(
     }
 
     // Es un Booking normal (item)
-    if (booking.item.ownerId !== session.user.id) {
+    if (booking.Item.ownerId !== session.user.id) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     }
 
@@ -96,8 +96,8 @@ export async function PATCH(
       {
         bookingId,
         itemId: booking.itemId,
-        itemTitle: booking.item.title,
-        ownerName: `${booking.item.owner.firstName} ${booking.item.owner.lastName}`.trim()
+        itemTitle: booking.Item.title,
+        ownerName: `${booking.Item.User.firstName} ${booking.Item.User.lastName}`.trim()
       }
     )
 

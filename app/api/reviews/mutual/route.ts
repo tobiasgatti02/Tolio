@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        item: true,
-        borrower: true,
-        owner: true
+        Item: true,
+        User_Booking_borrowerIdToUser: true,
+        User_Booking_ownerIdToUser: true
       }
     })
 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar que el usuario sea parte de la reserva
     const userId = session.user.id
-    if (booking.borrowerId !== userId && booking.item.ownerId !== userId) {
+    if (booking.borrowerId !== userId && booking.Item.ownerId !== userId) {
       return NextResponse.json({ error: "No autorizado para esta reserva" }, { status: 403 })
     }
 
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const review = await prisma.review.create({
       data: {
         bookingId,
-        itemId: booking.item.id,
+        itemId: booking.Item.id,
         reviewerId: userId,
         revieweeId,
         rating,
@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
       revieweeId,
       'REVIEW_RECEIVED',
       {
-        itemId: booking.item.id,
-        itemTitle: booking.item.title
+        itemId: booking.Item.id,
+        itemTitle: booking.Item.title
       }
     )
 
@@ -132,8 +132,8 @@ export async function GET(request: NextRequest) {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        item: { include: { owner: true } },
-        borrower: true,
+        Item: { include: { User: true } },
+        User_Booking_borrowerIdToUser: true,
       }
     })
 
@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = session.user.id
-    const isOwner = booking.item.ownerId === userId
+    const isOwner = booking.Item.ownerId === userId
     const isBorrower = booking.borrowerId === userId
 
     if (!isOwner && !isBorrower) {

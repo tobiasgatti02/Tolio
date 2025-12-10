@@ -9,13 +9,13 @@ export async function GET() {
         isAvailable: true,
       },
       include: {
-        owner: {
+        User: {
           select: {
             firstName: true,
             lastName: true,
           },
         },
-        reviews: {
+        Review: {
           select: {
             rating: true,
           },
@@ -25,8 +25,8 @@ export async function GET() {
 
     // Calcular rating promedio y ordenar
     const itemsWithRating = items.map((item) => {
-      const reviews = item.reviews || []
-      const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
+      const reviews = item.Review || []
+      const totalRating = reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0)
       const avgRating = reviews.length > 0 ? totalRating / reviews.length : 0
 
       return {
@@ -62,8 +62,8 @@ export async function GET() {
         location: item.location,
         image: item.images && item.images.length > 0 ? item.images[0] : "/placeholder.svg",
         owner: {
-          firstName: item.owner.firstName,
-          lastName: item.owner.lastName,
+          firstName: item.User.firstName,
+          lastName: item.User.lastName,
         },
       }
     })

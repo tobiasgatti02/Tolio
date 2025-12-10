@@ -22,10 +22,10 @@ export async function PATCH(
     let booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        item: {
-          include: { owner: true }
+        Item: {
+          include: { User: true }
         },
-        borrower: true
+        User_Booking_borrowerIdToUser: true
       }
     })
 
@@ -34,10 +34,10 @@ export async function PATCH(
       const serviceBooking = await prisma.serviceBooking.findUnique({
         where: { id: bookingId },
         include: {
-          service: {
-            include: { provider: true }
+          Service: {
+            include: { User: true }
           },
-          client: true
+          User_ServiceBooking_clientIdToUser: true
         }
       })
 
@@ -71,8 +71,8 @@ export async function PATCH(
       // Crear notificación para el otro usuario
       const otherUserId = isProvider ? serviceBooking.clientId : serviceBooking.providerId
       const cancellerName = isProvider 
-        ? `${serviceBooking.service.provider.firstName} ${serviceBooking.service.provider.lastName}`.trim()
-        : `${serviceBooking.client.firstName} ${serviceBooking.client.lastName}`.trim()
+        ? `${serviceBooking.Service.User.firstName} ${serviceBooking.Service.User.lastName}`.trim()
+        : `${serviceBooking.User_ServiceBooking_clientIdToUser.firstName} ${serviceBooking.User_ServiceBooking_clientIdToUser.lastName}`.trim()
 
       await createNotification(
         otherUserId,
@@ -80,7 +80,7 @@ export async function PATCH(
         {
           bookingId,
           itemId: serviceBooking.serviceId,
-          itemTitle: serviceBooking.service.title,
+          itemTitle: serviceBooking.Service.title,
           ownerName: cancellerName
         }
       )
@@ -89,7 +89,7 @@ export async function PATCH(
     }
 
     // Es un Booking normal (item)
-    const isOwner = booking.item.ownerId === userId
+    const isOwner = booking.Item.ownerId === userId
     const isBorrower = booking.borrowerId === userId
 
     if (!isOwner && !isBorrower) {
@@ -113,10 +113,10 @@ export async function PATCH(
     })
 
     // Crear notificación para el otro usuario
-    const otherUserId = isOwner ? booking.borrowerId : booking.item.ownerId
+    const otherUserId = isOwner ? booking.borrowerId : booking.Item.ownerId
     const cancellerName = isOwner
-      ? `${booking.item.owner.firstName} ${booking.item.owner.lastName}`.trim()
-      : `${booking.borrower.firstName} ${booking.borrower.lastName}`.trim()
+      ? `${booking.Item.User.firstName} ${booking.Item.User.lastName}`.trim()
+      : `${booking.User_Booking_borrowerIdToUser.firstName} ${booking.User_Booking_borrowerIdToUser.lastName}`.trim()
 
     await createNotification(
       otherUserId,
@@ -124,7 +124,7 @@ export async function PATCH(
       {
         bookingId,
         itemId: booking.itemId,
-        itemTitle: booking.item.title,
+        itemTitle: booking.Item.title,
         ownerName: cancellerName
       }
     )

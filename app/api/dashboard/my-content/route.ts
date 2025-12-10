@@ -19,14 +19,14 @@ export async function GET() {
     const items = await prisma.item.findMany({
       where: { ownerId: userId },
       include: {
-        bookings: {
+        Booking: {
           select: {
             status: true,
             startDate: true,
             endDate: true
           }
         },
-        reviews: {
+        Review: {
           select: {
             rating: true
           }
@@ -39,14 +39,14 @@ export async function GET() {
     const services = await prisma.service.findMany({
       where: { providerId: userId },
       include: {
-        bookings: {
+        ServiceBooking: {
           select: {
             status: true,
             startDate: true,
             endDate: true
           }
         },
-        reviews: {
+        ServiceReview: {
           select: {
             rating: true
           }
@@ -57,8 +57,8 @@ export async function GET() {
 
     // Formatear items
     const formattedItems = items.map(item => {
-      const activeBookings = item.bookings.filter(b => ['PENDING', 'CONFIRMED'].includes(b.status))
-      const hasActiveBooking = activeBookings.some(booking => {
+      const activeBookings = item.Booking.filter((b: any) => ['PENDING', 'CONFIRMED'].includes(b.status))
+      const hasActiveBooking = activeBookings.some((booking: any) => {
         const now = new Date()
         const endDate = new Date(booking.endDate)
         return endDate >= now
@@ -76,11 +76,11 @@ export async function GET() {
         status: !item.isAvailable ? 'PAUSADO' : hasActiveBooking ? 'PRESTADO' : 'DISPONIBLE',
         images: item.images,
         location: item.location,
-        averageRating: item.reviews.length > 0 
-          ? item.reviews.reduce((sum, r) => sum + r.rating, 0) / item.reviews.length 
+        averageRating: item.Review.length > 0 
+          ? item.Review.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / item.Review.length 
           : undefined,
-        reviewCount: item.reviews.length,
-        bookingsCount: item.bookings.length,
+        reviewCount: item.Review.length,
+        bookingsCount: item.Booking.length,
         createdAt: item.createdAt.toISOString(),
         updatedAt: item.updatedAt.toISOString()
       }
@@ -88,7 +88,7 @@ export async function GET() {
 
     // Formatear servicios
     const formattedServices = services.map(service => {
-      const activeBookings = service.bookings.filter(b => ['PENDING', 'CONFIRMED'].includes(b.status))
+      const activeBookings = service.ServiceBooking.filter((b: any) => ['PENDING', 'CONFIRMED'].includes(b.status))
       const hasActiveBooking = activeBookings.length > 0
 
       return {
@@ -105,11 +105,11 @@ export async function GET() {
         images: service.images,
         location: service.location,
         serviceArea: service.serviceArea,
-        averageRating: service.reviews.length > 0 
-          ? service.reviews.reduce((sum, r) => sum + r.rating, 0) / service.reviews.length 
+        averageRating: service.ServiceReview.length > 0 
+          ? service.ServiceReview.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / service.ServiceReview.length 
           : undefined,
-        reviewCount: service.reviews.length,
-        bookingsCount: service.bookings.length,
+        reviewCount: service.ServiceReview.length,
+        bookingsCount: service.ServiceBooking.length,
         createdAt: service.createdAt.toISOString(),
         updatedAt: service.updatedAt.toISOString()
       }

@@ -82,7 +82,7 @@ export async function GET(request: Request) {
         images: true,
         features: true,
         createdAt: true,
-        owner: {
+        User: {
           select: {
             id: true,
             firstName: true,
@@ -91,7 +91,7 @@ export async function GET(request: Request) {
           },
         },
         _count: {
-          select: { reviews: true }
+          select: { Review: true }
         }
       },
       take: hasGeoFilter ? 100 : 40, // Reduced limit for faster queries
@@ -128,12 +128,12 @@ export async function GET(request: Request) {
         images: item.images,
         features: item.features,
         averageRating: avgRating ? parseFloat(avgRating.toFixed(1)) : 0,
-        reviewCount: item._count.reviews,
+        reviewCount: item._count.Review,
         owner: {
-          id: item.owner.id,
-          firstName: item.owner.firstName,
-          lastName: item.owner.lastName,
-          profileImage: item.owner.profileImage,
+          id: item.User.id,
+          firstName: item.User.firstName,
+          lastName: item.User.lastName,
+          profileImage: item.User.profileImage,
         },
       }
     })
@@ -346,7 +346,7 @@ export async function POST(request: Request) {
         isAvailable: true,
       },
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             firstName: true,
@@ -491,7 +491,7 @@ export async function PUT(request: Request) {
         ...(imageUrls.length > 0 && { images: imageUrls }),
       },
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             firstName: true,

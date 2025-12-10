@@ -88,14 +88,14 @@ export async function GET(request: Request) {
         images: true,
         isProfessional: true,
         createdAt: true,
-        provider: {
+        User: {
           select: {
             firstName: true,
             lastName: true,
             profileImage: true,
           }
         },
-        reviews: {
+        ServiceReview: {
           select: {
             rating: true
           }
@@ -108,9 +108,9 @@ export async function GET(request: Request) {
 
     // Transform services - calculate ratings in-memory (faster than separate query)
     let formattedServices = services.map(service => {
-      const reviews = service.reviews || []
+      const reviews = service.ServiceReview || []
       const avgRating = reviews.length > 0
-        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        ? reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviews.length
         : 0
       
       return {
@@ -124,7 +124,7 @@ export async function GET(request: Request) {
         longitude: service.longitude,
         images: service.images,
         isProfessional: service.isProfessional,
-        provider: service.provider,
+        provider: service.User,
         averageRating: avgRating ? parseFloat(avgRating.toFixed(1)) : 0,
         reviewCount: reviews.length,
       }

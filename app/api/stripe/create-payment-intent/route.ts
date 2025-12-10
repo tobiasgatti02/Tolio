@@ -36,12 +36,12 @@ export async function POST(req: NextRequest) {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        item: {
+        Item: {
           include: {
-            owner: true
+            User: true
           }
         },
-        borrower: true,
+        User_Booking_borrowerIdToUser: true,
       },
     });
 
@@ -50,14 +50,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Verificar que el usuario sea el borrower
-    if (booking.borrower.email !== session.user.email) {
+    if (booking.User_Booking_borrowerIdToUser.email !== session.user.email) {
       return NextResponse.json({
         error: 'No autorizado para este booking'
       }, { status: 403 });
     }
 
     // Verificar que el owner tenga cuenta de Stripe Connect
-    if (!booking.item.owner.stripeAccountId) {
+    if (!booking.Item.User.stripeAccountId) {
       return NextResponse.json({
         error: 'El propietario aún no ha configurado su cuenta de pagos'
       }, { status: 400 });
@@ -67,21 +67,21 @@ export async function POST(req: NextRequest) {
     const { totalAmount, marketplaceFee, ownerAmount } = calculatePaymentAmounts(amount);
 
     // Crear o actualizar Customer de Stripe
-    let customerId = booking.borrower.stripeCustomerId;
+    let customerId = booking.User_Booking_borrowerIdToUser.stripeCustomerId;
     
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: booking.borrower.email,
-        name: `${booking.borrower.firstName} ${booking.borrower.lastName}`,
+        email: booking.User_Booking_borrowerIdToUser.email,
+        name: `${booking.User_Booking_borrowerIdToUser.firstName} ${booking.User_Booking_borrowerIdToUser.lastName}`,
         metadata: {
-          userId: booking.borrower.id,
+          userId: booking.User_Booking_borrowerIdToUser.id,
         },
       });
       
       customerId = customer.id;
       
       await prisma.user.update({
-        where: { id: booking.borrower.id },
+        where: { id: booking.User_Booking_borrowerIdToUser.id },
         data: { stripeCustomerId: customerId },
       });
     }
@@ -94,18 +94,18 @@ export async function POST(req: NextRequest) {
       capture_method: 'manual', // 🔥 CLAVE: Retener el pago hasta confirmación
       application_fee_amount: toStripeAmount(marketplaceFee), // 5% para el marketplace
       transfer_data: {
-        destination: booking.item.owner.stripeAccountId, // Destino: cuenta del owner
+        destination: booking.Item.User.stripeAccountId, // Destino: cuenta del owner
       },
       metadata: {
         bookingId: booking.id,
-        itemId: booking.item.id,
-        ownerId: booking.item.owner.id,
-        borrowerId: booking.borrower.id,
+        itemId: booking.Item.id,
+        ownerId: booking.Item.User.id,
+        borrowerId: booking.User_Booking_borrowerIdToUser.id,
         ownerAmount: ownerAmount.toString(),
         marketplaceFee: marketplaceFee.toString(),
-        stripeAccountId: booking.item.owner.stripeAccountId,
+        stripeAccountId: booking.Item.User.stripeAccountId,
       },
-      description: `Alquiler: ${booking.item.title} - ${booking.id.substring(0, 8)}`,
+      description: `Alquiler: ${booking.Item.title} - ${booking.id.substring(0, 8)}`,
     });
 
     // Crear o actualizar registro de Payment

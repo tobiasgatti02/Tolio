@@ -37,14 +37,14 @@ export async function POST(req: NextRequest) {
     const payment = await prisma.payment.findUnique({
       where: { stripePaymentIntentId: paymentIntentId },
       include: {
-        booking: {
+        Booking: {
           include: {
-            item: {
+            Item: {
               include: {
-                owner: true
+                User: true
               }
             },
-            borrower: true,
+            User_Booking_borrowerIdToUser: true,
           },
         },
       },
@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
-    const isOwner = user.id === payment.booking.item.owner.id;
-    const isBorrower = user.id === payment.booking.borrower.id;
+    const isOwner = user.id === payment.Booking.Item.User.id;
+    const isBorrower = user.id === payment.Booking.User_Booking_borrowerIdToUser.id;
     
     if (!isOwner && !isBorrower) {
       return NextResponse.json({
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
       });
 
       await prisma.booking.update({
-        where: { id: payment.booking.id },
+        where: { id: payment.Booking.id },
         data: { status: 'CANCELLED' },
       });
 
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
       amount: refundAmount,
       reason,
       metadata: {
-        bookingId: payment.booking.id,
+        bookingId: payment.Booking.id,
         paymentId: payment.id,
       },
     });
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
         },
       }),
       prisma.booking.update({
-        where: { id: payment.booking.id },
+        where: { id: payment.Booking.id },
         data: { status: 'CANCELLED' },
       }),
     ]);

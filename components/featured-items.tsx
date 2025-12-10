@@ -12,13 +12,13 @@ async function getFeaturedItems(): Promise<FeaturedItem[]> {
         isAvailable: true,
       },
       include: {
-        owner: {
+        User: {
           select: {
             firstName: true,
             lastName: true,
           },
         },
-        reviews: {
+        Review: {
           select: {
             rating: true,
           },
@@ -28,8 +28,8 @@ async function getFeaturedItems(): Promise<FeaturedItem[]> {
 
     // Calcular rating promedio y ordenar
     const itemsWithRating = items.map((item) => {
-      const reviews = item.reviews || []
-      const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
+      const reviews = item.Review || []
+      const totalRating = reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0)
       const avgRating = reviews.length > 0 ? totalRating / reviews.length : 0
 
       return {
@@ -64,8 +64,8 @@ async function getFeaturedItems(): Promise<FeaturedItem[]> {
       location: item.location,
       image: item.images && item.images.length > 0 ? item.images[0] : "/placeholder.svg",
       owner: {
-        firstName: item.owner.firstName,
-        lastName: item.owner.lastName,
+        firstName: item.User.firstName,
+        lastName: item.User.lastName,
       },
     }))
 

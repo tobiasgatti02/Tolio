@@ -48,7 +48,7 @@ export async function GET(request: Request) {
         },
       },
       include: {
-        item: {
+        Item: {
           select: {
             title: true,
             price: true,
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
       (sum: number, b) =>
         sum +
         calculateBookingPrice({
-          price: b.item.price,
+          price: b.Item.price,
           startDate: b.startDate,
           endDate: b.endDate,
         }),
@@ -81,7 +81,7 @@ export async function GET(request: Request) {
       }).format(new Date(booking.startDate))
 
       const expense = calculateBookingPrice({
-        price: booking.item.price,
+        price: booking.Item.price,
         startDate: booking.startDate,
         endDate: booking.endDate,
       })
@@ -109,9 +109,9 @@ export async function GET(request: Request) {
     // Get top expenses
     const topExpenses = bookings
       .map((booking) => ({
-        name: booking.item.title,
+        name: booking.Item.title,
         amount: calculateBookingPrice({
-          price: booking.item.price,
+          price: booking.Item.price,
           startDate: booking.startDate,
           endDate: booking.endDate,
         }),

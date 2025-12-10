@@ -20,7 +20,7 @@ async function getService(id: string) {
   const service = await prisma.service.findUnique({
     where: { id },
     include: {
-      provider: {
+      User: {
         select: {
           id: true,
           firstName: true,
@@ -31,13 +31,13 @@ async function getService(id: string) {
           createdAt: true,
         }
       },
-      reviews: {
+      ServiceReview: {
         select: {
           id: true,
           rating: true,
           comment: true,
           createdAt: true,
-          reviewer: {
+          User_ServiceReview_reviewerIdToUser: {
             select: {
               firstName: true,
               lastName: true,
@@ -55,14 +55,14 @@ async function getService(id: string) {
 
   if (!service) return null
 
-  const averageRating = service.reviews.length > 0
-    ? service.reviews.reduce((acc: number, review: any) => acc + review.rating, 0) / service.reviews.length
+  const averageRating = service.ServiceReview.length > 0
+    ? service.ServiceReview.reduce((acc: number, review: any) => acc + review.rating, 0) / service.ServiceReview.length
     : 0
 
   return {
     ...service,
     averageRating,
-    reviewCount: service.reviews.length
+    reviewCount: service.ServiceReview.length
   }
 }
 
@@ -75,7 +75,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
     notFound()
   }
 
-  const isOwnService = session?.user?.id === service.provider.id
+  const isOwnService = session?.user?.id === service.User.id
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50/30 via-white to-orange-50/30">
@@ -168,8 +168,8 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                     serviceId={service.id}
                     itemTitle={service.title}
                     itemType="service"
-                    reportedUserId={service.provider.id}
-                    reportedUserName={`${service.provider.firstName} ${service.provider.lastName}`}
+                    reportedUserId={service.User.id}
+                    reportedUserName={`${service.User.firstName} ${service.User.lastName}`}
                   />
                 </div>
               </div>
@@ -228,11 +228,11 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
             </div>
 
             {/* Reviews */}
-            {service.reviews && service.reviews.length > 0 && (
+            {service.ServiceReview && service.ServiceReview.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Reseñas de clientes</h2>
                 <div className="space-y-6">
-                  {service.reviews.map((review: any) => (
+                  {service.ServiceReview.map((review: any) => (
                     <div key={review.id} className="border-b border-gray-200 pb-6 last:border-0 last:pb-0">
                       <div className="flex items-start gap-4">
                         <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-indigo-400 flex-shrink-0">
@@ -295,54 +295,54 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Prestador del servicio</h3>
                 <div className="flex items-start gap-4 mb-6">
                   <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-indigo-400 flex-shrink-0">
-                    {service.provider.profileImage ? (
+                    {service.User.profileImage ? (
                       <Image
-                        src={service.provider.profileImage}
-                        alt={`${service.provider.firstName} ${service.provider.lastName}` || 'Prestador'}
+                        src={service.User.profileImage}
+                        alt={`${service.User.firstName} ${service.User.lastName}` || 'Prestador'}
                         fill
                         className="object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
-                        {(service.provider.firstName || 'P')[0].toUpperCase()}
+                        {(service.User.firstName || 'P')[0].toUpperCase()}
                       </div>
                     )}
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900 text-lg">
-                      {`${service.provider.firstName} ${service.provider.lastName}`.trim()}
+                      {`${service.User.firstName} ${service.User.lastName}`.trim()}
                     </h4>
                     <p className="text-sm text-gray-500">
-                      Miembro desde {new Date(service.provider.createdAt).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}
+                      Miembro desde {new Date(service.User.createdAt).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  {service.provider.email && (
+                  {service.User.email && (
                     <a
-                      href={`mailto:${service.provider.email}`}
+                      href={`mailto:${service.User.email}`}
                       className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
                     >
                       <Mail className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                       <span className="text-sm text-gray-700 group-hover:text-blue-600 transition-colors truncate">
-                        {service.provider.email}
+                        {service.User.email}
                       </span>
                     </a>
                   )}
-                  {service.provider.phoneNumber && (
+                  {service.User.phoneNumber && (
                     <>
                       <a
-                        href={`tel:${service.provider.phoneNumber}`}
+                        href={`tel:${service.User.phoneNumber}`}
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
                       >
                         <Phone className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                         <span className="text-sm text-gray-700 group-hover:text-blue-600 transition-colors">
-                          {service.provider.phoneNumber}
+                          {service.User.phoneNumber}
                         </span>
                       </a>
                       <a
-                        href={`https://wa.me/${service.provider.phoneNumber.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola! Me interesa tu servicio "${service.title}" que vi en Tolio.`)}`}
+                        href={`https://wa.me/${service.User.phoneNumber.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola! Me interesa tu servicio "${service.title}" que vi en Tolio.`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-green-50 transition-colors group"
@@ -363,7 +363,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                   <BookingFormFree
                     serviceId={service.id}
                     itemTitle={service.title}
-                    ownerName={`${service.provider.firstName} ${service.provider.lastName}`.trim()}
+                    ownerName={`${service.User.firstName} ${service.User.lastName}`.trim()}
                     ownerAddress={service.location}
                     price={service.pricePerHour}
                     type="service"
@@ -375,7 +375,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                       Contacta al prestador antes de reservar
                     </p>
                     <Link
-                      href={`/messages/${service.provider.id}`}
+                      href={`/messages/${service.User.id}`}
                       className="block w-full py-3 px-4 bg-white text-blue-600 rounded-xl font-semibold text-center hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 shadow-md"
                     >
                       Enviar mensaje

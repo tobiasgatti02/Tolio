@@ -8,24 +8,24 @@ export async function GET(request: NextRequest) {
     // Obtener todas las reservas con información de pago
     const bookings = await prisma.booking.findMany({
       include: {
-        item: {
+        Item: {
           select: {
             title: true,
           }
         },
-        borrower: {
+        User_Booking_borrowerIdToUser: {
           select: {
             firstName: true,
             lastName: true,
           }
         },
-        owner: {
+        User_Booking_ownerIdToUser: {
           select: {
             firstName: true,
             lastName: true,
           }
         },
-        payment: true
+        Payment: true
       },
       orderBy: {
         createdAt: 'desc'
@@ -37,14 +37,14 @@ export async function GET(request: NextRequest) {
       acc.totalBookings++
       
       const totalPrice = booking.totalPrice || 0
-      const platformFee = booking.payment?.marketplaceFee || Math.round(totalPrice * 0.05)
-      const ownerAmount = booking.payment?.ownerAmount || (totalPrice - platformFee)
+      const platformFee = booking.Payment?.marketplaceFee || Math.round(totalPrice * 0.05)
+      const ownerAmount = booking.Payment?.ownerAmount || (totalPrice - platformFee)
 
-      if (booking.payment?.stripeTransferId) {
+      if (booking.Payment?.stripeTransferId) {
         // Pago ya capturado y transferido
         acc.capturedAmount += totalPrice
         acc.totalFees += platformFee
-      } else if (booking.payment?.stripePaymentIntentId) {
+      } else if (booking.Payment?.stripePaymentIntentId) {
         // Pago autorizado pero no capturado
         acc.pendingAmount += totalPrice
       }
@@ -60,22 +60,22 @@ export async function GET(request: NextRequest) {
     // Formatear los datos para el frontend
     const formattedBookings = bookings.map(booking => {
       const totalPrice = booking.totalPrice || 0
-      const platformFee = booking.payment?.marketplaceFee || Math.round(totalPrice * 0.05)
-      const ownerAmount = booking.payment?.ownerAmount || (totalPrice - platformFee)
+      const platformFee = booking.Payment?.marketplaceFee || Math.round(totalPrice * 0.05)
+      const ownerAmount = booking.Payment?.ownerAmount || (totalPrice - platformFee)
 
       return {
         id: booking.id,
-        itemTitle: booking.item.title,
+        itemTitle: booking.Item.title,
         startDate: booking.startDate.toISOString(),
         endDate: booking.endDate.toISOString(),
         totalPrice: totalPrice,
         status: booking.status,
-        stripePaymentIntentId: booking.payment?.stripePaymentIntentId || null,
-        stripeTransferId: booking.payment?.stripeTransferId || null,
+        stripePaymentIntentId: booking.Payment?.stripePaymentIntentId || null,
+        stripeTransferId: booking.Payment?.stripeTransferId || null,
         platformFee: platformFee,
         ownerAmount: ownerAmount,
-        renterName: `${booking.borrower.firstName} ${booking.borrower.lastName}`,
-        ownerName: `${booking.owner.firstName} ${booking.owner.lastName}`,
+        renterName: `${booking.User_Booking_borrowerIdToUser.firstName} ${booking.User_Booking_borrowerIdToUser.lastName}`,
+        ownerName: `${booking.User_Booking_ownerIdToUser.firstName} ${booking.User_Booking_ownerIdToUser.lastName}`,
         createdAt: booking.createdAt.toISOString()
       }
     })

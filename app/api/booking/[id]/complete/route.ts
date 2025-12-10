@@ -22,16 +22,16 @@ export async function PATCH(
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        item: {
-          include: { owner: true }
+        Item: {
+          include: { User: true }
         },
-        borrower: true
+        User_Booking_borrowerIdToUser: true
       }
     })
 
     if (booking) {
       // Verificar autorización - solo el owner puede completar
-      if (booking.item.ownerId !== userId) {
+      if (booking.Item.ownerId !== userId) {
         return NextResponse.json({ error: "Solo el prestador puede completar la reserva" }, { status: 403 })
       }
 
@@ -46,7 +46,7 @@ export async function PATCH(
       })
 
       // Crear notificación para el otro usuario
-      const otherUserId = booking.item.ownerId === userId ? booking.borrowerId : booking.item.ownerId
+      const otherUserId = booking.Item.ownerId === userId ? booking.borrowerId : booking.Item.ownerId
 
       await createNotification(
         otherUserId,
@@ -54,7 +54,7 @@ export async function PATCH(
         {
           bookingId,
           itemId: booking.itemId,
-          itemTitle: booking.item.title
+          itemTitle: booking.Item.title
         }
       )
 
@@ -65,10 +65,10 @@ export async function PATCH(
     const serviceBooking = await prisma.serviceBooking.findUnique({
       where: { id: bookingId },
       include: {
-        service: {
-          include: { provider: true }
+        Service: {
+          include: { User: true }
         },
-        client: true
+        User_ServiceBooking_clientIdToUser: true
       }
     })
 
@@ -100,7 +100,7 @@ export async function PATCH(
       {
         bookingId,
         itemId: serviceBooking.serviceId,
-        itemTitle: serviceBooking.service.title
+        itemTitle: serviceBooking.Service.title
       }
     )
 

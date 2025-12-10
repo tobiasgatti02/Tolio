@@ -62,10 +62,10 @@ export async function POST(request: NextRequest) {
     const booking = await prisma.booking.findFirst({
       where: { id: payment.external_reference },
       include: {
-        payment: true,
-        item: {
+        Payment: true,
+        Item: {
           include: {
-            owner: true
+            User: true
           }
         }
       }
@@ -92,10 +92,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Actualizar o crear el registro de pago
-    if (booking.payment) {
+    if (booking.Payment) {
       // Actualizar pago existente
       await prisma.payment.update({
-        where: { id: booking.payment.id },
+        where: { id: booking.Payment.id },
         data: {
           status: mappedStatus,
           mercadopagoPaymentId: payment.id?.toString(),
@@ -142,10 +142,10 @@ export async function POST(request: NextRequest) {
       // Notificación para el owner (propietario)
       await prisma.notification.create({
         data: {
-          userId: booking.item.ownerId,
+          userId: booking.Item.ownerId,
           type: 'PAYMENT_RECEIVED',
           title: 'Pago recibido',
-          content: `Has recibido $${ownerAmount.toFixed(2)} por el alquiler de "${booking.item.title}"`,
+          content: `Has recibido $${ownerAmount.toFixed(2)} por el alquiler de "${booking.Item.title}"`,
         }
       })
 
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
           userId: booking.borrowerId,
           type: 'BOOKING_CONFIRMED',
           title: 'Reserva confirmada',
-          content: `Tu pago ha sido procesado y tu reserva de "${booking.item.title}" está confirmada`,
+          content: `Tu pago ha sido procesado y tu reserva de "${booking.Item.title}" está confirmada`,
         }
       })
     }

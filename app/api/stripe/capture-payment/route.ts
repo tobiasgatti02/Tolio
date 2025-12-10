@@ -36,14 +36,14 @@ export async function POST(req: NextRequest) {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        payment: true,
-        item: {
+        Payment: true,
+        Item: {
           include: {
-            owner: true
+            User: true
           }
         },
-        owner: true,
-        borrower: true
+        User_Booking_ownerIdToUser: true,
+        User_Booking_borrowerIdToUser: true
       },
     });
 
@@ -58,11 +58,11 @@ export async function POST(req: NextRequest) {
       }, { status: 403 });
     }
 
-    if (!booking.payment) {
+    if (!booking.Payment) {
       return NextResponse.json({ error: 'No hay pago asociado a esta reserva' }, { status: 404 });
     }
 
-    const payment = booking.payment;
+    const payment = booking.Payment;
 
     // Verificar que el pago no esté ya capturado
     if (payment.status === 'COMPLETED') {
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verificar que el owner tenga cuenta de Stripe conectada
-    if (!booking.owner.stripeAccountId) {
+    if (!booking.User_Booking_ownerIdToUser.stripeAccountId) {
       return NextResponse.json({
         error: 'El propietario no tiene una cuenta de Stripe conectada'
       }, { status: 400 });
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         data: {
           type: 'BOOKING_COMPLETED',
           title: 'Transacción completada',
-          content: `El propietario confirmó la entrega de "${booking.item.title}". El pago ha sido liberado.`,
+          content: `El propietario confirmó la entrega de "${booking.Item.title}". El pago ha sido liberado.`,
           userId: booking.borrowerId,
           bookingId: booking.id,
           itemId: booking.itemId,
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
       transfer: transferId ? {
         id: transferId,
         amount: payment.ownerAmount,
-        destination: booking.owner.stripeAccountId,
+        destination: booking.User_Booking_ownerIdToUser.stripeAccountId,
       } : null,
       message: 'Pago capturado y transferido exitosamente',
     });

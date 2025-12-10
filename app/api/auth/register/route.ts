@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs"
 import prisma from "@/lib/prisma"
 import { sendVerificationEmail } from "@/lib/email"
 import crypto from "crypto"
+import { v4 as uuidv4 } from "uuid"
 
 
 
@@ -136,6 +137,7 @@ export async function POST(request: Request) {
     // Crear el usuario
     const user = await prisma.user.create({
       data: {
+        id: uuidv4(),
         email,
         password: hashedPassword,
         firstName,
@@ -143,6 +145,7 @@ export async function POST(request: Request) {
         phoneNumber: normalizedPhone,
         isVerified: false,
         verificationToken,
+        updatedAt: new Date(),
       },
       select: {
         id: true,

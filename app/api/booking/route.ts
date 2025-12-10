@@ -105,12 +105,12 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
         ownerId: item.ownerId
       },
       include: {
-        item: {
+        Item: {
           select: {
             title: true
           }
         },
-        borrower: {
+        User_Booking_borrowerIdToUser: {
           select: {
             firstName: true,
             lastName: true
@@ -125,8 +125,8 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
       {
         bookingId: booking.id,
         itemId: itemId,
-        itemTitle: booking.item.title,
-        borrowerName: `${booking.borrower.firstName} ${booking.borrower.lastName}`.trim()
+        itemTitle: booking.Item.title,
+        borrowerName: `${booking.User_Booking_borrowerIdToUser.firstName} ${booking.User_Booking_borrowerIdToUser.lastName}`.trim()
       }
     )
 
@@ -160,7 +160,7 @@ export const getBookings = cache(async (userId?: string) => {
         ]
       } : undefined,
       include: {
-        item: {
+        Item: {
           select: {
             id: true,
             title: true,
@@ -168,7 +168,7 @@ export const getBookings = cache(async (userId?: string) => {
             images: true,
           }
         },
-        owner: {
+        User_Booking_ownerIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -176,7 +176,7 @@ export const getBookings = cache(async (userId?: string) => {
             profileImage: true,
           }
         },
-        borrower: {
+        User_Booking_borrowerIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -271,7 +271,7 @@ export async function getBookingById(bookingId: string) {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        item: {
+        Item: {
           select: {
             id: true,
             title: true,
@@ -280,7 +280,7 @@ export async function getBookingById(bookingId: string) {
             location: true,
           }
         },
-        owner: {
+        User_Booking_ownerIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -291,7 +291,7 @@ export async function getBookingById(bookingId: string) {
             isVerified: true,
           }
         },
-        borrower: {
+        User_Booking_borrowerIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -302,7 +302,7 @@ export async function getBookingById(bookingId: string) {
             isVerified: true,
           }
         },
-        review: true
+        Review: true
       }
     })
 
@@ -314,7 +314,7 @@ export async function getBookingById(bookingId: string) {
     const serviceBooking = await prisma.serviceBooking.findUnique({
       where: { id: bookingId },
       include: {
-        service: {
+        Service: {
           select: {
             id: true,
             title: true,
@@ -323,7 +323,7 @@ export async function getBookingById(bookingId: string) {
             location: true,
           }
         },
-        provider: {
+        User_ServiceBooking_providerIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -334,7 +334,7 @@ export async function getBookingById(bookingId: string) {
             isVerified: true,
           }
         },
-        client: {
+        User_ServiceBooking_clientIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -345,7 +345,7 @@ export async function getBookingById(bookingId: string) {
             isVerified: true,
           }
         },
-        review: true
+        ServiceReview: true
       }
     })
 
@@ -503,12 +503,12 @@ export async function POST(request: Request) {
         ownerId: item.ownerId
       },
       include: {
-        item: {
+        Item: {
           select: {
             title: true
           }
         },
-        borrower: {
+        User_Booking_borrowerIdToUser: {
           select: {
             firstName: true,
             lastName: true
@@ -529,8 +529,8 @@ export async function POST(request: Request) {
         {
           bookingId: booking.id,
           itemId: itemId,
-          itemTitle: booking.item.title,
-          borrowerName: `${booking.borrower.firstName} ${booking.borrower.lastName}`.trim()
+          itemTitle: booking.Item.title,
+          borrowerName: `${booking.User_Booking_borrowerIdToUser.firstName} ${booking.User_Booking_borrowerIdToUser.lastName}`.trim()
         }
       )
       console.log('Notification created successfully')

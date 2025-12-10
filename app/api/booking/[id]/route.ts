@@ -20,7 +20,7 @@ export async function GET(
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        item: {
+        Item: {
           select: {
             id: true,
             title: true,
@@ -29,7 +29,7 @@ export async function GET(
             location: true,
           }
         },
-        owner: {
+        User_Booking_ownerIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -37,7 +37,7 @@ export async function GET(
             profileImage: true,
           }
         },
-        borrower: {
+        User_Booking_borrowerIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -64,14 +64,14 @@ export async function GET(
         updatedAt: booking.updatedAt.toISOString(),
         type: 'item',
         item: {
-          id: booking.item.id,
-          title: booking.item.title,
-          images: booking.item.images,
-          price: booking.item.price,
-          location: booking.item.location,
+          id: booking.Item.id,
+          title: booking.Item.title,
+          images: booking.Item.images,
+          price: booking.Item.price,
+          location: booking.Item.location,
         },
-        owner: booking.owner,
-        borrower: booking.borrower,
+        owner: booking.User_Booking_ownerIdToUser,
+        borrower: booking.User_Booking_borrowerIdToUser,
         ownerId: booking.ownerId,
         borrowerId: booking.borrowerId,
       })
@@ -81,7 +81,7 @@ export async function GET(
     const serviceBooking = await prisma.serviceBooking.findUnique({
       where: { id: bookingId },
       include: {
-        service: {
+        Service: {
           select: {
             id: true,
             title: true,
@@ -90,7 +90,7 @@ export async function GET(
             location: true,
           }
         },
-        provider: {
+        User_ServiceBooking_providerIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -98,7 +98,7 @@ export async function GET(
             profileImage: true,
           }
         },
-        client: {
+        User_ServiceBooking_clientIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -125,14 +125,14 @@ export async function GET(
         updatedAt: serviceBooking.updatedAt.toISOString(),
         type: 'service',
         item: {
-          id: serviceBooking.service.id,
-          title: serviceBooking.service.title,
-          images: serviceBooking.service.images,
-          price: serviceBooking.service.pricePerHour || 0,
-          location: serviceBooking.service.location,
+          id: serviceBooking.Service.id,
+          title: serviceBooking.Service.title,
+          images: serviceBooking.Service.images,
+          price: serviceBooking.Service.pricePerHour || 0,
+          location: serviceBooking.Service.location,
         },
-        owner: serviceBooking.provider,
-        borrower: serviceBooking.client,
+        owner: serviceBooking.User_ServiceBooking_providerIdToUser,
+        borrower: serviceBooking.User_ServiceBooking_clientIdToUser,
         ownerId: serviceBooking.providerId,
         borrowerId: serviceBooking.clientId,
       })

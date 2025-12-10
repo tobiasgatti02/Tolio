@@ -11,14 +11,14 @@ export async function GET(
         const service = await prisma.service.findUnique({
             where: { id },
             include: {
-                reviews: {
+                ServiceReview: {
                     select: {
                         rating: true,
                         comment: true,
                         createdAt: true,
                     },
                 },
-                provider: {
+                User: {
                     select: {
                         id: true,
                         firstName: true,
@@ -38,14 +38,15 @@ export async function GET(
         }
 
         // Calcular rating promedio
-        const averageRating = service.reviews.length > 0
-            ? service.reviews.reduce((sum, review) => sum + review.rating, 0) / service.reviews.length
+        const averageRating = service.ServiceReview.length > 0
+            ? service.ServiceReview.reduce((sum: number, review: {rating: number}) => sum + review.rating, 0) / service.ServiceReview.length
             : undefined
 
         const formattedService = {
             ...service,
             averageRating: averageRating !== undefined ? parseFloat(averageRating.toFixed(1)) : undefined,
-            reviewCount: service.reviews.length,
+            reviewCount: service.ServiceReview.length,
+            provider: service.User,
         }
 
         return NextResponse.json(formattedService)
