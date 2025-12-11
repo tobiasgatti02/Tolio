@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "../../auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth-options"
 import prisma from "@/lib/prisma"
-
-
 
 export async function GET(
   request: NextRequest,
@@ -33,7 +31,7 @@ export async function GET(
         ]
       },
       include: {
-        sender: {
+        User_Message_senderIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -47,15 +45,26 @@ export async function GET(
       }
     })
 
-    // Convertir dates a strings para serialización
+    // Convertir dates a strings y mapear nombres de campos para el frontend
     const formattedMessages = messages.map(message => ({
-      ...message,
-      createdAt: message.createdAt.toISOString()
+      id: message.id,
+      content: message.content,
+      isRead: message.isRead,
+      senderId: message.senderId,
+      receiverId: message.receiverId,
+      bookingId: message.bookingId,
+      createdAt: message.createdAt.toISOString(),
+      sender: {
+        id: message.User_Message_senderIdToUser.id,
+        firstName: message.User_Message_senderIdToUser.firstName,
+        lastName: message.User_Message_senderIdToUser.lastName,
+        profileImage: message.User_Message_senderIdToUser.profileImage
+      }
     }))
 
     return NextResponse.json(formattedMessages)
   } catch (error) {
-    console.error('Error fetching messages:', error)
+    console.error('Error fetching messages:', error instanceof Error ? error.message : String(error))
     return NextResponse.json(
       { message: "Error interno del servidor" },
       { status: 500 }

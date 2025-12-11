@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "../auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth-options"
 import prisma from "@/lib/prisma"
-
-
+import { v4 as uuidv4 } from 'uuid'
 
 // Enviar nuevo mensaje
 export async function POST(request: NextRequest) {
@@ -47,13 +46,14 @@ export async function POST(request: NextRequest) {
     // Crear el mensaje
     const message = await prisma.message.create({
       data: {
+        id: uuidv4(),
         content,
         senderId: session.user.id,
         receiverId,
         bookingId: bookingId || null
       },
       include: {
-        sender: {
+        User_Message_senderIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
             profileImage: true
           }
         },
-        receiver: {
+        User_Message_receiverIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
     // Crear notificación para el receptor
     await prisma.notification.create({
       data: {
+        id: uuidv4(),
         userId: receiverId,
         type: 'MESSAGE_RECEIVED',
         title: 'Nuevo mensaje',
@@ -88,11 +89,18 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({
-      ...message,
-      createdAt: message.createdAt.toISOString()
+      id: message.id,
+      content: message.content,
+      senderId: message.senderId,
+      receiverId: message.receiverId,
+      bookingId: message.bookingId,
+      isRead: message.isRead,
+      createdAt: message.createdAt.toISOString(),
+      sender: message.User_Message_senderIdToUser,
+      receiver: message.User_Message_receiverIdToUser
     })
   } catch (error) {
-    console.error('Error sending message:', error)
+    console.error('Error sending message:', error instanceof Error ? error.message : String(error))
     return NextResponse.json(
       { message: "Error interno del servidor" },
       { status: 500 }

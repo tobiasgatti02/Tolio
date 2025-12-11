@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { authOptions } from "../auth/[...nextauth]/route"
-import { prisma } from "@/lib/utils"
+import prisma from "@/lib/prisma"
 import { calculateDistance, isValidCoordinates } from "@/lib/geo-utils"
 import sharp from "sharp"
 import { moderateImage } from "@/lib/image-moderation"

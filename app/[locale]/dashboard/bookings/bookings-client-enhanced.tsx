@@ -301,6 +301,8 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
       })
       
       if (response.ok) {
+        const responseData = await response.json()
+        
         // Actualizar solo el booking afectado en el estado local
         const statusMap: Record<string, string> = {
           confirm: 'CONFIRMADA',
@@ -314,12 +316,17 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
             : b
         ))
         
-        const actionMessages = {
-          confirm: 'Reserva confirmada',
-          reject: 'Reserva cancelada', 
-          complete: 'Reserva completada'
+        // Si se confirmó y puede incluir materiales, mostrar mensaje especial
+        if (action === 'confirm' && responseData.mayIncludeMaterials) {
+          showToast('success', '¡Reserva confirmada! Si necesitas materiales, puedes solicitarlos desde el chat con el cliente.')
+        } else {
+          const actionMessages = {
+            confirm: 'Reserva confirmada',
+            reject: 'Reserva cancelada', 
+            complete: 'Reserva completada'
+          }
+          showToast('success', actionMessages[action])
         }
-        showToast('success', actionMessages[action])
       } else {
         const errorData = await response.json()
         showToast('error', errorData.error || 'No se pudo procesar la reserva')

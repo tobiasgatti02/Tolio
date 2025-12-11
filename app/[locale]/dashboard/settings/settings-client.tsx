@@ -12,6 +12,7 @@ import StripeAccountStatus from "@/components/stripe-account-status"
 import StripeConnectOnboarding from "@/components/stripe-connect-onboarding"
 import MercadoPagoConnect from "@/components/mercadopago-connect"
 import MercadoPagoStatus from "@/components/mercadopago-status"
+import DLocalOnboarding from "@/components/dlocal-onboarding"
 
 interface SettingsClientProps {
   user: {
@@ -428,11 +429,41 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           </div>
         </CardContent>
       </Card>
- /*     
-}
-      {/* MercadoPago Payment Configuration 
 
-      
+      {/* DLocal Payment Configuration - Para Servicios */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-orange-600" />
+            Pagos de Servicios (DLocal)
+          </CardTitle>
+          <CardDescription>
+            Configura tu cuenta para recibir pagos por servicios y materiales
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <DLocalOnboarding onSuccess={() => {
+            setMessage({ type: 'success', text: 'Cuenta de pagos configurada exitosamente' })
+            setTimeout(() => setMessage(null), 3000)
+          }} />
+
+          <div className="space-y-4 pt-4 border-t">
+            <div>
+              <h4 className="font-semibold mb-2">Para Proveedores de Servicios</h4>
+              <p className="text-sm text-gray-600">
+                Recibe pagos por materiales (100% para ti) y por servicios completados
+                (98% para ti, 2% comisión de la plataforma).
+              </p>
+              <p className="text-sm text-blue-700 mt-2 bg-blue-50 p-2 rounded">
+                💡 Los clientes pueden pagarte materiales por adelantado y el servicio
+                una vez completado el trabajo.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* MercadoPago Payment Configuration - Comentado por ahora
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

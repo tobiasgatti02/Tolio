@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth-options"
 import prisma from "@/lib/prisma"
-
-
+import { v4 as uuidv4 } from 'uuid'
 
 export async function POST(request: Request) {
   try {
@@ -21,8 +20,8 @@ export async function POST(request: Request) {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        item: true,
-        review: true
+        Item: true,
+        Review: true
       }
     })
 
@@ -31,7 +30,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ message: "Solo se pueden reseñar reservas completadas" }, { status: 400 })
       }
 
-      if (booking.review) {
+      if (booking.Review) {
         return NextResponse.json({ message: "Ya existe una reseña para esta reserva" }, { status: 400 })
       }
 
@@ -43,9 +42,9 @@ export async function POST(request: Request) {
       // Crear la review
       const review = await prisma.review.create({
         data: {
+          id: uuidv4(),
           rating,
           comment,
-          trustFactors: trustFactors || [],
           reviewerId: userId,
           revieweeId,
           itemId: booking.itemId,
@@ -60,8 +59,8 @@ export async function POST(request: Request) {
     const serviceBooking = await prisma.serviceBooking.findUnique({
       where: { id: bookingId },
       include: {
-        service: true,
-        review: true
+        Service: true,
+        ServiceReview: true
       }
     })
 
@@ -73,7 +72,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Solo se pueden reseñar reservas completadas" }, { status: 400 })
     }
 
-    if (serviceBooking.review) {
+    if (serviceBooking.ServiceReview) {
       return NextResponse.json({ message: "Ya existe una reseña para esta reserva" }, { status: 400 })
     }
 
@@ -85,6 +84,7 @@ export async function POST(request: Request) {
     // Crear la review para servicio usando ServiceReview
     const review = await prisma.serviceReview.create({
       data: {
+        id: uuidv4(),
         rating,
         comment,
         reviewerId: userId,
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, review })
   } catch (error) {
-    console.error('Error creating review:', error)
+    console.error('Error creating review:', error instanceof Error ? error.message : String(error))
     return NextResponse.json(
       { message: "Error interno del servidor" }, 
       { status: 500 }

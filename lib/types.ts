@@ -57,6 +57,11 @@ export interface DashboardBooking {
   canReview: boolean;
   hasReviewed: boolean;
   userRole: 'borrower' | 'owner';
+  // Service booking specific fields
+  mayIncludeMaterials?: boolean;
+  materialsPaid?: boolean;
+  materialsAmount?: number;
+  servicePaid?: boolean;
 }
 
 export interface DashboardReview {

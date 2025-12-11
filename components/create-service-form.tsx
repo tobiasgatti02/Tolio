@@ -22,6 +22,7 @@ interface FormData {
   pricePerHour: string
   priceType: 'hour' | 'custom'
   isProfessional: boolean
+  mayIncludeMaterials: boolean
   location: string
   latitude: number | null
   longitude: number | null
@@ -58,6 +59,7 @@ export default function CreateServiceForm() {
     pricePerHour: "",
     priceType: "hour",
     isProfessional: false,
+    mayIncludeMaterials: false,
     location: "",
     latitude: null,
     longitude: null,
@@ -244,7 +246,7 @@ export default function CreateServiceForm() {
       Object.entries(formData).forEach(([key, value]) => {
         if (key === 'features') {
           submitFormData.append(key, JSON.stringify(value))
-        } else if (key === 'isProfessional') {
+        } else if (key === 'isProfessional' || key === 'mayIncludeMaterials') {
           submitFormData.append(key, String(value))
         } else if (key === 'latitude' || key === 'longitude') {
           if (value !== null) {
@@ -697,6 +699,28 @@ export default function CreateServiceForm() {
                 <p className="text-sm text-gray-500 mt-1">
                   {t('form.service.optional')}
                 </p>
+              </div>
+
+              {/* May Include Materials */}
+              <div className="border-2 border-gray-200 rounded-xl p-4">
+                <label className="flex items-start cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="mayIncludeMaterials"
+                    checked={formData.mayIncludeMaterials}
+                    onChange={handleChange}
+                    className="mt-1 mr-3 h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5 text-blue-600" />
+                      <span className="font-semibold text-gray-900">Este servicio puede requerir materiales adicionales</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Podrás solicitar el pago anticipado de materiales antes de comenzar el trabajo
+                    </p>
+                  </div>
+                </label>
               </div>
 
               {/* Features */}

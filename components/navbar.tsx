@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, Bell } from "lucide-react";
+import { Menu, X, MessageCircle, Bell } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import NotificationBadge from "./ui/notification-badge";
@@ -61,6 +61,15 @@ export default function Navbar() {
                   className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
                 >
                   Mis Reservas
+                </Link>
+              )}
+              {session && (
+                <Link
+                  href={`/${locale}/messages`}
+                  className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors flex items-center gap-1"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Mensajes
                 </Link>
               )}
             </nav>
@@ -184,6 +193,14 @@ export default function Navbar() {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Mis Reservas
+                  </Link>
+                  <Link
+                    href={`/${locale}/messages`}
+                    className="flex items-center gap-2 text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                    Mensajes
                   </Link>
                   {/* Notifications - Mobile */}
                   {session.user?.id && (

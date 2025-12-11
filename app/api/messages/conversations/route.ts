@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "../../auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth-options"
 import prisma from "@/lib/prisma"
-
-
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,7 +20,7 @@ export async function GET(request: NextRequest) {
         ]
       },
       include: {
-        sender: {
+        User_Message_senderIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -30,7 +28,7 @@ export async function GET(request: NextRequest) {
             profileImage: true
           }
         },
-        receiver: {
+        User_Message_receiverIdToUser: {
           select: {
             id: true,
             firstName: true,
@@ -49,8 +47,8 @@ export async function GET(request: NextRequest) {
 
     for (const message of conversations) {
       const otherUser = message.senderId === session.user.id 
-        ? message.receiver 
-        : message.sender
+        ? message.User_Message_receiverIdToUser 
+        : message.User_Message_senderIdToUser
       
       const conversationKey = otherUser.id
       
@@ -85,7 +83,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error fetching conversations:', error)
+    console.error('Error fetching conversations:', error instanceof Error ? error.message : String(error))
     return NextResponse.json(
       { message: "Error interno del servidor" },
       { status: 500 }

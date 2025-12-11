@@ -139,27 +139,28 @@ model Review {
 }
 
 model Service {
-  id             String           @id
-  title          String
-  description    String
-  pricePerHour   Float?
-  priceType      String           @default("hour")
-  isProfessional Boolean          @default(false)
-  category       String
-  subcategory    String?
-  location       String
-  latitude       Float?
-  longitude      Float?
-  serviceArea    String?
-  features       String[]
-  images         String[]
-  isAvailable    Boolean          @default(true)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime
-  providerId     String
-  User           User             @relation(fields: [providerId], references: [id])
-  ServiceBooking ServiceBooking[]
-  ServiceReview  ServiceReview[]
+  id                  String           @id
+  title               String
+  description         String
+  pricePerHour        Float?
+  priceType           String           @default("hour")
+  isProfessional      Boolean          @default(false)
+  category            String
+  subcategory         String?
+  location            String
+  latitude            Float?
+  longitude           Float?
+  serviceArea         String?
+  features            String[]
+  images              String[]
+  isAvailable         Boolean          @default(true)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime
+  providerId          String
+  mayIncludeMaterials Boolean          @default(false)
+  User                User             @relation(fields: [providerId], references: [id])
+  ServiceBooking      ServiceBooking[]
+  ServiceReview       ServiceReview[]
 
   @@index([category])
   @@index([createdAt(sort: Desc)])
@@ -168,20 +169,25 @@ model Service {
 }
 
 model ServiceBooking {
-  id                                   String         @id
+  id                                   String           @id
   startDate                            DateTime
   endDate                              DateTime?
   hours                                Float?
   customPrice                          Float?
-  status                               BookingStatus  @default(PENDING)
-  createdAt                            DateTime       @default(now())
+  status                               BookingStatus    @default(PENDING)
+  createdAt                            DateTime         @default(now())
   updatedAt                            DateTime
   serviceId                            String
   clientId                             String
   providerId                           String
-  User_ServiceBooking_clientIdToUser   User           @relation("ServiceBooking_clientIdToUser", fields: [clientId], references: [id])
-  User_ServiceBooking_providerIdToUser User           @relation("ServiceBooking_providerIdToUser", fields: [providerId], references: [id])
-  Service                              Service        @relation(fields: [serviceId], references: [id])
+  materialsPaid                        Boolean          @default(false)
+  servicePaid                          Boolean          @default(false)
+  totalPaid                            Float            @default(0)
+  materialPayment                      MaterialPayment?
+  payments                             Payment[]
+  User_ServiceBooking_clientIdToUser   User             @relation("ServiceBooking_clientIdToUser", fields: [clientId], references: [id])
+  User_ServiceBooking_providerIdToUser User             @relation("ServiceBooking_providerIdToUser", fields: [providerId], references: [id])
+  Service                              Service          @relation(fields: [serviceId], references: [id])
   ServiceReview                        ServiceReview?
 
   @@index([clientId])
@@ -253,6 +259,10 @@ model User {
   emailVerified                                  DateTime?
   image                                          String?
   name                                           String?
+  dlocalAccountId                                String?          @unique
+  dlocalKycStatus                                String?
+  dlocalOnboarded                                Boolean          @default(false)
+  dlocalUserId                                   String?          @unique
   Account                                        Account[]
   Booking_Booking_borrowerIdToUser               Booking[]        @relation("Booking_borrowerIdToUser")
   Booking_Booking_ownerIdToUser                  Booking[]        @relation("Booking_ownerIdToUser")
@@ -301,6 +311,48 @@ model Verification {
   @@index([userId])
 }
 
+model Payment {
+  id               String           @id @default(cuid())
+  serviceBookingId String
+  type             PaymentType
+  amount           Float
+  platformFee      Float            @default(0)
+  providerAmount   Float
+  status           PaymentStatus    @default(PENDING)
+  dlocalPaymentId  String?          @unique
+  dlocalOrderId    String?
+  paymentMethod    String?
+  description      String?
+  metadata         Json?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  paidAt           DateTime?
+  materialPayment  MaterialPayment?
+  serviceBooking   ServiceBooking   @relation(fields: [serviceBookingId], references: [id])
+
+  @@index([serviceBookingId])
+  @@index([status])
+  @@index([type])
+}
+
+model MaterialPayment {
+  id               String         @id @default(cuid())
+  serviceBookingId String         @unique
+  materials        Json
+  totalAmount      Float
+  status           PaymentStatus  @default(PENDING)
+  requestedAt      DateTime       @default(now())
+  paidAt           DateTime?
+  paymentId        String?        @unique
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  payment          Payment?       @relation(fields: [paymentId], references: [id])
+  serviceBooking   ServiceBooking @relation(fields: [serviceBookingId], references: [id])
+
+  @@index([serviceBookingId])
+  @@index([status])
+}
+
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -324,6 +376,10 @@ enum NotificationType {
   REVIEW_RECEIVED
   MESSAGE_RECEIVED
   BOOKING_COMPLETED
+  MATERIAL_PAYMENT_REQUESTED
+  MATERIAL_PAYMENT_COMPLETED
+  SERVICE_PAYMENT_REQUESTED
+  SERVICE_PAYMENT_COMPLETED
 }
 
 enum PaymentStatus {
@@ -331,6 +387,13 @@ enum PaymentStatus {
   COMPLETED
   REFUNDED
   FAILED
+  PROCESSING
+  CANCELLED
+}
+
+enum PaymentType {
+  MATERIAL
+  SERVICE
 }
 
 enum VerificationStatus {

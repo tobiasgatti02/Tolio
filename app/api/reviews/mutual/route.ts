@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { prisma } from "@/lib/utils"
+import { authOptions } from "@/lib/auth-options"
+import prisma from "@/lib/prisma"
 import { createNotification } from "@/lib/notification-helpers"
+import { v4 as uuidv4 } from 'uuid'
 
 // Crear review mutuo
 export async function POST(request: NextRequest) {
@@ -95,6 +96,7 @@ export async function POST(request: NextRequest) {
       // Enviar notificación al otro usuario para que deje su reseña
       await prisma.notification.create({
         data: {
+          id: uuidv4(),
           userId: revieweeId,
           type: "MESSAGE_RECEIVED", // Usamos este tipo existente por ahora
           title: "Es tu turno de evaluar",

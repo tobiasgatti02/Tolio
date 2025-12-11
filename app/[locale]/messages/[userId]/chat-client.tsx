@@ -2,11 +2,15 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
-import { Send, ArrowLeft, User, MoreVertical, ChevronDown } from "lucide-react"
+import { Send, ArrowLeft, User, ChevronDown, Wrench } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
+import MaterialPaymentCard from "@/components/chat/material-payment-card"
+import PaymentRequestMessage from "@/components/chat/payment-request-message"
+import PaymentGateway from "@/components/payment-gateway"
+import MaterialPaymentRequestForm from "@/components/material-payment-request-form"
 
 interface Message {
   id: string
@@ -15,6 +19,7 @@ interface Message {
   isRead: boolean
   senderId: string
   receiverId: string
+  bookingId?: string
   sender: {
     id: string
     firstName: string
@@ -34,6 +39,19 @@ interface ChatClientProps {
   otherUserId: string
 }
 
+interface ActiveBooking {
+  id: string
+  status: string
+  serviceId: string
+  serviceTitle: string
+  providerId: string
+  clientId: string
+  mayIncludeMaterials: boolean
+  materialsPaid: boolean
+  servicePaid: boolean
+  totalPrice?: number
+}
+
 export default function ChatClient({ otherUserId }: ChatClientProps) {
   const { data: session } = useSession()
   const [messages, setMessages] = useState<Message[]>([])
@@ -42,6 +60,16 @@ export default function ChatClient({ otherUserId }: ChatClientProps) {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true)
+  const [activeBookings, setActiveBookings] = useState<ActiveBooking[]>([])
+  const [showMaterialForm, setShowMaterialForm] = useState(false)
+  const [selectedBookingForMaterials, setSelectedBookingForMaterials] = useState<string | null>(null)
+  const [paymentGateway, setPaymentGateway] = useState<{
+    show: boolean
+    paymentId?: string
+    checkoutUrl?: string
+    amount?: number
+    type?: 'material' | 'service'
+  }>({ show: false })
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const prevMessagesLength = useRef(0)
@@ -61,9 +89,10 @@ export default function ChatClient({ otherUserId }: ChatClientProps) {
   useEffect(() => {
     fetchMessages()
     fetchOtherUser()
+    fetchActiveBookings()
     
     // Polling cada 3 segundos para nuevos mensajes
-    const interval = setInterval(fetchMessages, 3000)
+    const interval = setInterval(fetchMessages, 50000)
     
     return () => clearInterval(interval)
   }, [otherUserId])
@@ -89,6 +118,77 @@ export default function ChatClient({ otherUserId }: ChatClientProps) {
       }
     } catch (error) {
       console.error('Error fetching user:', error)
+    }
+  }
+
+  const fetchActiveBookings = async () => {
+    try {
+      const response = await fetch(`/api/chat/bookings/${otherUserId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setActiveBookings(data.bookings || [])
+      }
+    } catch (error) {
+      console.error('Error fetching active bookings:', error)
+    }
+  }
+
+  const handleMaterialsSubmit = async (materials: { name: string; price: number }[]) => {
+    if (!selectedBookingForMaterials) return
+
+    try {
+      const response = await fetch('/api/payments/materials/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: selectedBookingForMaterials,
+          materials,
+        }),
+      })
+
+      if (response.ok) {
+        alert('Solicitud de materiales enviada')
+        setShowMaterialForm(false)
+        setSelectedBookingForMaterials(null)
+        fetchMessages()
+        fetchActiveBookings()
+      } else {
+        const errorData = await response.json()
+        alert(`Error: ${errorData.error || 'No se pudo enviar la solicitud'}`)
+      }
+    } catch (error) {
+      console.error('Error requesting materials:', error)
+      alert('Error al solicitar materiales')
+    }
+  }
+
+  const initializeServicePayment = async (bookingId: string) => {
+    try {
+      const response = await fetch('/api/payments/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId,
+          type: 'SERVICE',
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPaymentGateway({
+          show: true,
+          paymentId: data.paymentId,
+          checkoutUrl: data.checkoutUrl,
+          amount: data.amount,
+          type: 'service',
+        })
+      } else {
+        const errorData = await response.json()
+        alert(`Error: ${errorData.error || 'No se pudo iniciar el pago'}`)
+      }
+    } catch (error) {
+      console.error('Error initializing payment:', error)
+      alert('Error al iniciar el pago')
     }
   }
 
@@ -161,15 +261,15 @@ export default function ChatClient({ otherUserId }: ChatClientProps) {
 
   if (loading) {
     return (
-      <div className="h-screen flex flex-col bg-gray-50">
-        <div className="bg-white border-b px-4 py-3 flex items-center">
-          <div className="w-8 h-8 bg-gray-200 rounded-full mr-3 animate-pulse"></div>
+      <div className="h-[calc(100dvh-64px)] flex flex-col bg-gray-50">
+        <div className="bg-white border-b px-3 py-2 flex items-center">
+          <div className="w-8 h-8 bg-gray-200 rounded-full mr-2 animate-pulse"></div>
           <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
         </div>
-        <div className="flex-1 p-4 space-y-4">
+        <div className="flex-1 p-3 space-y-3">
           {[...Array(5)].map((_, i) => (
             <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
-              <div className="bg-gray-200 rounded-lg p-3 max-w-xs animate-pulse">
+              <div className="bg-gray-200 rounded-lg p-2 max-w-xs animate-pulse">
                 <div className="h-3 bg-gray-300 rounded mb-1"></div>
                 <div className="h-3 bg-gray-300 rounded w-3/4"></div>
               </div>
@@ -181,16 +281,16 @@ export default function ChatClient({ otherUserId }: ChatClientProps) {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 relative">
-      {/* Header */}
-      <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center">
-          <Link href="/messages" className="mr-3 p-1 hover:bg-gray-100 rounded-full">
+    <div className="h-[calc(100dvh-64px)] flex flex-col bg-gray-50 relative">
+      {/* Header compacto */}
+      <div className="bg-white border-b px-3 py-2 flex items-center justify-between shrink-0">
+        <div className="flex items-center min-w-0">
+          <Link href="/messages" className="mr-2 p-1 hover:bg-gray-100 rounded-full shrink-0">
             <ArrowLeft className="h-5 w-5 text-gray-600" />
           </Link>
           
-          <div className="flex items-center">
-            <div className="h-8 w-8 rounded-full overflow-hidden mr-3">
+          <div className="flex items-center min-w-0">
+            <div className="h-8 w-8 rounded-full overflow-hidden mr-2 shrink-0">
               {otherUser?.profileImage ? (
                 <Image
                   src={otherUser.profileImage}
@@ -205,54 +305,157 @@ export default function ChatClient({ otherUserId }: ChatClientProps) {
                 </div>
               )}
             </div>
-            <div>
-              <h1 className="font-medium text-gray-900">
+            <div className="min-w-0">
+              <h1 className="font-medium text-gray-900 text-sm truncate">
                 {otherUser ? `${otherUser.firstName} ${otherUser.lastName}` : 'Cargando...'}
               </h1>
+              {activeBookings.length > 0 && (
+                <p className="text-xs text-gray-500 truncate">
+                  {activeBookings[0].serviceTitle}
+                </p>
+              )}
             </div>
           </div>
         </div>
         
-        <button className="p-1 hover:bg-gray-100 rounded-full">
-          <MoreVertical className="h-5 w-5 text-gray-600" />
-        </button>
+        {/* Botón de materiales solo cuando aplica */}
+        {activeBookings.map(booking => {
+          const isProvider = booking.providerId === session?.user?.id
+          
+          if (isProvider && booking.status === 'CONFIRMED' && booking.mayIncludeMaterials && !booking.materialsPaid) {
+            return (
+              <button
+                key={booking.id}
+                onClick={() => {
+                  setSelectedBookingForMaterials(booking.id)
+                  setShowMaterialForm(true)
+                }}
+                className="flex items-center gap-1 px-2 py-1 bg-orange-500 text-white text-xs rounded-lg hover:bg-orange-600 shrink-0"
+                title="Solicitar pago de materiales"
+              >
+                <Wrench className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Materiales</span>
+              </button>
+            )
+          }
+          return null
+        })}
       </div>
 
       {/* Messages */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
+        className="flex-1 overflow-y-auto px-3 py-2 space-y-2"
         onScroll={handleScroll}
       >
         {messages.length === 0 ? (
-          <div className="text-center py-8">
-            <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <div className="text-center py-6">
+            <User className="mx-auto h-10 w-10 text-gray-400 mb-3" />
+            <h3 className="text-base font-medium text-gray-900 mb-1">
               Comienza la conversación
             </h3>
-            <p className="text-gray-500">
-              Envía un mensaje para comenzar a chatear con {otherUser?.firstName}
+            <p className="text-sm text-gray-500">
+              Envía un mensaje para comenzar a chatear
             </p>
           </div>
         ) : (
           messages.map((message) => {
             const isOwnMessage = message.senderId === session?.user?.id
             
+            // Try to parse message content as JSON for special message types
+            let messageData: any = null
+            try {
+              messageData = JSON.parse(message.content)
+            } catch {
+              // Not JSON, regular message
+            }
+
+            // Check if it's a material payment request
+            if (messageData?.type === 'material_payment_request') {
+              return (
+                <div
+                  key={message.id}
+                  className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                >
+                  <MaterialPaymentCard
+                    materials={messageData.materials}
+                    totalAmount={messageData.totalAmount}
+                    status={messageData.status || 'pending'}
+                    materialPaymentId={messageData.materialPaymentId}
+                    bookingId={message.bookingId || ''}
+                    onPay={!isOwnMessage ? async () => {
+                      // Initialize payment
+                      try {
+                        const response = await fetch('/api/payments/initialize', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            bookingId: message.bookingId,
+                            type: 'MATERIAL',
+                          }),
+                        })
+
+                        if (response.ok) {
+                          const data = await response.json()
+                          setPaymentGateway({
+                            show: true,
+                            paymentId: data.paymentId,
+                            checkoutUrl: data.checkoutUrl,
+                            amount: data.amount,
+                            type: 'material',
+                          })
+                        } else {
+                          const error = await response.json()
+                          alert(error.error || 'Error al iniciar el pago')
+                        }
+                      } catch (error) {
+                        console.error('Error initiating payment:', error)
+                        alert('Error al iniciar el pago')
+                      }
+                    } : undefined}
+                  />
+                </div>
+              )
+            }
+
+            // Check if it's a service payment request
+            if (messageData?.type === 'service_payment_request') {
+              const booking = activeBookings.find(b => b.id === message.bookingId)
+              return (
+                <div
+                  key={message.id}
+                  className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                >
+                  <PaymentRequestMessage
+                    serviceTitle={messageData.serviceTitle || booking?.serviceTitle || 'Servicio'}
+                    amount={messageData.amount || booking?.totalPrice || 0}
+                    isPaid={messageData.isPaid || booking?.servicePaid || false}
+                    onPay={!isOwnMessage && !booking?.servicePaid ? () => {
+                      if (message.bookingId) {
+                        initializeServicePayment(message.bookingId)
+                      }
+                    } : undefined}
+                  />
+                </div>
+              )
+            }
+
+            // Regular message
             return (
               <div
                 key={message.id}
                 className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                  className={`max-w-[75%] px-3 py-2 rounded-2xl ${
                     isOwnMessage
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-white text-gray-900 border'
+                      ? 'bg-blue-500 text-white rounded-br-sm'
+                      : 'bg-white text-gray-900 border rounded-bl-sm'
                   }`}
                 >
-                  <p className="text-sm">{message.content}</p>
-                  <p className={`text-xs mt-1 ${
-                    isOwnMessage ? 'text-blue-100' : 'text-gray-500'
+                  <p className="text-sm break-words">{message.content}</p>
+                  <p className={`text-[10px] mt-0.5 ${
+                    isOwnMessage ? 'text-blue-100' : 'text-gray-400'
                   }`}>
                     {formatDistanceToNow(new Date(message.createdAt), {
                       addSuffix: true,
@@ -269,39 +472,69 @@ export default function ChatClient({ otherUserId }: ChatClientProps) {
 
       {/* Botón flotante para ir al final */}
       {!shouldAutoScroll && (
-        <div className="absolute bottom-20 right-6">
+        <div className="absolute bottom-16 right-4">
           <button
             onClick={() => {
               setShouldAutoScroll(true)
               scrollToBottom()
             }}
-            className="bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-600 transition-colors"
+            className="bg-blue-500 text-white p-2 rounded-full shadow-lg hover:bg-blue-600 transition-colors"
           >
-            <ChevronDown className="h-5 w-5" />
+            <ChevronDown className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* Message Input */}
-      <div className="bg-white border-t p-4">
-        <form onSubmit={sendMessage} className="flex items-center space-x-2">
+      {/* Message Input - más compacto */}
+      <div className="bg-white border-t px-3 py-2 shrink-0">
+        <form onSubmit={sendMessage} className="flex items-center gap-2">
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Escribe un mensaje..."
             disabled={sending}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={!newMessage.trim() || sending}
-            className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
-            <Send className="h-5 w-5" />
+            <Send className="h-4 w-4" />
           </button>
         </form>
       </div>
+
+      {/* Payment Gateway Modal */}
+      {paymentGateway.show && paymentGateway.checkoutUrl && (
+        <PaymentGateway
+          paymentId={paymentGateway.paymentId!}
+          checkoutUrl={paymentGateway.checkoutUrl}
+          amount={paymentGateway.amount!}
+          type={paymentGateway.type!}
+          onSuccess={() => {
+            setPaymentGateway({ show: false })
+            fetchMessages() // Refresh messages to update payment status
+            fetchActiveBookings()
+          }}
+          onCancel={() => {
+            setPaymentGateway({ show: false })
+          }}
+        />
+      )}
+
+      {/* Material Payment Request Form Modal */}
+      {showMaterialForm && selectedBookingForMaterials && (
+        <MaterialPaymentRequestForm
+          bookingId={selectedBookingForMaterials}
+          onSubmit={handleMaterialsSubmit}
+          onCancel={() => {
+            setShowMaterialForm(false)
+            setSelectedBookingForMaterials(null)
+          }}
+        />
+      )}
     </div>
   )
 }

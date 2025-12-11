@@ -5,12 +5,14 @@ import Link from "next/link"
 import { 
   Calendar, Clock, CheckCircle, XCircle, 
   Filter, Search, Star, Eye, MessageCircle,
-  TrendingUp, DollarSign, Package
+  TrendingUp, DollarSign, Package, Wrench
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DashboardBooking } from '@/lib/types'
 import ReviewModal from "./review-modal"
+import MaterialPaymentRequestForm from "@/components/material-payment-request-form"
+import PaymentGateway from "@/components/payment-gateway"
 
 interface BookingsStats {
   totalSpent: number
@@ -31,6 +33,10 @@ export default function BookingsClient({ userId }: { userId: string }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedBooking, setSelectedBooking] = useState<DashboardBooking | null>(null)
   const [showReviewModal, setShowReviewModal] = useState(false)
+  const [showMaterialForm, setShowMaterialForm] = useState(false)
+  const [selectedBookingForMaterials, setSelectedBookingForMaterials] = useState<string | null>(null)
+  const [showPaymentGateway, setShowPaymentGateway] = useState(false)
+  const [paymentData, setPaymentData] = useState<{ paymentId: string; checkoutUrl: string; amount: number } | null>(null)
 
   useEffect(() => {
     fetchBookings()
@@ -165,6 +171,68 @@ export default function BookingsClient({ userId }: { userId: string }) {
     } catch (error) {
       console.error('Error processing booking:', error)
       alert('Error al procesar la reserva')
+    }
+  }
+
+  const openMaterialsForm = (bookingId: string) => {
+    setSelectedBookingForMaterials(bookingId)
+    setShowMaterialForm(true)
+  }
+
+  const handleMaterialsSubmit = async (materials: { name: string; price: number }[]) => {
+    if (!selectedBookingForMaterials) return
+
+    try {
+      const response = await fetch('/api/payments/materials/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: selectedBookingForMaterials,
+          materials,
+        }),
+      })
+
+      if (response.ok) {
+        alert('Solicitud de materiales enviada exitosamente')
+        setShowMaterialForm(false)
+        setSelectedBookingForMaterials(null)
+        fetchBookings() // Refresh to update status
+      } else {
+        const errorData = await response.json()
+        alert(`Error: ${errorData.error || 'No se pudo enviar la solicitud'}`)
+      }
+    } catch (error) {
+      console.error('Error requesting materials:', error)
+      alert('Error al solicitar materiales')
+    }
+  }
+
+  const initializeServicePayment = async (bookingId: string) => {
+    try {
+      const response = await fetch('/api/payments/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId,
+          type: 'SERVICE',
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPaymentData({
+          paymentId: data.paymentId,
+          checkoutUrl: data.checkoutUrl,
+          amount: data.amount,
+        })
+        setShowPaymentGateway(true)
+      } else {
+        const errorData = await response.json()
+        alert(`Error: ${errorData.error || 'No se pudo iniciar el pago'}`)
+      }
+    } catch (error) {
+      console.error('Error initializing payment:', error)
+      alert('Error al iniciar el pago')
     }
   }
 
@@ -502,6 +570,30 @@ export default function BookingsClient({ userId }: { userId: string }) {
                             </>
                           )}
 
+                          {/* Botón para solicitar materiales - solo para servicios confirmados */}
+                          {isOwner && booking.type === 'service' && booking.status === 'CONFIRMED' && booking.mayIncludeMaterials && !booking.materialsPaid && (
+                            <button
+                              onClick={() => openMaterialsForm(booking.id)}
+                              className="inline-flex items-center px-3 py-1 bg-orange-600 text-white rounded-md text-sm hover:bg-orange-700"
+                              title="Solicitar pago de materiales"
+                            >
+                              <Wrench className="w-4 h-4 mr-1" />
+                              Materiales
+                            </button>
+                          )}
+
+                          {/* Botón para pagar servicio - solo para cliente cuando el servicio está completado */}
+                          {!isOwner && booking.type === 'service' && booking.status === 'COMPLETED' && !booking.servicePaid && (
+                            <button
+                              onClick={() => initializeServicePayment(booking.id)}
+                              className="inline-flex items-center px-3 py-1 bg-emerald-600 text-white rounded-md text-sm hover:bg-emerald-700"
+                              title="Pagar servicio completado"
+                            >
+                              <DollarSign className="w-4 h-4 mr-1" />
+                              Pagar
+                            </button>
+                          )}
+
                           {booking.canReview && !booking.hasReviewed && (
                             <button
                               onClick={() => openReviewModal(booking)}
@@ -537,6 +629,37 @@ export default function BookingsClient({ userId }: { userId: string }) {
           booking={selectedBooking}
           userId={userId}
           onClose={closeReviewModal}
+        />
+      )}
+
+      {/* Modal de solicitud de materiales */}
+      {showMaterialForm && selectedBookingForMaterials && (
+        <MaterialPaymentRequestForm
+          bookingId={selectedBookingForMaterials}
+          onSubmit={handleMaterialsSubmit}
+          onCancel={() => {
+            setShowMaterialForm(false)
+            setSelectedBookingForMaterials(null)
+          }}
+        />
+      )}
+
+      {/* Modal de pago de servicio */}
+      {showPaymentGateway && paymentData && (
+        <PaymentGateway
+          paymentId={paymentData.paymentId}
+          checkoutUrl={paymentData.checkoutUrl}
+          amount={paymentData.amount}
+          type="service"
+          onSuccess={() => {
+            setShowPaymentGateway(false)
+            setPaymentData(null)
+            fetchBookings() // Refresh to update payment status
+          }}
+          onCancel={() => {
+            setShowPaymentGateway(false)
+            setPaymentData(null)
+          }}
         />
       )}
     </div>

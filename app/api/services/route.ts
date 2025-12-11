@@ -1,10 +1,11 @@
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { authOptions } from "../auth/[...nextauth]/route"
-import { prisma } from "@/lib/utils"
+import prisma from "@/lib/prisma"
 import { calculateDistance, isValidCoordinates } from "@/lib/geo-utils"
 import sharp from "sharp"
 import { moderateImage } from "@/lib/image-moderation"
+import { v4 as uuidv4 } from "uuid"
 
 // Cache headers for CDN and browser caching
 const CACHE_HEADERS = {
@@ -13,8 +14,7 @@ const CACHE_HEADERS = {
 
 export async function GET(request: Request) {
   const apiStartTime = performance.now()
-  console.log('⏱️ [API/SERVICES] Iniciando GET request...')
-  
+
   try {
     const { searchParams } = new URL(request.url)
 
@@ -71,7 +71,7 @@ export async function GET(request: Request) {
     }
 
     const queryStartTime = performance.now()
-    
+
     // SINGLE OPTIMIZED QUERY: Get services with provider and review aggregation
     const services = await prisma.service.findMany({
       where,
@@ -103,8 +103,7 @@ export async function GET(request: Request) {
       },
       take: hasGeoFilter ? 100 : 40,
     })
-    
-    console.log(`⏱️ [API/SERVICES] Query principal: ${(performance.now() - queryStartTime).toFixed(2)}ms - ${services.length} servicios`)
+
 
     // Transform services - calculate ratings in-memory (faster than separate query)
     let formattedServices = services.map(service => {
@@ -112,7 +111,7 @@ export async function GET(request: Request) {
       const avgRating = reviews.length > 0
         ? reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviews.length
         : 0
-      
+
       return {
         id: service.id,
         title: service.title,
@@ -157,8 +156,7 @@ export async function GET(request: Request) {
     }
 
     const totalTime = performance.now() - apiStartTime
-    console.log(`✅ [API/SERVICES] Request completada en: ${totalTime.toFixed(2)}ms`)
-    
+
     return NextResponse.json(formattedServices, { headers: CACHE_HEADERS })
   } catch (error) {
     console.error("Error fetching services:", error)
@@ -190,6 +188,7 @@ export async function POST(request: Request) {
     const serviceArea = formData.get('serviceArea') as string || null
     const featuresRaw = formData.get('features') as string
     const features = featuresRaw ? JSON.parse(featuresRaw) : []
+    const mayIncludeMaterials = formData.get('mayIncludeMaterials') === 'true'
 
     // Validation
     if (!title || !description || !category || !location) {
@@ -256,6 +255,7 @@ export async function POST(request: Request) {
 
     const newService = await prisma.service.create({
       data: {
+        id: uuidv4(),
         title,
         description,
         category,
@@ -270,6 +270,8 @@ export async function POST(request: Request) {
         images: imageUrls.length > 0 ? imageUrls : ['/placeholder.svg'],
         providerId: session.user.id,
         isAvailable: true,
+        mayIncludeMaterials,
+        updatedAt: new Date(),
       }
     })
 

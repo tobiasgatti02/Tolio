@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/utils'
+import prisma from '@/lib/prisma'
+import { v4 as uuidv4 } from 'uuid'
 
 export type NotificationType =
     | 'BOOKING_REQUEST'
@@ -161,6 +162,7 @@ export async function createNotification(
 
         await prisma.notification.create({
             data: {
+                id: uuidv4(),
                 userId,
                 type,
                 title,
@@ -173,7 +175,7 @@ export async function createNotification(
             }
         })
     } catch (error) {
-        console.error('Error creating notification:', error)
+        console.error('Error creating notification:', error instanceof Error ? error.message : String(error))
         throw error
     }
 }

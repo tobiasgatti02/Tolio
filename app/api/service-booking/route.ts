@@ -6,7 +6,7 @@ import { prisma } from '@/lib/utils'
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const service = await prisma.service.findUnique({
       where: { id: serviceId },
       include: {
-        provider: true
+        User: true
       }
     })
 
@@ -41,16 +41,18 @@ export async function POST(request: NextRequest) {
     // Crear la reserva de servicio
     const booking = await prisma.serviceBooking.create({
       data: {
+        id: crypto.randomUUID(),
         serviceId: serviceId,
         clientId: session.user.id,
         providerId: service.providerId,
         startDate: new Date(startDate),
-        status: 'PENDING'
+        status: 'PENDING',
+        updatedAt: new Date()
       },
       include: {
-        service: true,
-        client: true,
-        provider: true
+        Service: true,
+        User_ServiceBooking_clientIdToUser: true,
+        User_ServiceBooking_providerIdToUser: true
       }
     })
 
@@ -61,7 +63,7 @@ export async function POST(request: NextRequest) {
         status: booking.status,
         startDate: booking.startDate,
         service: {
-          title: booking.service.title
+          title: booking.Service.title
         }
       }
     }, { status: 201 })

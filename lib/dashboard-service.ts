@@ -1,6 +1,7 @@
 import { DashboardStats, DashboardItem, DashboardBooking, DashboardReview, DashboardNotification } from './types'
 import { ERROR_MESSAGES, DASHBOARD_CONFIG } from './dashboard-constants'
 import prisma from './prisma'
+import { v4 as uuidv4 } from 'uuid'
 
 // Map status from English (database) to Spanish (frontend)
 function mapStatusToSpanish(status: string): string {
@@ -24,7 +25,7 @@ function calculateBookingPrice(dailyPrice: number, startDate: Date, endDate: Dat
 }
 
 export class DashboardService {
-  
+
   static async getUserStats(userId: string): Promise<DashboardStats> {
     if (!userId || typeof userId !== 'string') {
       throw new Error(ERROR_MESSAGES.INVALID_USER_ID)
@@ -43,20 +44,19 @@ export class DashboardService {
         prisma.item.count({
           where: { ownerId: userId }
         }),
-        
+
         // Total de servicios del usuario
         prisma.service.count({
           where: { providerId: userId }
         }),
-        
+
         // Reservas del usuario (solo con items existentes)
         prisma.booking.findMany({
           where: {
             OR: [
               { borrowerId: userId },
               { ownerId: userId }
-            ],
-            item: { isNot: null } // Solo bookings con items existentes
+            ]
           },
           select: {
             status: true,
@@ -64,21 +64,21 @@ export class DashboardService {
             createdAt: true,
             startDate: true,
             endDate: true,
-            item: {
+            Item: {
               select: {
                 price: true
               }
             }
           }
         }),
-        
+
         // Reviews sobre LOS ITEMS que nos pertenecen
         prisma.review.aggregate({
           _count: { rating: true },
           _avg: { rating: true },
           _sum: { rating: true },
           where: {
-            item: { ownerId: userId }
+            Item: { ownerId: userId }
           }
         }),
         // Reviews sobre LOS SERVICIOS que ofrecemos
@@ -87,10 +87,10 @@ export class DashboardService {
           _avg: { rating: true },
           _sum: { rating: true },
           where: {
-            service: { providerId: userId }
+            Service: { providerId: userId }
           }
         }),
-        
+
         // Notificaciones no leídas
         prisma.notification.count({
           where: {
@@ -101,34 +101,34 @@ export class DashboardService {
       ])
 
       // Filtrar bookings válidos (con item existente)
-      const validBookings = userBookings.filter(b => b.item !== null)
-      
+      const validBookings = userBookings.filter(b => b.Item !== null)
+
       const activeBookings = validBookings.filter(b => b.status === 'CONFIRMED').length
       const pendingBookings = validBookings.filter(b => b.status === 'PENDING').length
       const completedBookings = validBookings.filter(b => b.status === 'COMPLETED').length
-      
+
       // Ganancias (como prestador)
       const totalEarnings = validBookings
-        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && b.item)
-        .reduce((sum, b) => sum + calculateBookingPrice(b.item!.price, b.startDate, b.endDate), 0)
-      
+        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && b.Item)
+        .reduce((sum, b) => sum + calculateBookingPrice(b.Item!.price, b.startDate, b.endDate), 0)
+
       // Gastos (como prestatario)
       const totalSpent = validBookings
-        .filter(b => b.status === 'COMPLETED' && b.borrowerId === userId && b.item)
-        .reduce((sum, b) => sum + calculateBookingPrice(b.item!.price, b.startDate, b.endDate), 0)
+        .filter(b => b.status === 'COMPLETED' && b.borrowerId === userId && b.Item)
+        .reduce((sum, b) => sum + calculateBookingPrice(b.Item!.price, b.startDate, b.endDate), 0)
 
       // Ganancias de hoy
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       const todayEarnings = validBookings
-        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && b.item && new Date(b.createdAt) >= today)
-        .reduce((sum, b) => sum + calculateBookingPrice(b.item!.price, b.startDate, b.endDate), 0)
+        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && b.Item && new Date(b.createdAt) >= today)
+        .reduce((sum, b) => sum + calculateBookingPrice(b.Item!.price, b.startDate, b.endDate), 0)
 
       // Ganancias del mes
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
       const monthlyEarnings = validBookings
-        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && b.item && new Date(b.createdAt) >= monthStart)
-        .reduce((sum, b) => sum + calculateBookingPrice(b.item!.price, b.startDate, b.endDate), 0)
+        .filter(b => b.status === 'COMPLETED' && b.borrowerId !== userId && b.Item && new Date(b.createdAt) >= monthStart)
+        .reduce((sum, b) => sum + calculateBookingPrice(b.Item!.price, b.startDate, b.endDate), 0)
 
       // Combinar métricas de reviews de items y services para calcular promedio recibido
       const itemCount = itemReviewsAgg._count?.rating || 0
@@ -182,14 +182,14 @@ export class DashboardService {
       const items = await prisma.item.findMany({
         where: { ownerId: userId },
         include: {
-          bookings: {
+          Booking: {
             select: {
               status: true,
               startDate: true,
               endDate: true
             }
           },
-          reviews: {
+          Review: {
             select: {
               rating: true
             }
@@ -208,10 +208,10 @@ export class DashboardService {
         status: item.isAvailable ? 'DISPONIBLE' : 'NO_DISPONIBLE' as any,
         imagenes: item.images,
         ubicacion: item.location,
-        averageRating: item.reviews.length > 0 
-          ? item.reviews.reduce((sum, r) => sum + r.rating, 0) / item.reviews.length 
+        averageRating: item.Review.length > 0
+          ? item.Review.reduce((sum: number, r: any) => sum + r.rating, 0) / item.Review.length
           : undefined,
-        reviewCount: item.reviews.length > 0 ? item.reviews.length : undefined,
+        reviewCount: item.Review.length > 0 ? item.Review.length : undefined,
         createdAt: item.createdAt.toISOString(),
         updatedAt: item.updatedAt.toISOString()
       }))
@@ -228,7 +228,7 @@ export class DashboardService {
 
     try {
       let statusFilter = {}
-      
+
       if (filter === 'active') {
         statusFilter = { status: { in: ['PENDING', 'CONFIRMED'] } }
       } else if (filter === 'completed') {
@@ -243,11 +243,10 @@ export class DashboardService {
               { borrowerId: userId },
               { ownerId: userId }
             ],
-            item: { isNot: null }, // Solo bookings con items existentes
             ...statusFilter
           },
           include: {
-            item: {
+            Item: {
               select: {
                 id: true,
                 title: true,
@@ -255,7 +254,7 @@ export class DashboardService {
                 price: true
               }
             },
-            borrower: {
+            User_Booking_borrowerIdToUser: {
               select: {
                 id: true,
                 firstName: true,
@@ -263,7 +262,7 @@ export class DashboardService {
                 email: true
               }
             },
-            owner: {
+            User_Booking_ownerIdToUser: {
               select: {
                 id: true,
                 firstName: true,
@@ -271,7 +270,7 @@ export class DashboardService {
                 email: true
               }
             },
-            review: true
+            Review: true
           },
           orderBy: { createdAt: 'desc' }
         }),
@@ -281,19 +280,19 @@ export class DashboardService {
               { clientId: userId },
               { providerId: userId }
             ],
-            service: { isNot: null }, // Solo bookings con servicios existentes
             ...statusFilter
           },
           include: {
-            service: {
+            Service: {
               select: {
                 id: true,
                 title: true,
                 images: true,
-                pricePerHour: true
+                pricePerHour: true,
+                mayIncludeMaterials: true
               }
             },
-            client: {
+            User_ServiceBooking_clientIdToUser: {
               select: {
                 id: true,
                 firstName: true,
@@ -301,7 +300,7 @@ export class DashboardService {
                 email: true
               }
             },
-            provider: {
+            User_ServiceBooking_providerIdToUser: {
               select: {
                 id: true,
                 firstName: true,
@@ -309,7 +308,8 @@ export class DashboardService {
                 email: true
               }
             },
-            review: true
+            ServiceReview: true,
+            materialPayment: true
           },
           orderBy: { createdAt: 'desc' }
         })
@@ -317,81 +317,87 @@ export class DashboardService {
 
       // Mapear reservas de items (filtrar los que tienen item null por seguridad)
       const mappedItemBookings: DashboardBooking[] = itemBookings
-        .filter(booking => booking.item !== null)
+        .filter(booking => booking.Item !== null)
         .map(booking => {
-        const isBorrower = booking.borrowerId === userId
-        const hasReviewed = booking.review !== null
-        const totalPrice = calculateBookingPrice(booking.item!.price, booking.startDate, booking.endDate)
-        
-        return {
-          id: booking.id,
-          type: 'item' as const,
-          item: {
-            id: booking.item!.id,
-            nombre: booking.item!.title,
-            imagenes: booking.item!.images,
-            precioPorDia: booking.item!.price,
-            type: 'item'
-          },
-          borrower: isBorrower ? undefined : {
-            id: booking.borrower.id,
-            name: `${booking.borrower.firstName} ${booking.borrower.lastName}`.trim(),
-            email: booking.borrower.email
-          },
-          owner: !isBorrower ? undefined : {
-            id: booking.owner.id,
-            name: `${booking.owner.firstName} ${booking.owner.lastName}`.trim(),
-            email: booking.owner.email
-          },
-          fechaInicio: booking.startDate.toISOString(),
-          fechaFin: booking.endDate.toISOString(),
-          total: totalPrice,
-          status: mapStatusToSpanish(booking.status) as any,
-          createdAt: booking.createdAt.toISOString(),
-          canReview: booking.status === 'COMPLETED' && !hasReviewed,
-          hasReviewed: hasReviewed,
-          userRole: isBorrower ? 'borrower' : 'owner'
-        }
-      })
+          const isBorrower = booking.borrowerId === userId
+          const hasReviewed = booking.Review !== null
+          const totalPrice = calculateBookingPrice(booking.Item!.price, booking.startDate, booking.endDate)
+
+          return {
+            id: booking.id,
+            type: 'item' as const,
+            item: {
+              id: booking.Item!.id,
+              nombre: booking.Item!.title,
+              imagenes: booking.Item!.images,
+              precioPorDia: booking.Item!.price,
+              type: 'item'
+            },
+            borrower: isBorrower ? undefined : {
+              id: booking.User_Booking_borrowerIdToUser.id,
+              name: `${booking.User_Booking_borrowerIdToUser.firstName} ${booking.User_Booking_borrowerIdToUser.lastName}`.trim(),
+              email: booking.User_Booking_borrowerIdToUser.email
+            },
+            owner: !isBorrower ? undefined : {
+              id: booking.User_Booking_ownerIdToUser.id,
+              name: `${booking.User_Booking_ownerIdToUser.firstName} ${booking.User_Booking_ownerIdToUser.lastName}`.trim(),
+              email: booking.User_Booking_ownerIdToUser.email
+            },
+            fechaInicio: booking.startDate.toISOString(),
+            fechaFin: booking.endDate.toISOString(),
+            total: totalPrice,
+            status: mapStatusToSpanish(booking.status) as any,
+            createdAt: booking.createdAt.toISOString(),
+            canReview: booking.status === 'COMPLETED' && !hasReviewed,
+            hasReviewed: hasReviewed,
+            userRole: isBorrower ? 'borrower' : 'owner'
+          }
+        })
 
       // Mapear reservas de servicios (filtrar los que tienen service null por seguridad)
       const mappedServiceBookings: DashboardBooking[] = serviceBookings
-        .filter(booking => booking.service !== null)
+        .filter(booking => booking.Service !== null)
         .map(booking => {
-        const isClient = booking.clientId === userId
-        const hasReviewed = booking.review !== null
-        const totalPrice = booking.service!.pricePerHour || 0
-        
-        return {
-          id: booking.id,
-          type: 'service' as const,
-          item: {
-            id: booking.service!.id,
-            nombre: booking.service!.title,
-            imagenes: booking.service!.images,
-            precioPorDia: booking.service!.pricePerHour || 0,
-            type: 'service'
-          },
-          borrower: isClient ? undefined : {
-            id: booking.client.id,
-            name: `${booking.client.firstName} ${booking.client.lastName}`.trim(),
-            email: booking.client.email
-          },
-          owner: !isClient ? undefined : {
-            id: booking.provider.id,
-            name: `${booking.provider.firstName} ${booking.provider.lastName}`.trim(),
-            email: booking.provider.email
-          },
-          fechaInicio: booking.startDate.toISOString(),
-          fechaFin: booking.startDate.toISOString(), // Servicios no tienen fecha fin
-          total: totalPrice,
-          status: mapStatusToSpanish(booking.status) as any,
-          createdAt: booking.createdAt.toISOString(),
-          canReview: booking.status === 'COMPLETED' && !hasReviewed,
-          hasReviewed: hasReviewed,
-          userRole: isClient ? 'borrower' : 'owner'
-        }
-      })
+          const isClient = booking.clientId === userId
+          const hasReviewed = booking.ServiceReview !== null
+          const totalPrice = booking.Service!.pricePerHour || 0
+          const hasMaterialPayment = booking.materialPayment !== null
+          const materialsPaid = hasMaterialPayment && booking.materialPayment?.status === 'COMPLETED'
+
+          return {
+            id: booking.id,
+            type: 'service' as const,
+            item: {
+              id: booking.Service!.id,
+              nombre: booking.Service!.title,
+              imagenes: booking.Service!.images,
+              precioPorDia: booking.Service!.pricePerHour || 0,
+              type: 'service'
+            },
+            borrower: isClient ? undefined : {
+              id: booking.User_ServiceBooking_clientIdToUser.id,
+              name: `${booking.User_ServiceBooking_clientIdToUser.firstName} ${booking.User_ServiceBooking_clientIdToUser.lastName}`.trim(),
+              email: booking.User_ServiceBooking_clientIdToUser.email
+            },
+            owner: !isClient ? undefined : {
+              id: booking.User_ServiceBooking_providerIdToUser.id,
+              name: `${booking.User_ServiceBooking_providerIdToUser.firstName} ${booking.User_ServiceBooking_providerIdToUser.lastName}`.trim(),
+              email: booking.User_ServiceBooking_providerIdToUser.email
+            },
+            fechaInicio: booking.startDate.toISOString(),
+            fechaFin: booking.startDate.toISOString(), // Servicios no tienen fecha fin
+            total: totalPrice,
+            status: mapStatusToSpanish(booking.status) as any,
+            createdAt: booking.createdAt.toISOString(),
+            canReview: booking.status === 'COMPLETED' && !hasReviewed,
+            hasReviewed: hasReviewed,
+            userRole: isClient ? 'borrower' : 'owner',
+            mayIncludeMaterials: booking.Service!.mayIncludeMaterials ?? false,
+            materialsPaid: materialsPaid,
+            materialsAmount: booking.materialPayment?.totalAmount || 0,
+            servicePaid: booking.servicePaid ?? false
+          }
+        })
 
       // Combinar y ordenar por fecha de creación
       const allBookings = [...mappedItemBookings, ...mappedServiceBookings]
@@ -399,7 +405,8 @@ export class DashboardService {
 
       return allBookings
     } catch (error) {
-      console.error('Error fetching user bookings:', error)
+      console.error('[DashboardService.getUserBookings] Error:', error instanceof Error ? error.message : String(error))
+      console.error('[DashboardService.getUserBookings] Stack:', error instanceof Error ? error.stack : 'No stack trace')
       throw new Error('Failed to fetch user bookings')
     }
   }
@@ -413,14 +420,14 @@ export class DashboardService {
       const reviews = await prisma.review.findMany({
         where: { revieweeId: userId },
         include: {
-          reviewer: {
+          User_Review_reviewerIdToUser: {
             select: {
               id: true,
               firstName: true,
               lastName: true
             }
           },
-          item: {
+          Item: {
             select: {
               id: true,
               title: true,
@@ -436,13 +443,13 @@ export class DashboardService {
         rating: review.rating,
         comment: review.comment || undefined,
         item: {
-          id: review.item.id,
-          nombre: review.item.title,
-          imagenes: review.item.images
+          id: review.Item.id,
+          nombre: review.Item.title,
+          imagenes: review.Item.images
         },
         reviewer: {
-          id: review.reviewer.id,
-          name: `${review.reviewer.firstName} ${review.reviewer.lastName}`.trim()
+          id: review.User_Review_reviewerIdToUser.id,
+          name: `${review.User_Review_reviewerIdToUser.firstName} ${review.User_Review_reviewerIdToUser.lastName}`.trim()
         },
         createdAt: review.createdAt.toISOString()
       }))
@@ -495,6 +502,7 @@ export class DashboardService {
     try {
       await prisma.notification.create({
         data: {
+          id: uuidv4(),
           userId: data.userId,
           type: data.type,
           title: data.title,
@@ -503,7 +511,7 @@ export class DashboardService {
         }
       })
     } catch (error) {
-      console.error('Error creating notification:', error)
+      console.error('Error creating notification:', error instanceof Error ? error.message : String(error))
       throw new Error('Failed to create notification')
     }
   }
@@ -523,9 +531,9 @@ export class DashboardService {
   static async markAllNotificationsAsRead(userId: string): Promise<void> {
     try {
       await prisma.notification.updateMany({
-        where: { 
+        where: {
           userId: userId,
-          isRead: false 
+          isRead: false
         },
         data: { isRead: true }
       })

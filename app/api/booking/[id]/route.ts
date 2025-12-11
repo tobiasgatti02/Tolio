@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { prisma } from "@/lib/utils"
+import { authOptions } from "@/lib/auth-options"
+import prisma from "@/lib/prisma"
 
 export async function GET(
   request: NextRequest,
@@ -86,8 +86,10 @@ export async function GET(
             id: true,
             title: true,
             pricePerHour: true,
+            priceType: true,
             images: true,
             location: true,
+            mayIncludeMaterials: true,
           }
         },
         User_ServiceBooking_providerIdToUser: {
@@ -106,6 +108,7 @@ export async function GET(
             profileImage: true,
           }
         },
+        materialPayment: true,
       }
     })
 
@@ -115,12 +118,23 @@ export async function GET(
         return NextResponse.json({ error: "No autorizado" }, { status: 403 })
       }
 
+      // Calcular precio total
+      const pricePerHour = serviceBooking.Service.pricePerHour || 0
+      let totalPrice = serviceBooking.customPrice || 0
+      if (!totalPrice && pricePerHour > 0) {
+        if (serviceBooking.Service.priceType === 'hour' && serviceBooking.hours) {
+          totalPrice = pricePerHour * serviceBooking.hours
+        } else {
+          totalPrice = pricePerHour
+        }
+      }
+
       return NextResponse.json({
         id: serviceBooking.id,
         status: serviceBooking.status,
         startDate: serviceBooking.startDate.toISOString(),
         endDate: (serviceBooking.endDate || serviceBooking.startDate).toISOString(),
-        totalPrice: serviceBooking.totalPrice,
+        totalPrice: totalPrice,
         createdAt: serviceBooking.createdAt.toISOString(),
         updatedAt: serviceBooking.updatedAt.toISOString(),
         type: 'service',
@@ -135,6 +149,10 @@ export async function GET(
         borrower: serviceBooking.User_ServiceBooking_clientIdToUser,
         ownerId: serviceBooking.providerId,
         borrowerId: serviceBooking.clientId,
+        mayIncludeMaterials: serviceBooking.Service.mayIncludeMaterials,
+        materialsPaid: serviceBooking.materialPayment?.status === 'COMPLETED',
+        servicePaid: serviceBooking.servicePaid,
+        priceType: serviceBooking.Service.priceType,
       })
     }
 

@@ -68,6 +68,9 @@ export default function Footer() {
           <p className="text-gray-400 text-sm text-center">
             &copy; {new Date().getFullYear()} Tolio. Todos los derechos reservados.
           </p>
+          <p className="text-gray-400 text-sm text-center">
+            Hecho con ❤️ por Tobias Gatti.
+          </p>
         </div>
       </div>
     </footer>

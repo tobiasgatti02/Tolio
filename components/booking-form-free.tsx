@@ -115,10 +115,22 @@ export default function BookingFormFree({
         body: JSON.stringify(body),
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
-        throw new Error(data?.error || "Error al crear la reserva")
+        let errorMessage = "Error al crear la reserva"
+        try {
+          const data = await response.json()
+          errorMessage = data?.error || errorMessage
+        } catch {
+          // Response might not be JSON
+        }
+        throw new Error(errorMessage)
+      }
+
+      // Only parse JSON if response has content
+      let data = null
+      const contentType = response.headers.get("content-type")
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json()
       }
 
       setSuccess(true)

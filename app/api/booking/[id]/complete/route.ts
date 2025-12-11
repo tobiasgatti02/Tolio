@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { prisma } from "@/lib/utils"
+import { authOptions } from "@/lib/auth-options"
+import prisma from "@/lib/prisma"
 import { createNotification } from "@/lib/notification-helpers"
+import { v4 as uuidv4 } from "uuid"
 
 export async function PATCH(
   request: NextRequest,
@@ -91,11 +92,9 @@ export async function PATCH(
       data: { status: "COMPLETED" }
     })
 
-    // Crear notificación para el otro usuario
-    const otherUserId = serviceBooking.providerId === userId ? serviceBooking.clientId : serviceBooking.providerId
-
+    // Crear notificación para el cliente
     await createNotification(
-      otherUserId,
+      serviceBooking.clientId,
       'BOOKING_COMPLETED',
       {
         bookingId,
@@ -103,6 +102,39 @@ export async function PATCH(
         itemTitle: serviceBooking.Service.title
       }
     )
+
+    // Calcular el precio del servicio
+    const pricePerHour = serviceBooking.Service.pricePerHour || 0
+    let totalPrice = serviceBooking.customPrice || 0
+    if (!totalPrice) {
+      if (serviceBooking.Service.priceType === 'hour' && serviceBooking.hours) {
+        totalPrice = pricePerHour * serviceBooking.hours
+      } else {
+        totalPrice = pricePerHour
+      }
+    }
+
+    // Enviar mensaje de solicitud de pago al chat
+    if (totalPrice > 0) {
+      const paymentRequestContent = JSON.stringify({
+        type: 'service_payment_request',
+        serviceTitle: serviceBooking.Service.title,
+        amount: totalPrice,
+        bookingId: bookingId,
+        isPaid: false
+      })
+
+      await prisma.message.create({
+        data: {
+          id: uuidv4(),
+          content: paymentRequestContent,
+          senderId: serviceBooking.providerId,
+          receiverId: serviceBooking.clientId,
+          bookingId: bookingId,
+          isRead: false
+        }
+      })
+    }
 
     return NextResponse.json(updatedServiceBooking)
   } catch (error) {

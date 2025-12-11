@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { prisma } from "@/lib/utils"
+import { authOptions } from "@/lib/auth-options"
+import prisma from "@/lib/prisma"
 import sharp from "sharp"
 
 export async function POST(request: NextRequest) {

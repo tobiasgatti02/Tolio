@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth-options"
 import { redirect } from "next/navigation"
 import { Star, MessageSquare, ThumbsUp, Filter, Search } from "lucide-react"
 import { format } from "date-fns"
@@ -39,18 +39,15 @@ const formatDate = (date: Date) => {
 // Función para obtener reseñas del usuario directamente desde la BD
 async function getUserReviews(userId: string): Promise<Review[]> {
   try {
-    const { PrismaClient } = await import('@prisma/client')
-    
+    const prisma = (await import('@/lib/prisma')).default
     
     // Obtener reviews como prestatario y como prestador
     const [reviewsAsLender, reviewsAsBorrower] = await Promise.all([
       // Reviews recibidas como prestador (mis artículos)
       prisma.review.findMany({
         where: {
-          booking: {
-            item: {
-              ownerId: userId
-            }
+          Item: {
+            ownerId: userId
           }
         },
         select: {
@@ -60,7 +57,7 @@ async function getUserReviews(userId: string): Promise<Review[]> {
           response: true,
           responseDate: true,
           createdAt: true,
-          reviewer: {
+          User_Review_reviewerIdToUser: {
             select: {
               id: true,
               firstName: true,
@@ -68,15 +65,11 @@ async function getUserReviews(userId: string): Promise<Review[]> {
               profileImage: true
             }
           },
-          booking: {
+          Item: {
             select: {
-              item: {
-                select: {
-                  id: true,
-                  title: true,
-                  images: true
-                }
-              }
+              id: true,
+              title: true,
+              images: true
             }
           }
         },
@@ -97,7 +90,7 @@ async function getUserReviews(userId: string): Promise<Review[]> {
           response: true,
           responseDate: true,
           createdAt: true,
-          reviewer: {
+          User_Review_reviewerIdToUser: {
             select: {
               id: true,
               firstName: true,
@@ -105,15 +98,11 @@ async function getUserReviews(userId: string): Promise<Review[]> {
               profileImage: true
             }
           },
-          booking: {
+          Item: {
             select: {
-              item: {
-                select: {
-                  id: true,
-                  title: true,
-                  images: true
-                }
-              }
+              id: true,
+              title: true,
+              images: true
             }
           }
         },
@@ -130,21 +119,20 @@ async function getUserReviews(userId: string): Promise<Review[]> {
       comment: review.comment,
       createdAt: review.createdAt,
       reviewer: {
-        id: review.reviewer.id,
-        name: `${review.reviewer.firstName} ${review.reviewer.lastName}`.trim(),
-        avatar: review.reviewer.profileImage
+        id: review.User_Review_reviewerIdToUser.id,
+        name: `${review.User_Review_reviewerIdToUser.firstName} ${review.User_Review_reviewerIdToUser.lastName}`.trim(),
+        avatar: review.User_Review_reviewerIdToUser.profileImage
       },
       item: {
-        id: review.booking.item.id,
-        title: review.booking.item.title,
-        image: review.booking.item.images[0]
+        id: review.Item.id,
+        title: review.Item.title,
+        image: review.Item.images[0] || ''
       },
       type: reviewsAsLender.some(r => r.id === review.id) ? 'received' as const : 'given' as const,
       response: review.response,
       responseDate: review.responseDate
     }))
     
-    await prisma.$disconnect()
     return allReviews
   } catch (error) {
     console.error('Error fetching user reviews:', error)

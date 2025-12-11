@@ -174,11 +174,17 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                 </div>
               </div>
 
-              <div className="mt-6">
+              <div className="mt-6 flex flex-wrap gap-3">
                 {service.isProfessional && (
                   <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-full">
                     <Award className="w-5 h-5 text-orange-600" />
                     <span className="text-sm font-semibold text-orange-700">Profesional Verificado</span>
+                  </div>
+                )}
+                {service.mayIncludeMaterials && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-full">
+                    <DollarSign className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-semibold text-blue-700">Puede incluir costos de materiales</span>
                   </div>
                 )}
               </div>
@@ -194,12 +200,20 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
                   <div className="flex items-baseline gap-2">
                     <DollarSign className="w-6 h-6 text-blue-600" />
-                    <span className="text-4xl font-bold text-gray-900">
-                      ${service.pricePerHour ? service.pricePerHour.toFixed(2) : '0.00'}
-                    </span>
-                    <span className="text-xl text-gray-600">
-                      {service.priceType === 'hour' ? '/ hora' : service.priceType === 'custom' ? '/ servicio' : ''}
-                    </span>
+                    {service.pricePerHour && service.pricePerHour > 0 ? (
+                      <>
+                        <span className="text-4xl font-bold text-gray-900">
+                          ${service.pricePerHour.toFixed(2)}
+                        </span>
+                        <span className="text-xl text-gray-600">
+                          {service.priceType === 'hour' ? '/ hora' : service.priceType === 'custom' ? '/ servicio' : ''}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-3xl font-semibold text-gray-700">
+                        Precio a convenir
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

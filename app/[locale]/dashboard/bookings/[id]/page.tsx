@@ -9,7 +9,7 @@ import { es } from "date-fns/locale"
 import { 
   ChevronLeft, Calendar, Clock, CheckCircle, XCircle, 
   User, MessageCircle, MapPin, Package, Briefcase,
-  AlertCircle
+  AlertCircle, Wrench
 } from "lucide-react"
 import BookingTimeline from "@/components/booking-timeline"
 
@@ -43,6 +43,10 @@ interface BookingDetails {
   }
   borrowerId: string
   ownerId: string
+  mayIncludeMaterials?: boolean
+  materialsPaid?: boolean
+  servicePaid?: boolean
+  priceType?: string
 }
 
 // Skeleton component
@@ -464,9 +468,15 @@ export default function BookingDetailsPage() {
                       {isService ? 'Precio del servicio' : `$${booking.item.price} x ${days} día${days > 1 ? 's' : ''}`}
                     </p>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">
-                    ${booking.totalPrice?.toLocaleString() || (booking.item.price * days).toLocaleString()}
-                  </p>
+                  {(booking.totalPrice && booking.totalPrice > 0) || (booking.item.price > 0) ? (
+                    <p className="text-2xl font-bold text-gray-900">
+                      ${booking.totalPrice?.toLocaleString() || (booking.item.price * days).toLocaleString()}
+                    </p>
+                  ) : (
+                    <p className="text-xl font-semibold text-gray-700">
+                      Precio a convenir
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -524,7 +534,7 @@ export default function BookingDetailsPage() {
                 <div className="text-center">
                   <div className="inline-flex items-center gap-2 text-blue-700 bg-blue-50 px-4 py-2 rounded-lg mb-4">
                     <CheckCircle className="w-5 h-5" />
-                    <span className="font-medium">Reserva confirmada</span>
+                    <span className="font-medium">Reserva confirmada - Listo para usar</span>
                   </div>
                 </div>
                 {isOwner && (
@@ -550,6 +560,16 @@ export default function BookingDetailsPage() {
                       Cancelar
                     </button>
                   </div>
+                )}
+                {/* Botón de materiales para servicios */}
+                {isOwner && isService && booking.mayIncludeMaterials && !booking.materialsPaid && (
+                  <Link
+                    href={`/messages/${otherUser.id}`}
+                    className="w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Wrench className="w-5 h-5" />
+                    Solicitar pago de materiales
+                  </Link>
                 )}
                 {isBorrower && (
                   <p className="text-sm text-gray-500 text-center">
