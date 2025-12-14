@@ -13,16 +13,21 @@ export async function GET(request: NextRequest) {
     
     if (!code) {
       console.log('[MercadoPago OAuth] No code received')
-      return NextResponse.redirect(new URL('/dashboard/settings?error=no_code', request.url))
+      // Extraer locale de la URL o usar 'es' por defecto
+      const locale = request.nextUrl.pathname.split('/')[1] || 'es'
+      return NextResponse.redirect(new URL(`/${locale}/dashboard/settings?error=no_code`, request.url))
     }
 
     // Obtener sesión del usuario
     const session = await getServerSession(authOptions)
     
+    // Extraer locale de la URL o usar 'es' por defecto
+    const locale = request.nextUrl.pathname.split('/')[1] || 'es'
+    
     if (!session?.user?.id) {
       console.log('[MercadoPago OAuth] No session found, redirecting to login')
-      const returnUrl = `/dashboard/settings?mp_code=${code}&needs_auth=true`
-      return NextResponse.redirect(new URL(`/login?returnUrl=${encodeURIComponent(returnUrl)}`, request.url))
+      const returnUrl = `/${locale}/dashboard/settings?mp_code=${code}&needs_auth=true`
+      return NextResponse.redirect(new URL(`/${locale}/login?returnUrl=${encodeURIComponent(returnUrl)}`, request.url))
     }
 
     // Intercambiar código por tokens
@@ -48,13 +53,35 @@ export async function GET(request: NextRequest) {
     })
 
     console.log('[MercadoPago OAuth] User updated successfully')
+    console.log('[MercadoPago OAuth] User ID:', session.user.id)
+    
+    // Verificar que se guardó correctamente
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        mercadopagoConnected: true,
+        mercadopagoAccessToken: true,
+        mercadopagoUserId: true,
+      },
+    })
+    
+    console.log('[MercadoPago OAuth] Verification after update:', {
+      connected: updatedUser?.mercadopagoConnected,
+      hasAccessToken: !!updatedUser?.mercadopagoAccessToken,
+      userId: updatedUser?.mercadopagoUserId,
+    })
 
     // Redirigir al usuario de vuelta a settings con éxito
-    return NextResponse.redirect(new URL('/dashboard/settings?success=mercadopago_connected', request.url))
+    // Extraer locale de la URL o usar 'es' por defecto
+    const locale = request.nextUrl.pathname.split('/')[1] || 'es'
+    return NextResponse.redirect(new URL(`/${locale}/dashboard/settings?success=mercadopago_connected`, request.url))
     
   } catch (error) {
     console.error('[MercadoPago OAuth] Error:', error)
-    return NextResponse.redirect(new URL('/dashboard/settings?error=mercadopago_connection_failed', request.url))
+    // Extraer locale de la URL o usar 'es' por defecto
+    const locale = request.nextUrl.pathname.split('/')[1] || 'es'
+    return NextResponse.redirect(new URL(`/${locale}/dashboard/settings?error=mercadopago_connection_failed`, request.url))
   } finally {
     await prisma.$disconnect()
   }

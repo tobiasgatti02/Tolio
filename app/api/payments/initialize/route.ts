@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import prisma from '@/lib/prisma'
-import { dlocalService } from '@/lib/dlocal-service'
+import { createServicePaymentPreference, createPaymentPreference } from '@/lib/mercadopago'
 
 /**
  * POST /api/payments/initialize
@@ -32,8 +32,25 @@ export async function POST(request: NextRequest) {
             where: { id: bookingId },
             include: {
                 Service: true,
-                User_ServiceBooking_clientIdToUser: true,
-                User_ServiceBooking_providerIdToUser: true,
+                User_ServiceBooking_clientIdToUser: {
+                    select: {
+                        id: true,
+                        email: true,
+                        firstName: true,
+                        lastName: true,
+                    },
+                },
+                User_ServiceBooking_providerIdToUser: {
+                    select: {
+                        id: true,
+                        email: true,
+                        firstName: true,
+                        lastName: true,
+                        mercadopagoConnected: true,
+                        mercadopagoAccessToken: true,
+                        mercadopagoUserId: true,
+                    },
+                },
             },
         })
 
@@ -42,6 +59,22 @@ export async function POST(request: NextRequest) {
         }
 
         const userId = session.user.id
+        
+        // Debug: Verificar datos del proveedor
+        console.log('[Payment Initialize] Booking found:', {
+            bookingId: booking.id,
+            providerId: booking.providerId,
+            clientId: booking.clientId,
+            currentUserId: userId,
+        })
+        
+        console.log('[Payment Initialize] Provider data:', {
+            providerId: booking.User_ServiceBooking_providerIdToUser.id,
+            email: booking.User_ServiceBooking_providerIdToUser.email,
+            mercadopagoConnected: booking.User_ServiceBooking_providerIdToUser.mercadopagoConnected,
+            hasAccessToken: !!booking.User_ServiceBooking_providerIdToUser.mercadopagoAccessToken,
+            accessTokenLength: booking.User_ServiceBooking_providerIdToUser.mercadopagoAccessToken?.length || 0,
+        })
 
         // Validar permisos según el tipo de pago
         if (type === 'MATERIAL') {
@@ -72,14 +105,68 @@ export async function POST(request: NextRequest) {
                 )
             }
 
-            // Crear pago en DLocal
-            const dlocalPayment = await dlocalService.createMaterialPayment({
-                bookingId,
-                providerId: booking.providerId,
-                amount: materialPayment.totalAmount,
-                materials: materialPayment.materials as Array<{ name: string; price: number }>,
-                clientEmail: booking.User_ServiceBooking_clientIdToUser.email,
-                clientName: `${booking.User_ServiceBooking_clientIdToUser.firstName} ${booking.User_ServiceBooking_clientIdToUser.lastName}`,
+            // Verificar que el proveedor tenga cuenta de MercadoPago configurada
+            const provider = booking.User_ServiceBooking_providerIdToUser
+            
+            // Verificación adicional: consultar directamente desde la DB para evitar problemas de caché
+            const providerFromDB = await prisma.user.findUnique({
+                where: { id: booking.providerId },
+                select: {
+                    id: true,
+                    email: true,
+                    mercadopagoConnected: true,
+                    mercadopagoAccessToken: true,
+                    mercadopagoUserId: true,
+                },
+            })
+            
+            console.log('[Payment Initialize] Provider MP status (MATERIAL):', {
+                providerId: provider.id,
+                fromBooking: {
+                    mercadopagoConnected: provider.mercadopagoConnected,
+                    hasAccessToken: !!provider.mercadopagoAccessToken,
+                },
+                fromDB: {
+                    mercadopagoConnected: providerFromDB?.mercadopagoConnected,
+                    hasAccessToken: !!providerFromDB?.mercadopagoAccessToken,
+                },
+            })
+            
+            // Usar datos de la DB directa como fuente de verdad
+            const finalProvider = providerFromDB || provider
+            
+            if (!finalProvider.mercadopagoConnected || !finalProvider.mercadopagoAccessToken) {
+                // Verificar si el usuario actual es el proveedor
+                const isCurrentUserProvider = session.user.id === booking.providerId
+                
+                return NextResponse.json(
+                    { 
+                        error: isCurrentUserProvider 
+                            ? 'Debes conectar tu cuenta de MercadoPago en Configuración → Pagos antes de recibir pagos'
+                            : 'El proveedor debe conectar su cuenta de MercadoPago antes de recibir pagos de materiales',
+                        providerId: finalProvider.id,
+                        providerEmail: finalProvider.email,
+                        currentUserId: session.user.id,
+                        isProvider: isCurrentUserProvider,
+                        debug: {
+                            connected: finalProvider.mercadopagoConnected,
+                            hasToken: !!finalProvider.mercadopagoAccessToken,
+                        }
+                    },
+                    { status: 400 }
+                )
+            }
+
+            // Crear preferencia de pago en MercadoPago
+            // Los materiales van 100% al proveedor (sin comisión del marketplace)
+            const preference = await createPaymentPreference({
+                title: `Materiales - Reserva ${bookingId.substring(0, 8)}`,
+                quantity: 1,
+                unit_price: materialPayment.totalAmount,
+                bookingId: bookingId,
+                userId: booking.clientId,
+                itemId: `material-${materialPayment.id}`,
+                ownerAccessToken: finalProvider.mercadopagoAccessToken || undefined,
             })
 
             // Crear registro de pago en DB
@@ -91,9 +178,11 @@ export async function POST(request: NextRequest) {
                     platformFee: 0, // Sin comisión en materiales
                     providerAmount: materialPayment.totalAmount,
                     status: 'PENDING',
-                    dlocalPaymentId: dlocalPayment.id,
-                    dlocalOrderId: dlocalPayment.order_id,
                     description: 'Pago de materiales',
+                    metadata: {
+                        mercadopagoPreferenceId: preference.id,
+                        paymentProvider: 'mercadopago',
+                    },
                 },
             })
 
@@ -108,8 +197,8 @@ export async function POST(request: NextRequest) {
 
             return NextResponse.json({
                 paymentId: payment.id,
-                dlocalPaymentId: dlocalPayment.id,
-                checkoutUrl: dlocalPayment.redirect_url,
+                preferenceId: preference.id,
+                checkoutUrl: preference.init_point || preference.sandbox_init_point,
                 amount: materialPayment.totalAmount,
             })
         } else if (type === 'SERVICE') {
@@ -143,22 +232,72 @@ export async function POST(request: NextRequest) {
                 (await prisma.materialPayment.findUnique({ where: { serviceBookingId: bookingId } }))?.totalAmount || 0
                 : 0
 
-            const platformFeePercentage = parseFloat(process.env.MARKETPLACE_FEE_PERCENTAGE || '2')
+            // Verificar que el proveedor tenga cuenta de MercadoPago configurada
+            const provider = booking.User_ServiceBooking_providerIdToUser
+            
+            // Verificación adicional: consultar directamente desde la DB para evitar problemas de caché
+            const providerFromDB = await prisma.user.findUnique({
+                where: { id: booking.providerId },
+                select: {
+                    id: true,
+                    email: true,
+                    mercadopagoConnected: true,
+                    mercadopagoAccessToken: true,
+                    mercadopagoUserId: true,
+                },
+            })
+            
+            console.log('[Payment Initialize] Provider MP status (SERVICE):', {
+                providerId: provider.id,
+                fromBooking: {
+                    mercadopagoConnected: provider.mercadopagoConnected,
+                    hasAccessToken: !!provider.mercadopagoAccessToken,
+                },
+                fromDB: {
+                    mercadopagoConnected: providerFromDB?.mercadopagoConnected,
+                    hasAccessToken: !!providerFromDB?.mercadopagoAccessToken,
+                },
+            })
+            
+            // Usar datos de la DB directa como fuente de verdad
+            const finalProvider = providerFromDB || provider
+            
+            if (!finalProvider.mercadopagoConnected || !finalProvider.mercadopagoAccessToken) {
+                // Verificar si el usuario actual es el proveedor
+                const isCurrentUserProvider = session.user.id === booking.providerId
+                
+                return NextResponse.json(
+                    { 
+                        error: isCurrentUserProvider 
+                            ? 'Debes conectar tu cuenta de MercadoPago en Configuración → Pagos antes de recibir pagos'
+                            : 'El proveedor debe conectar su cuenta de MercadoPago antes de recibir pagos de servicios',
+                        providerId: finalProvider.id,
+                        providerEmail: finalProvider.email,
+                        currentUserId: session.user.id,
+                        isProvider: isCurrentUserProvider,
+                        debug: {
+                            connected: finalProvider.mercadopagoConnected,
+                            hasToken: !!finalProvider.mercadopagoAccessToken,
+                        }
+                    },
+                    { status: 400 }
+                )
+            }
 
-            // Crear pago en DLocal
-            const dlocalPayment = await dlocalService.createServicePayment({
-                bookingId,
-                providerId: booking.providerId,
-                serviceAmount,
-                materialsAmount,
-                platformFeePercentage,
+            const platformFeePercentage = parseFloat(process.env.MARKETPLACE_FEE_PERCENTAGE || '2')
+            const totalAmount = serviceAmount + materialsAmount
+            const platformFee = Math.round(serviceAmount * (platformFeePercentage / 100) * 100) / 100
+            const providerAmount = totalAmount - platformFee
+
+            // Crear preferencia de pago en MercadoPago con split payment
+            const preference = await createServicePaymentPreference({
+                bookingId: bookingId,
+                serviceAmount: serviceAmount,
+                materialsAmount: materialsAmount,
                 clientEmail: booking.User_ServiceBooking_clientIdToUser.email,
                 clientName: `${booking.User_ServiceBooking_clientIdToUser.firstName} ${booking.User_ServiceBooking_clientIdToUser.lastName}`,
+                providerAccessToken: finalProvider.mercadopagoAccessToken || undefined,
             })
-
-            const totalAmount = serviceAmount + materialsAmount
-            const platformFee = serviceAmount * (platformFeePercentage / 100)
-            const providerAmount = totalAmount - platformFee
 
             // Crear registro de pago en DB
             const payment = await prisma.payment.create({
@@ -169,10 +308,10 @@ export async function POST(request: NextRequest) {
                     platformFee,
                     providerAmount,
                     status: 'PENDING',
-                    dlocalPaymentId: dlocalPayment.id,
-                    dlocalOrderId: dlocalPayment.order_id,
                     description: 'Pago de servicio completado',
                     metadata: {
+                        mercadopagoPreferenceId: preference.id,
+                        paymentProvider: 'mercadopago',
                         serviceAmount,
                         materialsAmount,
                         platformFeePercentage,
@@ -182,13 +321,14 @@ export async function POST(request: NextRequest) {
 
             return NextResponse.json({
                 paymentId: payment.id,
-                dlocalPaymentId: dlocalPayment.id,
-                checkoutUrl: dlocalPayment.redirect_url,
+                preferenceId: preference.id,
+                checkoutUrl: preference.init_point || preference.sandbox_init_point,
                 breakdown: {
                     serviceAmount,
                     materialsAmount,
                     total: totalAmount,
                     platformFee,
+                    providerAmount,
                 },
             })
         } else {

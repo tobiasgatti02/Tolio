@@ -31,12 +31,12 @@ export default function PaymentGateway({
 }: PaymentGatewayProps) {
   const [loading, setLoading] = useState(false)
 
-  // Detectar si es sandbox de DLocal
-  const isSandbox = checkoutUrl.includes('sbx') || checkoutUrl.includes('sandbox')
+  // Detectar si es sandbox de MercadoPago
+  const isSandbox = checkoutUrl.includes('sandbox') || checkoutUrl.includes('test')
 
   const handlePayment = () => {
     setLoading(true)
-    // Redirigir al checkout de DLocal
+    // Redirigir al checkout de MercadoPago
     window.location.href = checkoutUrl
   }
 
@@ -51,7 +51,7 @@ export default function PaymentGateway({
               <h2 className="text-xl font-bold">
                 {type === 'material' ? 'Pago de Materiales' : 'Pago de Servicio'}
               </h2>
-              <p className="text-blue-100 text-sm">Procesamiento seguro con DLocal</p>
+              <p className="text-blue-100 text-sm">Procesamiento seguro con MercadoPago</p>
             </div>
           </div>
           <button
@@ -130,13 +130,13 @@ export default function PaymentGateway({
           </button>
           
           <p className="text-xs text-gray-500 mt-4 text-center">
-            Serás redirigido a la pasarela de pago segura de DLocal
+            Serás redirigido a la pasarela de pago segura de MercadoPago
           </p>
         </div>
 
         {/* Footer */}
         <div className="bg-gray-50 p-4 border-t text-center text-sm text-gray-600">
-          <p>🔒 Pago seguro procesado por DLocal</p>
+          <p>🔒 Pago seguro procesado por MercadoPago</p>
         </div>
       </div>
     </div>
