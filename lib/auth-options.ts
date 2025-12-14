@@ -117,12 +117,12 @@ export const authOptions: NextAuthOptions = {
         try {
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email },
-            include: { Account: true },
+            include: { accounts: true },
           });
 
           if (existingUser) {
             // Verificar si ya tiene esta cuenta vinculada
-            const hasAccount = existingUser.Account?.some(
+            const hasAccount = existingUser.accounts?.some(
               (acc) => acc.provider === account?.provider
             );
 

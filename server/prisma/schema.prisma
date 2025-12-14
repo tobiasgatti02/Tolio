@@ -20,7 +20,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -219,7 +219,7 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Subcategory {
@@ -263,7 +263,7 @@ model User {
   dlocalKycStatus                                String?
   dlocalOnboarded                                Boolean          @default(false)
   dlocalUserId                                   String?          @unique
-  Account                                        Account[]
+  accounts                                       Account[]
   Booking_Booking_borrowerIdToUser               Booking[]        @relation("Booking_borrowerIdToUser")
   Booking_Booking_ownerIdToUser                  Booking[]        @relation("Booking_ownerIdToUser")
   Item                                           Item[]
@@ -277,7 +277,7 @@ model User {
   ServiceBooking_ServiceBooking_providerIdToUser ServiceBooking[] @relation("ServiceBooking_providerIdToUser")
   ServiceReview_ServiceReview_revieweeIdToUser   ServiceReview[]  @relation("ServiceReview_revieweeIdToUser")
   ServiceReview_ServiceReview_reviewerIdToUser   ServiceReview[]  @relation("ServiceReview_reviewerIdToUser")
-  Session                                        Session[]
+  sessions                                       Session[]
   Verification                                   Verification[]
 }
 
