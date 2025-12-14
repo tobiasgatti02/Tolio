@@ -430,7 +430,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         </CardContent>
       </Card>
 
-      {/* DLocal Payment Configuration - Para Servicios */}
+      {/* DLocal Paynt Configuration - Para Servicios 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -462,8 +462,9 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           </div>
         </CardContent>
       </Card>
+      */}
 
-      {/* MercadoPago Payment Configuration - Comentado por ahora
+      {/* MercadoPago Payment Configuration */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -500,7 +501,6 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           </div>
         </CardContent>
       </Card>
-      */}
     </div>
   )
 }
