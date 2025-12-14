@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Account {
-  id                String  @id
+  id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
@@ -215,7 +215,7 @@ model ServiceReview {
 }
 
 model Session {
-  id           String   @id
+  id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -233,7 +233,7 @@ model Subcategory {
 }
 
 model User {
-  id                                             String           @id
+  id                                             String           @id @default(cuid())
   email                                          String           @unique
   password                                       String?
   firstName                                      String?
@@ -242,7 +242,7 @@ model User {
   bio                                            String?
   phoneNumber                                    String?
   createdAt                                      DateTime         @default(now())
-  updatedAt                                      DateTime
+  updatedAt                                      DateTime         @updatedAt
   isVerified                                     Boolean          @default(false)
   verificationToken                              String?
   resetToken                                     String?

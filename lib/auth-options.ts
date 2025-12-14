@@ -94,8 +94,8 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 días
   },
   pages: {
-    signIn: "/login",
-    error: "/login", // Redirect to login page on error
+    signIn: "/es/login",
+    error: "/es/login", // Redirect to login page on error
   },
   logger: {
     error(code, metadata) {
@@ -111,23 +111,54 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       console.log(`[NextAuth] SignIn callback for user: ${user.email}, provider: ${account?.provider}`);
-      // Para OAuth providers (Google/Facebook), marcar como verificado automáticamente
-      if (account?.provider !== "credentials") {
-        if (user.email) {
-          try {
-            const existingUser = await prisma.user.findUnique({
-              where: { email: user.email },
-            });
+      
+      // Para OAuth providers (Google/Facebook)
+      if (account?.provider !== "credentials" && user.email) {
+        try {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email },
+            include: { accounts: true },
+          });
 
-            if (existingUser && !existingUser.isVerified) {
+          if (existingUser) {
+            // Verificar si ya tiene esta cuenta vinculada
+            const hasAccount = existingUser.accounts?.some(
+              (acc) => acc.provider === account?.provider
+            );
+
+            if (!hasAccount && account) {
+              // Vincular la cuenta OAuth al usuario existente
+              console.log(`[NextAuth] Linking ${account.provider} account to existing user: ${user.email}`);
+              await prisma.account.create({
+                data: {
+                  userId: existingUser.id,
+                  type: account.type,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  access_token: account.access_token,
+                  refresh_token: account.refresh_token,
+                  expires_at: account.expires_at,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                },
+              });
+            }
+
+            // Marcar como verificado
+            if (!existingUser.isVerified) {
               await prisma.user.update({
                 where: { email: user.email },
                 data: { isVerified: true },
               });
             }
-          } catch (error) {
-            console.error("Error updating user verification:", error);
+
+            // Asignar el ID correcto al user object para que el JWT tenga el ID correcto
+            user.id = existingUser.id;
           }
+        } catch (error) {
+          console.error("[NextAuth] Error in signIn callback:", error);
+          // No bloquear el login, dejar que continúe
         }
       }
       return true;
