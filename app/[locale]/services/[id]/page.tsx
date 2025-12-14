@@ -250,23 +250,23 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                     <div key={review.id} className="border-b border-gray-200 pb-6 last:border-0 last:pb-0">
                       <div className="flex items-start gap-4">
                         <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-indigo-400 flex-shrink-0">
-                          {review.reviewer.profileImage ? (
+                          {review.User_ServiceReview_reviewerIdToUser.profileImage ? (
                             <Image
-                              src={review.reviewer.profileImage}
-                              alt={`${review.reviewer.firstName} ${review.reviewer.lastName}` || 'Usuario'}
+                              src={review.User_ServiceReview_reviewerIdToUser.profileImage}
+                              alt={`${review.User_ServiceReview_reviewerIdToUser.firstName} ${review.User_ServiceReview_reviewerIdToUser.lastName}` || 'Usuario'}
                               fill
                               className="object-cover"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-white font-semibold">
-                              {(review.reviewer.firstName || 'U')[0].toUpperCase()}
+                              {(review.User_ServiceReview_reviewerIdToUser.firstName || 'U')[0].toUpperCase()}
                             </div>
                           )}
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="font-semibold text-gray-900">
-                              {`${review.reviewer.firstName} ${review.reviewer.lastName}`.trim() || 'Usuario'}
+                              {`${review.User_ServiceReview_reviewerIdToUser.firstName} ${review.User_ServiceReview_reviewerIdToUser.lastName}`.trim() || 'Usuario'}
                             </h3>
                             <div className="flex items-center gap-1">
                               {[...Array(5)].map((_, i) => (
