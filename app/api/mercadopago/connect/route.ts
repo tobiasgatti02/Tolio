@@ -7,22 +7,20 @@ import prisma from "@/lib/prisma"
 
 
 export async function GET(request: NextRequest) {
+  // Extraer locale de la URL o usar 'es' por defecto (definido una sola vez)
+  const locale = 'es' // Las rutas API no tienen locale, usar 'es' por defecto
+  
   try {
     console.log('[MercadoPago OAuth] Callback received')
     const code = request.nextUrl.searchParams.get("code")
     
     if (!code) {
       console.log('[MercadoPago OAuth] No code received')
-      // Extraer locale de la URL o usar 'es' por defecto
-      const locale = request.nextUrl.pathname.split('/')[1] || 'es'
       return NextResponse.redirect(new URL(`/${locale}/dashboard/settings?error=no_code`, request.url))
     }
 
     // Obtener sesión del usuario
     const session = await getServerSession(authOptions)
-    
-    // Extraer locale de la URL o usar 'es' por defecto
-    const locale = request.nextUrl.pathname.split('/')[1] || 'es'
     
     if (!session?.user?.id) {
       console.log('[MercadoPago OAuth] No session found, redirecting to login')
@@ -73,14 +71,10 @@ export async function GET(request: NextRequest) {
     })
 
     // Redirigir al usuario de vuelta a settings con éxito
-    // Extraer locale de la URL o usar 'es' por defecto
-    const locale = request.nextUrl.pathname.split('/')[1] || 'es'
     return NextResponse.redirect(new URL(`/${locale}/dashboard/settings?success=mercadopago_connected`, request.url))
     
   } catch (error) {
     console.error('[MercadoPago OAuth] Error:', error)
-    // Extraer locale de la URL o usar 'es' por defecto
-    const locale = request.nextUrl.pathname.split('/')[1] || 'es'
     return NextResponse.redirect(new URL(`/${locale}/dashboard/settings?error=mercadopago_connection_failed`, request.url))
   } finally {
     await prisma.$disconnect()
