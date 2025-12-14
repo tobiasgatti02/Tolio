@@ -12,7 +12,6 @@ import StripeAccountStatus from "@/components/stripe-account-status"
 import StripeConnectOnboarding from "@/components/stripe-connect-onboarding"
 import MercadoPagoConnect from "@/components/mercadopago-connect"
 import MercadoPagoStatus from "@/components/mercadopago-status"
-import DLocalOnboarding from "@/components/dlocal-onboarding"
 
 interface SettingsClientProps {
   user: {
@@ -430,49 +429,15 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         </CardContent>
       </Card>
 
-      {/* DLocal Paynt Configuration - Para Servicios 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-orange-600" />
-            Pagos de Servicios (DLocal)
-          </CardTitle>
-          <CardDescription>
-            Configura tu cuenta para recibir pagos por servicios y materiales
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <DLocalOnboarding onSuccess={() => {
-            setMessage({ type: 'success', text: 'Cuenta de pagos configurada exitosamente' })
-            setTimeout(() => setMessage(null), 3000)
-          }} />
-
-          <div className="space-y-4 pt-4 border-t">
-            <div>
-              <h4 className="font-semibold mb-2">Para Proveedores de Servicios</h4>
-              <p className="text-sm text-gray-600">
-                Recibe pagos por materiales (100% para ti) y por servicios completados
-                (98% para ti, 2% comisión de la plataforma).
-              </p>
-              <p className="text-sm text-blue-700 mt-2 bg-blue-50 p-2 rounded">
-                💡 Los clientes pueden pagarte materiales por adelantado y el servicio
-                una vez completado el trabajo.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      */}
-
-      {/* MercadoPago Payment Configuration */}
+      {/* MercadoPago Payment Configuration - Para Servicios y Marketplace */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wallet className="h-5 w-5 text-blue-600" />
-            MercadoPago - Pago Directo
+            MercadoPago - Pagos de Servicios
           </CardTitle>
           <CardDescription>
-            Recibe pagos directos sin retención (sin garantía de escrow)
+            Conecta tu cuenta de MercadoPago para recibir pagos por servicios y materiales
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -488,14 +453,23 @@ export default function SettingsClient({ user }: SettingsClientProps) {
 
           <div className="space-y-4 pt-4 border-t">
             <div>
-              <h4 className="font-semibold mb-2">MercadoPago - Pago Inmediato</h4>
-              <p className="text-sm text-gray-600">
-                Con MercadoPago, el dinero llega directamente a tu cuenta sin retención.
-                No hay garantía de escrow. Recibes el <strong>95% del precio</strong>.
+              <h4 className="font-semibold mb-2">MercadoPago Marketplace - Split Payments</h4>
+              <p className="text-sm text-gray-600 mb-2">
+                Con MercadoPago, los pagos se dividen automáticamente:
               </p>
-              <p className="text-sm text-yellow-700 mt-2 bg-yellow-50 p-2 rounded">
-                ⚠️ El comprador paga de inmediato y tú recibes el dinero sin esperar confirmación
-                de entrega.
+              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside mb-3">
+                <li><strong>Materiales:</strong> 100% para ti (sin comisión)</li>
+                <li><strong>Servicios:</strong> 98% para ti, 2% comisión del marketplace</li>
+              </ul>
+              <p className="text-sm text-blue-700 mt-2 bg-blue-50 p-3 rounded">
+                💡 <strong>Para Proveedores de Servicios:</strong> Los clientes pueden pagarte materiales por adelantado 
+                y el servicio una vez completado el trabajo. El marketplace cobra automáticamente su comisión del 2%.
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Referencia: <a href="https://github.com/goncy/next-mercadopago/tree/main/integraciones/marketplace" 
+                target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                  Implementación basada en next-mercadopago marketplace
+                </a>
               </p>
             </div>
           </div>

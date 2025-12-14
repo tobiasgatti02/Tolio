@@ -34,18 +34,21 @@ export default function MercadoPagoConnect() {
       <CardHeader>
         <CardTitle className="text-blue-900">Conectar MercadoPago</CardTitle>
         <CardDescription className="text-blue-700">
-          Conecta tu cuenta de MercadoPago para recibir pagos directos (sin retención)
+          Conecta tu cuenta de MercadoPago para recibir pagos con split automático
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="text-sm text-blue-800 space-y-2">
             <p>
-              <strong>⚠️ Pago Directo:</strong> Con MercadoPago, recibirás el dinero de inmediato.
-              No hay retención de pago como garantía.
+              <strong>💰 Split Payments Automático:</strong> Con MercadoPago, los pagos se dividen automáticamente:
             </p>
-            <p>
-              La plataforma cobrará una comisión del <strong>5%</strong> sobre cada transacción.
+            <ul className="list-disc list-inside ml-2 space-y-1">
+              <li><strong>Materiales:</strong> 100% para ti (sin comisión)</li>
+              <li><strong>Servicios:</strong> 98% para ti, 2% comisión del marketplace</li>
+            </ul>
+            <p className="mt-2">
+              El marketplace cobra automáticamente su comisión del <strong>2%</strong> solo sobre el monto del servicio.
             </p>
           </div>
           

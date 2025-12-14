@@ -58,106 +58,170 @@ export async function POST(request: NextRequest) {
       return new Response(null, { status: 200 })
     }
 
-    // Buscar el booking por external_reference
-    const booking = await prisma.booking.findFirst({
-      where: { id: payment.external_reference },
-      include: {
-        Payment: true,
-        Item: {
-          include: {
-            User: true
-          }
+    // Buscar el booking por metadata (puede ser booking de items o service booking)
+    let booking = null
+    let serviceBooking = null
+    
+    // Intentar buscar en metadata del pago
+    const bookingId = (payment.metadata as any)?.booking_id || payment.external_reference
+    
+    if (bookingId) {
+      // Buscar primero en service bookings
+      serviceBooking = await prisma.serviceBooking.findFirst({
+        where: { id: bookingId },
+        include: {
+          payments: true,
+          User_ServiceBooking_providerIdToUser: true,
+          User_ServiceBooking_clientIdToUser: true,
         }
+      })
+      
+      // Si no se encuentra, buscar en bookings de items
+      if (!serviceBooking) {
+        booking = await prisma.booking.findFirst({
+          where: { id: bookingId },
+          include: {
+            Item: {
+              include: {
+                User: true
+              }
+            }
+          }
+        })
       }
-    })
+    }
 
-    if (!booking) {
-      console.log('❌ Booking no encontrado para external_reference:', payment.external_reference)
+    if (!booking && !serviceBooking) {
+      console.log('❌ Booking no encontrado para:', bookingId)
       return new Response(null, { status: 200 })
     }
 
     // Mapear el status de MercadoPago a nuestro sistema
     const mappedStatus = mapPaymentStatus(payment.status!)
 
-    // Calcular montos del marketplace si el pago fue aprobado
-    let marketplaceFee = 0
-    let ownerAmount = 0
-    let marketplaceAmount = 0
+    // Procesar pagos de servicios
+    if (serviceBooking) {
+      // Calcular montos del marketplace si el pago fue aprobado
+      let marketplaceFee = 0
+      let providerAmount = 0
 
-    if (payment.status === 'approved' && payment.transaction_amount) {
-      const commissionPercentage = parseFloat(process.env.MARKETPLACE_COMMISSION_PERCENTAGE || '2') / 100
-      marketplaceFee = payment.transaction_amount * commissionPercentage
-      ownerAmount = payment.transaction_amount - marketplaceFee
-      marketplaceAmount = marketplaceFee
+      if (payment.status === 'approved' && payment.transaction_amount) {
+        // Obtener el fee del marketplace desde el pago (ya calculado por MercadoPago)
+        // En split payments, MercadoPago ya divide el pago automáticamente
+        const commissionPercentage = parseFloat(process.env.MARKETPLACE_FEE_PERCENTAGE || '2') / 100
+        // El marketplace_fee ya está aplicado por MercadoPago, solo necesitamos calcularlo para registro
+        marketplaceFee = Math.round(payment.transaction_amount * commissionPercentage * 100) / 100
+        providerAmount = payment.transaction_amount - marketplaceFee
+      }
+
+      // Actualizar o crear el registro de pago
+      const existingPayment = serviceBooking.payments?.[0]
+      if (existingPayment) {
+        await prisma.payment.update({
+          where: { id: existingPayment.id },
+          data: {
+            status: mappedStatus,
+            platformFee: marketplaceFee,
+            providerAmount: providerAmount,
+            paidAt: payment.status === 'approved' ? new Date() : null,
+            metadata: {
+              ...(existingPayment.metadata as object || {}),
+              mercadopagoPaymentId: payment.id?.toString(),
+              mercadopagoStatus: payment.status,
+            },
+          }
+        })
+      }
+
+      // Actualizar el status del service booking según el pago
+      if (payment.status === 'approved' && !serviceBooking.servicePaid) {
+        await prisma.serviceBooking.update({
+          where: { id: serviceBooking.id },
+          data: { servicePaid: true }
+        })
+      }
+
+      // Crear notificaciones
+      if (payment.status === 'approved') {
+        await prisma.notification.create({
+          data: {
+            id: `notif-${Date.now()}-${serviceBooking.providerId}`,
+            userId: serviceBooking.providerId,
+            type: 'PAYMENT_RECEIVED',
+            title: 'Pago recibido',
+            content: `Has recibido $${providerAmount.toFixed(2)} por el servicio completado`,
+          }
+        })
+
+        await prisma.notification.create({
+          data: {
+            id: `notif-${Date.now()}-${serviceBooking.clientId}`,
+            userId: serviceBooking.clientId,
+            type: 'BOOKING_CONFIRMED',
+            title: 'Pago completado',
+            content: `Tu pago ha sido procesado exitosamente`,
+          }
+        })
+      }
+
+      console.log('✅ Webhook procesado exitosamente para service booking')
+      return new Response(null, { status: 200 })
     }
 
-    // Actualizar o crear el registro de pago
-    if (booking.Payment) {
-      // Actualizar pago existente
-      await prisma.payment.update({
-        where: { id: booking.Payment.id },
-        data: {
-          status: mappedStatus,
-          mercadopagoPaymentId: payment.id?.toString(),
-          mercadopagoStatus: payment.status,
-          mercadopagoStatusDetail: payment.status_detail,
-          paidAt: payment.status === 'approved' ? new Date() : null,
-        }
-      })
-    } else {
-      // Crear nuevo pago
-      await prisma.payment.create({
-        data: {
-          bookingId: booking.id,
-          amount: payment.transaction_amount || booking.totalPrice,
-          paymentMethod: payment.payment_method_id || 'mercadopago',
-          status: mappedStatus,
-          mercadopagoPaymentId: payment.id?.toString(),
-          mercadopagoStatus: payment.status,
-          mercadopagoStatusDetail: payment.status_detail,
-          externalReference: payment.external_reference,
-          paymentProvider: 'mercadopago',
-          paidAt: payment.status === 'approved' ? new Date() : null,
-        }
-      })
-    }
+    // Procesar pagos de items (código existente)
+    if (booking) {
+      // Calcular montos del marketplace si el pago fue aprobado
+      let marketplaceFee = 0
+      let ownerAmount = 0
+      let marketplaceAmount = 0
 
-    // Actualizar el status del booking según el pago
-    let bookingStatus = booking.status
-    if (payment.status === 'approved') {
-      bookingStatus = 'CONFIRMED'
-    } else if (payment.status === 'cancelled' || payment.status === 'rejected') {
-      bookingStatus = 'CANCELLED'
-    }
+      if (payment.status === 'approved' && payment.transaction_amount) {
+        const commissionPercentage = parseFloat(process.env.MARKETPLACE_COMMISSION_PERCENTAGE || '2') / 100
+        marketplaceFee = payment.transaction_amount * commissionPercentage
+        ownerAmount = payment.transaction_amount - marketplaceFee
+        marketplaceAmount = marketplaceFee
+      }
 
-    if (bookingStatus !== booking.status) {
-      await prisma.booking.update({
-        where: { id: booking.id },
-        data: { status: bookingStatus }
-      })
-    }
+      // Para bookings de items, el pago se maneja diferente (no hay modelo Payment para bookings de items en este schema)
+      // Solo actualizamos el estado del booking
 
-    // Crear notificaciones
-    if (payment.status === 'approved') {
-      // Notificación para el owner (propietario)
-      await prisma.notification.create({
-        data: {
-          userId: booking.Item.ownerId,
-          type: 'PAYMENT_RECEIVED',
-          title: 'Pago recibido',
-          content: `Has recibido $${ownerAmount.toFixed(2)} por el alquiler de "${booking.Item.title}"`,
-        }
-      })
+      // Actualizar el status del booking según el pago
+      let bookingStatus = booking.status
+      if (payment.status === 'approved') {
+        bookingStatus = 'CONFIRMED'
+      } else if (payment.status === 'cancelled' || payment.status === 'rejected') {
+        bookingStatus = 'CANCELLED'
+      }
 
-      // Notificación para el renter (inquilino)
-      await prisma.notification.create({
-        data: {
-          userId: booking.borrowerId,
-          type: 'BOOKING_CONFIRMED',
-          title: 'Reserva confirmada',
-          content: `Tu pago ha sido procesado y tu reserva de "${booking.Item.title}" está confirmada`,
-        }
-      })
+      if (bookingStatus !== booking.status) {
+        await prisma.booking.update({
+          where: { id: booking.id },
+          data: { status: bookingStatus }
+        })
+      }
+
+      // Crear notificaciones para bookings de items
+      if (payment.status === 'approved' && booking.Item) {
+        await prisma.notification.create({
+          data: {
+            id: `notif-${Date.now()}-${booking.ownerId}`,
+            userId: booking.ownerId,
+            type: 'PAYMENT_RECEIVED',
+            title: 'Pago recibido',
+            content: `Has recibido $${ownerAmount.toFixed(2)} por el alquiler de "${booking.Item.title}"`,
+          }
+        })
+
+        await prisma.notification.create({
+          data: {
+            id: `notif-${Date.now()}-${booking.borrowerId}`,
+            userId: booking.borrowerId,
+            type: 'BOOKING_CONFIRMED',
+            title: 'Reserva confirmada',
+            content: `Tu pago ha sido procesado y tu reserva de "${booking.Item.title}" está confirmada`,
+          }
+        })
+      }
     }
 
     console.log('✅ Webhook procesado exitosamente')

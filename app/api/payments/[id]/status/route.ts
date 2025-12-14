@@ -50,6 +50,10 @@ export async function GET(
             )
         }
 
+        // Obtener preference ID desde metadata si existe
+        const metadata = payment.metadata as any
+        const mercadopagoPreferenceId = metadata?.mercadopagoPreferenceId || null
+
         return NextResponse.json({
             id: payment.id,
             type: payment.type,
@@ -57,7 +61,7 @@ export async function GET(
             status: payment.status,
             platformFee: payment.platformFee,
             providerAmount: payment.providerAmount,
-            dlocalPaymentId: payment.dlocalPaymentId,
+            mercadopagoPreferenceId,
             createdAt: payment.createdAt,
             paidAt: payment.paidAt,
         })
