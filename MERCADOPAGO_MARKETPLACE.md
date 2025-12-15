@@ -185,3 +185,4 @@ POST /api/mercadopago/webhook
 - [Documentación MercadoPago Marketplace](https://www.mercadopago.com.ar/developers/es/docs/your-integrations/marketplace)
 - [API de Preferencias](https://www.mercadopago.com.ar/developers/es/reference/preferences/_checkout_preferences/post)
 
+

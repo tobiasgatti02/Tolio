@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
 import { Menu, X, MessageCircle, Bell } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -9,8 +11,16 @@ import NotificationBadge from "./ui/notification-badge";
 import NotificationsPanel from "./ui/notifications-panel";
 import PublishModal from "./ui/publish-modal";
 import { useLocale, useTranslations } from 'next-intl';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Navbar() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
@@ -18,7 +28,7 @@ export default function Navbar() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('common');
-  
+
   function changeLocale(newLocale: string) {
     // Mantener la ruta actual pero cambiar el locale
     const currentPath = window.location.pathname;
@@ -27,56 +37,58 @@ export default function Navbar() {
   }
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link href={`/${locale}`} className="flex-shrink-0 flex items-center">
-              <span className="text-2xl font-bold text-orange-600 hover:text-orange-700 transition-colors">
-                {t('brand')}
-              </span>
+    <nav className="sticky top-0 z-50 w-full border-b border-neutral-200 bg-white relative">
+      <Link href={`/${locale}`} className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center z-10">
+        <Image
+          src="/logo-tolio-circle.png"
+          alt="Tolio"
+          width={70}
+          height={70}
+          className="h-20 w-20 object-contain"
+        />
+      </Link>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-20 items-center justify-between pl-24">
+
+          {/* Desktop Navigation */}
+          <div className="hidden items-center gap-12 md:flex ml-16">
+            <Link
+              href={`/${locale}/items`}
+              className="flex items-center gap-3 text-sm font-medium text-neutral-700 transition-colors hover:text-[#FF5722]"
+            >
+              <Image
+                src="/icons/herramientas.svg"
+                alt="Herramientas"
+                width={40}
+                height={40}
+                className="object-contain"
+              />
+              <span>{t('tools')}</span>
             </Link>
-            <nav className="hidden md:ml-10 md:flex md:space-x-8">
+
+            <Link
+              href={`/${locale}/services`}
+              className="flex items-center gap-3 text-sm font-medium text-neutral-700 transition-colors hover:text-[#FF5722]"
+            >
+              <Image src="/icons/servicios.svg" alt="Servicios" width={40} height={40} className="object-contain" />
+              <span>{t('services')}</span>
+            </Link>
+
+            {session && (
               <Link
-                href={`/${locale}/items`}
-                className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
+                href={`/${locale}/dashboard/bookings`}
+                className="flex items-center gap-3 text-sm font-medium text-neutral-700 transition-colors hover:text-[#FF5722]"
               >
-                {t('tools')}
+                <Image src="/icons/reservas.svg" alt="Reservas" width={40} height={40} className="object-contain" />
+                <span>Reservas</span>
               </Link>
-              <Link
-                href={`/${locale}/services`}
-                className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
-              >
-                {t('services')}
-              </Link>
-              <Link
-                href={`/${locale}/how-it-works`}
-                className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
-              >
-                {t('howItWorks')}
-              </Link>
-              {session && (
-                <Link
-                  href={`/${locale}/dashboard/bookings`}
-                  className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
-                >
-                  Mis Reservas
-                </Link>
-              )}
-              {session && (
-                <Link
-                  href={`/${locale}/messages`}
-                  className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors flex items-center gap-1"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Mensajes
-                </Link>
-              )}
-            </nav>
+            )}
           </div>
-          <div className="hidden md:flex items-center space-x-4">
+
+          {/* Desktop Actions */}
+          <div className="hidden items-center gap-8 md:flex">
             {session && session.user?.id && (
-              <NotificationBadge 
+              <NotificationBadge
                 userId={session.user.id}
                 onClick={() => setIsNotificationsOpen(true)}
               />
@@ -84,48 +96,51 @@ export default function Navbar() {
 
             {session && (
               <Link
-                href={`/${locale}/dashboard`}
-                className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
+                href={`/${locale}/messages`}
+                className="flex items-center gap-3 text-sm font-medium text-neutral-700 transition-colors hover:text-[#FF5722]"
               >
-                {t('myPanel')}
+                <Image src="/icons/mensajes.svg" alt="Mensajes" width={40} height={40} className="object-contain" />
               </Link>
             )}
+
             {session && (
-              <button
+              <Button
                 onClick={() => setIsPublishModalOpen(true)}
-                className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all text-sm font-medium"
+                className="bg-[#FF5722] text-white hover:bg-[#E64A19]"
               >
                 {t('publish.label')}
-              </button>
+              </Button>
             )}
-            {session ? (
-              <button
-                onClick={async () => {
-                  setIsMenuOpen(false);
-                  await signOut({ callbackUrl: "/" });
-                }}
-                className="text-gray-700 hover:text-red-600 px-3 py-2 text-sm font-medium transition-colors"
-              >
-                {t('logout')}
-              </button>
-            ) : (
-              <>
-                <Link
-                  href={`/${locale}/login`}
-                  className="border-2 border-orange-600 text-orange-600 hover:bg-orange-50 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-                  onClick={() => setIsMenuOpen(false)}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Image src="/icons/perfil.svg" alt="Perfil" width={40} height={40} className="object-contain" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link href={`/${locale}/dashboard`} className="w-full">
+                    {t('myPanel')}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/${locale}/how-it-works`} className="w-full">
+                    {t('howItWorks')}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-600"
+                  onClick={async () => {
+                    await signOut({ callbackUrl: "/" });
+                  }}
                 >
-                  {t('login')}
-                </Link>
-                <Link
-                  href={`/${locale}/signup`}
-                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all text-sm font-semibold"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {t('signup')}
-                </Link>
-              </>
-            )}
+                  {t('logout')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* SELECTOR DE IDIOMA - Botón pequeño y sutil */}
             <button
               onClick={() => changeLocale(locale === 'es' ? 'en' : 'es')}
@@ -135,124 +150,133 @@ export default function Navbar() {
               {locale === 'es' ? 'EN' : 'ES'}
             </button>
           </div>
-          <div className="flex items-center md:hidden">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-700 hover:text-orange-600 p-2"
+
+          <div className="flex items-center gap-2 md:hidden">
+            {session && session.user?.id && (
+              <NotificationBadge
+                userId={session.user.id}
+                onClick={() => setMobileMenuOpen(true)}
+              />
+            )}
+
+            {session && (
+              <Link
+                href={`/${locale}/messages`}
+                className="flex items-center gap-2 text-sm font-medium text-neutral-700 transition-colors hover:text-[#FF5722]"
+              >
+                <Image src="/icons/mensajes.svg" alt="Mensajes" width={40} height={40} className="object-contain" />
+              </Link>
+            )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-10 w-10">
+                  <Image src="/icons/perfil.svg" alt="Perfil" width={40} height={40} className="object-contain" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link href={`/${locale}/dashboard`} className="w-full">
+                    {t('myPanel')}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/${locale}/how-it-works`} className="w-full">
+                    {t('howItWorks')}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-600"
+                  onClick={async () => {
+                    await signOut({ callbackUrl: "/" });
+                  }}
+                >
+                  {t('logout')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Menu Hamburguesa */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {isMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </button>
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Mobile menu */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-200">
-          <div className="pt-2 pb-4 space-y-1 px-4 sm:px-6 lg:px-8">
+      {mobileMenuOpen && (
+        <div className="border-t border-neutral-200 bg-white md:hidden">
+          <div className="space-y-1 px-4 pb-3 pt-2">
             <Link
               href={`/${locale}/items`}
-              className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-100"
+              onClick={() => setMobileMenuOpen(false)}
             >
-              {t('tools')}
+              <Image
+                src="/icons/herramientas.svg"
+                alt="Herramientas"
+                width={40}
+                height={40}
+                className="object-contain"
+              />
+              <span>{t('tools')}</span>
             </Link>
             <Link
               href={`/${locale}/services`}
-              className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-100"
+              onClick={() => setMobileMenuOpen(false)}
             >
-              {t('services')}
+              <Image src="/icons/servicios.svg" alt="Servicios" width={40} height={40} className="object-contain" />
+              <span>{t('services')}</span>
             </Link>
+            {session && (
+              <Link
+                href={`/${locale}/dashboard/bookings`}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-100"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Image src="/icons/reservas.svg" alt="Reservas" width={40} height={40} className="object-contain" />
+                <span>Mis Reservas</span>
+              </Link>
+            )}
+            <div className="my-2 border-t border-neutral-200" />
             <Link
               href={`/${locale}/how-it-works`}
-              className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              className="block rounded-lg px-3 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-100"
+              onClick={() => setMobileMenuOpen(false)}
             >
               {t('howItWorks')}
             </Link>
-
             {session && (
-              <>
-                {/* Dashboard and Bookings - Mobile Only */}
-                <div className="border-t border-gray-200 mt-2 pt-2">
-                  <Link
-                    href={`/${locale}/dashboard`}
-                    className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {t('myPanel')}
-                  </Link>
-                  <Link
-                    href={`/${locale}/dashboard/bookings`}
-                    className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Mis Reservas
-                  </Link>
-                  <Link
-                    href={`/${locale}/messages`}
-                    className="flex items-center gap-2 text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <MessageCircle className="h-5 w-5" />
-                    Mensajes
-                  </Link>
-                  {/* Notifications - Mobile */}
-                  {session.user?.id && (
-                    <button
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        setIsNotificationsOpen(true);
-                      }}
-                      className="flex items-center gap-2 w-full text-left text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
-                    >
-                      <Bell className="h-5 w-5" />
-                      Notificaciones
-                    </button>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    setIsPublishModalOpen(true);
-                  }}
-                  className="block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all text-base font-medium mt-2 w-full text-center"
-                >
-                  {t('publish.label')}
-                </button>
-              </>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setIsPublishModalOpen(true);
+                }}
+                className="block w-full rounded-lg bg-[#FF5722] px-3 py-2 text-base font-medium text-white hover:bg-[#E64A19]"
+              >
+                {t('publish.label')}
+              </button>
             )}
-            {session ? (
-              <>
-                <button
-                  onClick={async () => {
-                    setIsMenuOpen(false);
-                    await signOut({ callbackUrl: "/" });
-                  }}
-                  className="block text-gray-700 hover:text-red-600 px-3 py-2 text-base font-medium transition-colors w-full text-left"
-                >
-                  {t('logout')}
-                </button>
-              </>
-            ) : (
+            {!session && (
               <>
                 <Link
                   href={`/${locale}/login`}
-                  className="block border-2 border-orange-600 text-orange-600 hover:bg-orange-50 px-4 py-2 rounded-lg text-base font-semibold transition-all text-center mt-2"
-                  onClick={() => setIsMenuOpen(false)}
+                  className="block rounded-lg px-3 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-100"
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   {t('login')}
                 </Link>
                 <Link
                   href={`/${locale}/signup`}
-                  className="block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all text-base font-semibold mt-2 text-center"
-                  onClick={() => setIsMenuOpen(false)}
+                  className="block rounded-lg bg-[#FF5722] px-3 py-2 text-base font-medium text-white hover:bg-[#E64A19] text-center"
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   {t('signup')}
                 </Link>
@@ -276,6 +300,6 @@ export default function Navbar() {
         isOpen={isPublishModalOpen}
         onClose={() => setIsPublishModalOpen(false)}
       />
-    </header>
+    </nav>
   );
 }

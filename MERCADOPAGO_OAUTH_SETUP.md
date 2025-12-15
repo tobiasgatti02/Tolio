@@ -116,3 +116,4 @@ MP_ACCESS_TOKEN=tu-access-token
 - [Documentación OAuth de MercadoPago](https://www.mercadopago.com.ar/developers/es/docs/security/oauth)
 - [Dashboard de MercadoPago](https://www.mercadopago.com.ar/developers/panel)
 
+

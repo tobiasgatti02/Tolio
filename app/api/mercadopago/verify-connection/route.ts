@@ -56,3 +56,4 @@ export async function GET(request: NextRequest) {
 // Forzar Node.js runtime
 export const runtime = 'nodejs';
 
+

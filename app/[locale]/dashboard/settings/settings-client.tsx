@@ -451,28 +451,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
             <MercadoPagoConnect />
           )}
 
-          <div className="space-y-4 pt-4 border-t">
-            <div>
-              <h4 className="font-semibold mb-2">MercadoPago Marketplace - Split Payments</h4>
-              <p className="text-sm text-gray-600 mb-2">
-                Con MercadoPago, los pagos se dividen automáticamente:
-              </p>
-              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside mb-3">
-                <li><strong>Materiales:</strong> 100% para ti (sin comisión)</li>
-                <li><strong>Servicios:</strong> 98% para ti, 2% comisión del marketplace</li>
-              </ul>
-              <p className="text-sm text-blue-700 mt-2 bg-blue-50 p-3 rounded">
-                💡 <strong>Para Proveedores de Servicios:</strong> Los clientes pueden pagarte materiales por adelantado 
-                y el servicio una vez completado el trabajo. El marketplace cobra automáticamente su comisión del 2%.
-              </p>
-              <p className="text-xs text-gray-500 mt-2">
-                Referencia: <a href="https://github.com/goncy/next-mercadopago/tree/main/integraciones/marketplace" 
-                target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                  Implementación basada en next-mercadopago marketplace
-                </a>
-              </p>
-            </div>
-          </div>
+
         </CardContent>
       </Card>
     </div>
