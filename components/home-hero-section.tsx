@@ -76,26 +76,7 @@ export default function HomeHeroSection() {
           </div>
 
           {/* Feature Icons */}
-          <div className="mt-8 md:mt-16 grid grid-cols-3 gap-4 sm:gap-6 md:gap-8 text-white animate-fade-in-up animation-delay-600 px-2">
-            <div className="flex flex-col items-center space-y-2 md:space-y-4 hover:scale-110 transition-transform duration-300">
-              <div className="bg-white/20 backdrop-blur-sm p-3 md:p-4 rounded-xl md:rounded-2xl mb-1 md:mb-2 shadow-lg">
-                <Search className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
-              </div>
-              <span className="text-xs sm:text-sm md:text-lg font-semibold text-center">Busca oficios</span>
-            </div>
-            <div className="flex flex-col items-center space-y-2 md:space-y-4 hover:scale-110 transition-transform duration-300">
-              <div className="bg-white/20 backdrop-blur-sm p-3 md:p-4 rounded-xl md:rounded-2xl mb-1 md:mb-2 shadow-lg">
-                <Clock className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
-              </div>
-              <span className="text-xs sm:text-sm md:text-lg font-semibold text-center">Conecta directo</span>
-            </div>
-            <div className="flex flex-col items-center space-y-2 md:space-y-4 hover:scale-110 transition-transform duration-300">
-              <div className="bg-white/20 backdrop-blur-sm p-3 md:p-4 rounded-xl md:rounded-2xl mb-1 md:mb-2 shadow-lg">
-                <Shield className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
-              </div>
-              <span className="text-xs sm:text-sm md:text-lg font-semibold text-center">Comunidad confiable</span>
-            </div>
-          </div>
+     
         </div>
 
         {/* Scroll Indicator */}

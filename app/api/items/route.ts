@@ -19,6 +19,8 @@ export async function GET(request: Request) {
     const search = searchParams.get("search")?.trim()
     const location = searchParams.get("location")?.trim()
     const category = searchParams.get("category")?.trim()
+    const minPriceParam = searchParams.get("minPrice")
+    const maxPriceParam = searchParams.get("maxPrice")
     const sort = searchParams.get("sort") || "recent"
 
     // Parámetros de búsqueda geográfica
@@ -45,6 +47,16 @@ export async function GET(request: Request) {
 
     if (location && location.length >= 2) {
       where.location = { contains: location, mode: 'insensitive' }
+    }
+
+    // Price filters (minPrice / maxPrice)
+    const minPrice = minPriceParam ? Number(minPriceParam) : null
+    const maxPrice = maxPriceParam ? Number(maxPriceParam) : null
+    if (minPrice !== null && !isNaN(minPrice)) {
+      where.price = { ...(where.price || {}), gte: Math.max(0, minPrice) }
+    }
+    if (maxPrice !== null && !isNaN(maxPrice)) {
+      where.price = { ...(where.price || {}), lte: Math.max(0, maxPrice) }
     }
 
     // Determine order efficiently
