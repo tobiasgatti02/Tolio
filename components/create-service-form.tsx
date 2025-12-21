@@ -215,7 +215,6 @@ export default function CreateServiceForm() {
       if (formData.priceType === 'hour' && (!formData.pricePerHour || parseFloat(formData.pricePerHour) <= 0)) {
         newErrors.pricePerHour = "El precio por hora es requerido"
       }
-      if (!formData.location.trim()) newErrors.location = "La ubicación es requerida"
     }
     
     setErrors(newErrors)

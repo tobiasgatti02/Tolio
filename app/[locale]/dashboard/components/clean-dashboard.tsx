@@ -22,6 +22,7 @@ import { DashboardBooking, DashboardStats, DashboardItem, DashboardReview, Dashb
 import StripeAccountCheck from "@/components/stripe-account-check"
 import { useOnboarding } from "@/components/onboarding"
 import BookingPreviewCard from "@/components/booking-preview-card"
+import { useUserMode } from "@/contexts/user-mode-context"
 
 interface MenuItem {
   id: string
@@ -76,6 +77,9 @@ export default function CleanDashboard({
   const pathname = usePathname()
   const router = useRouter()
   const { showOnboarding, isOnboardingComplete } = useOnboarding()
+  const { userMode } = useUserMode()
+  
+  const isBuyerContext = userMode === 'buyer'
   
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -106,6 +110,13 @@ export default function CleanDashboard({
       return () => clearTimeout(timer)
     }
   }, [isOnboardingComplete, showOnboarding])
+
+  // Redirect buyers to expenses if accessing other pages
+  useEffect(() => {
+    if (isBuyerContext && !['expenses', 'bookings', 'calendar', 'reviews', 'settings'].some(page => pathname.includes(`/dashboard/${page}`))) {
+      router.push(`/${locale}/dashboard/expenses`)
+    }
+  }, [isBuyerContext, pathname, router, locale])
 
   // Determinar la sección activa basada en la URL
   const getActiveSection = () => {
@@ -239,6 +250,10 @@ export default function CleanDashboard({
       path: `/${locale}/dashboard/settings`,
     },
   ]
+
+  const visibleMenuItems = isBuyerContext
+    ? menuItems.filter((item) => ['expenses', 'bookings', 'calendar', 'reviews', 'settings'].includes(item.id))
+    : menuItems
 
   const toggleDropdown = (itemId: string) => {
     setDropdowns(prev => ({
@@ -475,13 +490,15 @@ export default function CleanDashboard({
             <div className="bg-white p-6 rounded-xl border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Acciones rápidas</h3>
               <div className="space-y-3">
-                <Link
-                  href="/items/nuevo"
-                  className="flex items-center space-x-3 p-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span className="font-medium">Publicar nuevo artículo</span>
-                </Link>
+                {!isBuyerContext && (
+                  <Link
+                    href="/items/nuevo"
+                    className="flex items-center space-x-3 p-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span className="font-medium">Publicar nuevo artículo</span>
+                  </Link>
+                )}
                 <Link
                   href="/dashboard/bookings"
                   className="flex items-center space-x-3 p-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
@@ -544,15 +561,17 @@ export default function CleanDashboard({
               </div>
             </div>
             {!loading && (
-              <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+              <div className={`mt-4 grid ${isBuyerContext ? 'grid-cols-2' : 'grid-cols-3'} gap-3 text-center`}>
                 <div className="bg-gray-50 rounded-lg p-2">
                   <p className="text-lg font-bold text-gray-900">{(stats.trustScore || 0).toFixed(1)}</p>
                   <p className="text-xs text-gray-500">{t('trust')}</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-lg font-bold text-gray-900">{stats.totalItems || 0}</p>
-                  <p className="text-xs text-gray-500">{t('items')}</p>
-                </div>
+                {!isBuyerContext && (
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <p className="text-lg font-bold text-gray-900">{stats.totalItems || 0}</p>
+                    <p className="text-xs text-gray-500">{t('items')}</p>
+                  </div>
+                )}
                 <div className="bg-gray-50 rounded-lg p-2 mx-auto">
                   <p className="text-lg font-bold text-gray-900">${(stats.totalEarnings || 0).toLocaleString()}</p>
                   <p className="text-xs text-gray-500">{t('earned')}</p>
@@ -573,7 +592,7 @@ export default function CleanDashboard({
 
           {/* Menu items */}
           <nav className="flex-1 px-4 py-6 space-y-2">
-            {menuItems.map((item) => (
+            {visibleMenuItems.map((item) => (
               <div key={item.id}>
                 <div className="flex items-center">
                   <Link

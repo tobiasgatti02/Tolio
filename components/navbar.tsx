@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, Bell } from "lucide-react";
+import { ArrowRightLeft, Menu, X, Bell } from "lucide-react";
 import MessageBadge from "./ui/message-badge";
 import { signOut, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import NotificationBadge from "./ui/notification-badge";
 import NotificationsPanel from "./ui/notifications-panel";
 import PublishModal from "./ui/publish-modal";
 import { useLocale, useTranslations } from 'next-intl';
+import { useUserMode } from "@/contexts/user-mode-context";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -18,7 +19,24 @@ export default function Navbar() {
   const { data: session } = useSession();
   const router = useRouter();
   const locale = useLocale();
+  const pathname = usePathname();
   const t = useTranslations('common');
+  const { userMode, toggleUserMode } = useUserMode();
+
+  const isSellerMode = pathname.startsWith(`/${locale}/dashboard`);
+  const isBuyerDashboardContext = userMode === 'buyer'
+
+  const handleToggleUserMode = () => {
+    toggleUserMode(); // Toggle the mode
+    if (!isSellerMode) {
+      if (!session) {
+        router.push(`/${locale}/login`);
+        return;
+      }
+      router.push(`/${locale}/dashboard`);
+    }
+    // If in dashboard, just toggle mode
+  }
   
   function changeLocale(newLocale: string) {
     // Mantener la ruta actual pero cambiar el locale
@@ -42,22 +60,37 @@ export default function Navbar() {
 
           {/* Servicios y Herramientas - Centro (desktop) */}
           <nav className="hidden md:flex md:items-center md:space-x-8">
-            <Link
-              href={`/${locale}/items`}
-              className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
-            >
-              {t('tools')}
-            </Link>
-            <Link
-              href={`/${locale}/services`}
-              className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
-            >
-              {t('services')}
-            </Link>
+            {!isSellerMode && (
+              <>
+                <Link
+                  href={`/${locale}/items`}
+                  className="group relative px-4 py-2 text-base font-semibold text-[#111827] hover:text-[#f97316] transition-colors"
+                >
+                  <span className="relative z-10">Herramientas</span>
+                  <span className="absolute inset-0 rounded-lg bg-[#d1fae5] scale-0 group-hover:scale-100 transition-transform duration-200" />
+                </Link>
+                <Link
+                  href={`/${locale}/services`}
+                  className="group relative px-4 py-2 text-base font-semibold text-[#111827] hover:text-[#f97316] transition-colors"
+                >
+                  <span className="relative z-10">Servicios</span>
+                  <span className="absolute inset-0 rounded-lg bg-[#dbeafe] scale-0 group-hover:scale-100 transition-transform duration-200" />
+                </Link>
+              </>
+            )}
           </nav>
 
           {/* Grupos de acción - Derecho (desktop) */}
           <div className="hidden md:flex items-center space-x-6">
+            <button
+              type="button"
+              onClick={handleToggleUserMode}
+              className="hidden sm:flex items-center gap-2 border-2 border-[#f97316] text-[#f97316] hover:bg-[#fff4e9] font-semibold bg-transparent px-4 py-2 rounded-lg transition-colors"
+            >
+              <ArrowRightLeft className="h-4 w-4" />
+              {userMode === 'seller' ? "Cambiar a comprador" : "Cambiar a vendedor"}
+            </button>
+
             {/* Reservas - grupo independiente */}
             {session && (
               <div className="flex items-center">
@@ -96,7 +129,7 @@ export default function Navbar() {
                 </Link>
               )}
 
-              {session && (
+              {session && !isBuyerDashboardContext && (
                 <button
                   onClick={() => setIsPublishModalOpen(true)}
                   className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all text-sm font-medium"
@@ -133,7 +166,7 @@ export default function Navbar() {
                   </Link>
                 </>
               )}
-
+{/*
               <button
                 onClick={() => changeLocale(locale === 'es' ? 'en' : 'es')}
                 className="ml-2 px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded transition-colors border border-gray-200"
@@ -141,6 +174,8 @@ export default function Navbar() {
               >
                 {locale === 'es' ? 'EN' : 'ES'}
               </button>
+
+*/}
             </div>
           </div>
           <div className="flex items-center md:hidden">
@@ -161,111 +196,140 @@ export default function Navbar() {
       {/* Mobile menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-200">
-          <div className="pt-2 pb-4 space-y-1 px-4 sm:px-6 lg:px-8">
-            <Link
-              href={`/${locale}/items`}
-              className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {t('tools')}
-            </Link>
-            <Link
-              href={`/${locale}/services`}
-              className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {t('services')}
-            </Link>
-            <Link
-              href={`/${locale}/how-it-works`}
-              className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {t('howItWorks')}
-            </Link>
+          <div className="px-4 py-4 space-y-4">
+            {/* User Mode Toggle */}
+            <div className="pb-2 border-b border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  toggleUserMode();
+                }}
+                className="w-full flex items-center justify-center gap-2 border-2 border-[#f97316] text-[#f97316] hover:bg-[#fff4e9] font-semibold bg-transparent px-4 py-3 rounded-lg transition-colors"
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+                {userMode === 'seller' ? "Cambiar a comprador" : "Cambiar a vendedor"}
+              </button>
+            </div>
 
+            {/* Main Navigation - Only when not in dashboard */}
+            {!isSellerMode && (
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3">
+                  Explorar
+                </h3>
+                <div className="space-y-1">
+                  <Link
+                    href={`/${locale}/services`}
+                    className="flex items-center gap-3 text-gray-700 hover:text-orange-600 hover:bg-orange-50 px-3 py-3 text-base font-medium transition-colors rounded-lg"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    Servicios
+                  </Link>
+                  <Link
+                    href={`/${locale}/items`}
+                    className="flex items-center gap-3 text-gray-700 hover:text-orange-600 hover:bg-orange-50 px-3 py-3 text-base font-medium transition-colors rounded-lg"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    Herramientas
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* User Account Section */}
             {session && (
-              <>
-                {/* Dashboard and Bookings - Mobile Only */}
-                <div className="border-t border-gray-200 mt-2 pt-2">
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3">
+                  Mi Cuenta
+                </h3>
+                <div className="space-y-1">
                   <Link
                     href={`/${locale}/dashboard`}
-                    className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
+                    className="flex items-center gap-3 text-gray-700 hover:text-orange-600 hover:bg-orange-50 px-3 py-3 text-base font-medium transition-colors rounded-lg"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {t('myPanel')}
                   </Link>
                   <Link
                     href={`/${locale}/dashboard/bookings`}
-                    className="block text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
+                    className="flex items-center gap-3 text-gray-700 hover:text-orange-600 hover:bg-orange-50 px-3 py-3 text-base font-medium transition-colors rounded-lg"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Mis Reservas
                   </Link>
                   <Link
                     href={`/${locale}/messages`}
-                    className="flex items-center gap-2 text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
+                    className="flex items-center gap-3 text-gray-700 hover:text-orange-600 hover:bg-orange-50 px-3 py-3 text-base font-medium transition-colors rounded-lg"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <MessageBadge />
                     <span>Mensajes</span>
                   </Link>
-                  {/* Notifications - Mobile */}
                   {session.user?.id && (
                     <button
                       onClick={() => {
                         setIsMenuOpen(false);
                         setIsNotificationsOpen(true);
                       }}
-                      className="flex items-center gap-2 w-full text-left text-gray-700 hover:text-orange-600 px-3 py-2 text-base font-medium transition-colors"
+                      className="flex items-center gap-3 w-full text-left text-gray-700 hover:text-orange-600 hover:bg-orange-50 px-3 py-3 text-base font-medium transition-colors rounded-lg"
                     >
                       <Bell className="h-5 w-5" />
-                      Notificaciones
+                      <span>Notificaciones</span>
                     </button>
                   )}
                 </div>
+              </div>
+            )}
 
+            {/* Actions */}
+            {session && !isBuyerDashboardContext && (
+              <div className="pt-2">
                 <button
                   onClick={() => {
                     setIsMenuOpen(false);
                     setIsPublishModalOpen(true);
                   }}
-                  className="block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all text-base font-medium mt-2 w-full text-center"
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg shadow-sm hover:shadow-md transition-all text-base font-semibold flex items-center justify-center gap-2"
                 >
                   {t('publish.label')}
                 </button>
-              </>
+              </div>
             )}
-            {session ? (
-              <>
+
+            {/* Authentication */}
+            <div className="pt-2 border-t border-gray-200">
+              {session ? (
                 <button
                   onClick={async () => {
                     setIsMenuOpen(false);
                     await signOut({ callbackUrl: "/" });
                   }}
-                  className="block text-gray-700 hover:text-red-600 px-3 py-2 text-base font-medium transition-colors w-full text-left"
+                  className="w-full flex items-center gap-3 text-gray-700 hover:text-red-600 hover:bg-red-50 px-3 py-3 text-base font-medium transition-colors rounded-lg"
                 >
                   {t('logout')}
                 </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href={`/${locale}/login`}
-                  className="block border-2 border-orange-600 text-orange-600 hover:bg-orange-50 px-4 py-2 rounded-lg text-base font-semibold transition-all text-center mt-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {t('login')}
-                </Link>
-                <Link
-                  href={`/${locale}/signup`}
-                  className="block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all text-base font-semibold mt-2 text-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {t('signup')}
-                </Link>
-              </>
-            )}
+              ) : (
+                <div className="space-y-2">
+                  <Link
+                    href={`/${locale}/login`}
+                    className="block border-2 border-orange-600 text-orange-600 hover:bg-orange-50 px-4 py-3 rounded-lg text-base font-semibold transition-all text-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {t('login')}
+                  </Link>
+                  <Link
+                    href={`/${locale}/signup`}
+                    className="block bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg shadow-md hover:shadow-lg transition-all text-base font-semibold text-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {t('signup')}
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

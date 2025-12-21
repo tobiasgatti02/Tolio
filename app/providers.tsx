@@ -3,6 +3,7 @@
 import { SessionProvider } from "next-auth/react"
 import { NotificationsProvider } from "@/contexts/notifications-context"
 import { OnboardingProvider } from "@/components/onboarding"
+import { UserModeProvider } from "@/contexts/user-mode-context"
 import type { ReactNode } from "react"
 
 interface ProvidersProps {
@@ -14,7 +15,9 @@ export default function Providers({ children }: ProvidersProps) {
     <SessionProvider>
       <NotificationsProvider>
         <OnboardingProvider>
-          {children}
+          <UserModeProvider>
+            {children}
+          </UserModeProvider>
         </OnboardingProvider>
       </NotificationsProvider>
     </SessionProvider>
