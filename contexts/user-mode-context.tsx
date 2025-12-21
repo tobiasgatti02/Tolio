@@ -13,7 +13,7 @@ interface UserModeContextType {
 const UserModeContext = createContext<UserModeContextType | undefined>(undefined)
 
 export function UserModeProvider({ children }: { children: ReactNode }) {
-  const [userMode, setUserMode] = useState<UserMode>('buyer')
+  const [userMode, setUserMode] = useState<UserMode>('seller')
 
   useEffect(() => {
     const stored = localStorage.getItem('userMode') as UserMode
