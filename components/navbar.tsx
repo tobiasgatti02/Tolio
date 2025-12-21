@@ -33,7 +33,7 @@ export default function Navbar() {
         router.push(`/${locale}/login`);
         return;
       }
-      router.push(`/${locale}/dashboard`);
+      router.push(userMode === 'buyer' ? `/${locale}/dashboard/bookings` : `/${locale}/dashboard`);
     }
     // If in dashboard, just toggle mode
   }
@@ -122,7 +122,7 @@ export default function Navbar() {
             <div className="flex items-center space-x-3">
               {session && (
                 <Link
-                  href={`/${locale}/dashboard`}
+                  href={isBuyerDashboardContext ? `/${locale}/dashboard/bookings` : `/${locale}/dashboard`}
                   className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
                 >
                   {t('myPanel')}
@@ -247,7 +247,7 @@ export default function Navbar() {
                 </h3>
                 <div className="space-y-1">
                   <Link
-                    href={`/${locale}/dashboard`}
+                    href={isBuyerDashboardContext ? `/${locale}/dashboard/bookings` : `/${locale}/dashboard`}
                     className="flex items-center gap-3 text-gray-700 hover:text-orange-600 hover:bg-orange-50 px-3 py-3 text-base font-medium transition-colors rounded-lg"
                     onClick={() => setIsMenuOpen(false)}
                   >
