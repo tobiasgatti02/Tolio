@@ -24,6 +24,7 @@ interface BookingUser {
   id: string
   name: string
   email: string
+  image?: string | null
 }
 
 interface Booking {
@@ -51,10 +52,10 @@ interface BookingsStats {
 
 // ============== CONSTANTES FUERA DEL COMPONENTE ==============
 const STATUS_MAP: Record<string, { color: string; text: string; iconType: 'check' | 'clock' | 'x' }> = {
-  CONFIRMADA: { color: "bg-green-100 text-green-800 border-green-200", text: "Confirmada", iconType: 'check' },
-  PENDIENTE: { color: "bg-yellow-100 text-yellow-800 border-yellow-200", text: "Pendiente", iconType: 'clock' },
+  CONFIRMADA: { color: "bg-[#d1fae5] text-[#065f46] border-[#a7f3d0]", text: "Confirmada", iconType: 'check' },
+  PENDIENTE: { color: "bg-[#fff4e9] text-[#7c3d12] border-[#feccaa]", text: "Pendiente", iconType: 'clock' },
   CANCELADA: { color: "bg-red-100 text-red-800 border-red-200", text: "Cancelada", iconType: 'x' },
-  COMPLETADA: { color: "bg-blue-100 text-blue-800 border-blue-200", text: "Completada", iconType: 'check' },
+  COMPLETADA: { color: "bg-[#dbeafe] text-[#1e3a8a] border-[#bfdbfe]", text: "Completada", iconType: 'check' },
 }
 
 const FILTER_OPTIONS = [
@@ -207,20 +208,20 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
     }
 
     // Si está en progreso
-    return { text: 'En progreso', color: 'text-yellow-600', icon: <Clock className="w-4 h-4" /> }
+    return { text: 'En progreso', color: 'text-[#ea670c]', icon: <Clock className="w-4 h-4" /> }
   }
 
   const getStatusInfo = (status: string) => {
     switch (status) {
       case "CONFIRMADA":
         return {
-          color: "bg-green-100 text-green-800 border-green-200",
+          color: "bg-[#d1fae5] text-[#065f46] border-[#a7f3d0]",
           text: "Confirmada",
           icon: <CheckCircle className="w-4 h-4" />,
         }
       case "PENDIENTE":
         return {
-          color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+          color: "bg-[#fff4e9] text-[#7c3d12] border-[#feccaa]",
           text: "Pendiente",
           icon: <Clock className="w-4 h-4" />,
         }
@@ -232,7 +233,7 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
         }
       case "COMPLETADA":
         return {
-          color: "bg-blue-100 text-blue-800 border-blue-200",
+          color: "bg-[#dbeafe] text-[#1e3a8a] border-[#bfdbfe]",
           text: "Completada",
           icon: <CheckCircle className="w-4 h-4" />,
         }
@@ -414,54 +415,47 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl text-white shadow-lg">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-[#fff4e9] border border-[#ffe6d5] p-6 rounded-xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Pendientes</p>
-              <p className="text-3xl font-bold mt-1">{stats.pendingBookings}</p>
+              <p className="text-sm font-medium text-[#c2570c]">Pendientes</p>
+              <p className="text-4xl font-bold text-[#7c3d12]">{stats.pendingBookings}</p>
+              <p className="text-xs text-gray-600 mt-1">Requieren acción</p>
             </div>
-            <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6" />
+            <div className="w-12 h-12 bg-[#ffe6d5] rounded-lg flex items-center justify-center">
+              <Clock className="w-6 h-6 text-[#f97316]" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-[#d1fae5] border border-[#a7f3d0] p-6 rounded-xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm font-medium">Activas</p>
-              <p className="text-3xl font-bold mt-1">{stats.activeBookings}</p>
+              <p className="text-sm font-medium text-[#047857]">Activas</p>
+              <p className="text-4xl font-bold text-[#065f46]">{stats.activeBookings}</p>
+              <p className="text-xs text-gray-600 mt-1">En progreso</p>
             </div>
-            <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6" />
+            <div className="w-12 h-12 bg-[#a7f3d0] rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-[#047857]" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-[#dbeafe] border border-[#bfdbfe] p-6 rounded-xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-medium">Completadas</p>
-              <p className="text-3xl font-bold mt-1">{stats.completedBookings}</p>
+              <p className="text-sm font-medium text-[#1e40af]">Completadas</p>
+              <p className="text-4xl font-bold text-[#1e3a8a]">{stats.completedBookings}</p>
+              <p className="text-xs text-gray-600 mt-1">Este mes</p>
             </div>
-            <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-              <Package className="w-6 h-6" />
+            <div className="w-12 h-12 bg-[#bfdbfe] rounded-lg flex items-center justify-center">
+              <Package className="w-6 h-6 text-[#1e40af]" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-6 rounded-xl text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-amber-100 text-sm font-medium">Total Gastado</p>
-              <p className="text-2xl font-bold mt-1">${stats.totalSpent.toLocaleString()}</p>
-            </div>
-            <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-              <span className="text-xl font-bold">$</span>
-            </div>
-          </div>
-        </div>
+        
       </div>
 
       {/* Filtros */}
@@ -474,9 +468,10 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
               <button
                 key={filter.key}
                 onClick={() => setActiveFilter(filter.key)}
+                aria-pressed={activeFilter === filter.key}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                   activeFilter === filter.key
-                    ? 'bg-blue-600 text-white shadow-md'
+                    ? 'bg-orange-600 text-white shadow-md'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -531,7 +526,7 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
               placeholder="Buscar reservas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full pl-10 pr-4 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f97316] focus:border-transparent text-sm"
             />
           </div>
         </div>
@@ -617,8 +612,14 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
 
                           {/* Usuario */}
                           <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                              {otherUser?.name.charAt(0).toUpperCase() || '?'}
+                            <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200">
+                              {otherUser?.image ? (
+                                <img src={otherUser.image} alt={otherUser.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-[#f97316] to-[#ea670c] flex items-center justify-center text-white text-sm font-semibold">
+                                  {otherUser?.name.charAt(0).toUpperCase() || '?'}
+                                </div>
+                              )}
                             </div>
                             <div>
                               <p className="text-sm font-medium text-gray-900">
@@ -641,8 +642,8 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
                                 <div className="flex flex-col items-center gap-1">
                                   <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
                                     booking.status === 'PENDIENTE' 
-                                      ? 'bg-yellow-500 text-white ring-2 ring-yellow-200' 
-                                      : 'bg-green-500 text-white'
+                                      ? 'bg-[#f97316] text-white ring-2 ring-[#feccaa]' 
+                                      : 'bg-[#10b981] text-white'
                                   }`}>
                                     <Clock className="w-3.5 h-3.5" />
                                   </div>
@@ -652,7 +653,7 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
                                 {/* Línea 1 */}
                                 <div className={`flex-1 h-0.5 rounded-full ${
                                   ['CONFIRMADA'].includes(booking.status) 
-                                    ? 'bg-green-500' 
+                                    ? 'bg-[#10b981]' 
                                     : 'bg-gray-200'
                                 }`}></div>
 
@@ -707,7 +708,7 @@ export default function BookingsClientEnhanced({ userId }: { userId: string }) {
                           <div className="flex flex-wrap gap-2 justify-end">
                             <Link 
                               href={`/dashboard/bookings/${booking.id}`}
-                              className="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                              className="inline-flex items-center px-3 py-2 bg-white text-[#f97316] border border-[#feccaa] rounded-lg text-sm font-medium hover:bg-[#fff4e9] transition-colors"
                             >
                               <Eye className="w-4 h-4 mr-1" />
                               Ver

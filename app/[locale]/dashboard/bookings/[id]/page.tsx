@@ -11,7 +11,22 @@ import {
   User, MessageCircle, MapPin, Package, Briefcase,
   AlertCircle, Wrench
 } from "lucide-react"
-import BookingTimeline from "@/components/booking-timeline"
+import BookingTimeline from "@/components/dashboard/booking-timeline"
+import MaterialRequestAlert from "@/components/dashboard/material-request-alert"
+import MaterialRequestModal from "@/components/dashboard/material-request-modal"
+
+interface MaterialItem {
+  name: string
+  price: number
+}
+
+interface MaterialPayment {
+  id: string
+  materials: MaterialItem[]
+  totalAmount: number
+  status: 'PENDING' | 'COMPLETED' | 'FAILED'
+  requestedAt: string
+}
 
 interface BookingDetails {
   id: string
@@ -44,89 +59,13 @@ interface BookingDetails {
   borrowerId: string
   ownerId: string
   mayIncludeMaterials?: boolean
+  materialPayment?: MaterialPayment | null
   materialsPaid?: boolean
   servicePaid?: boolean
   priceType?: string
 }
 
-// Skeleton component
-function BookingDetailsSkeleton() {
-  return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <div className="max-w-3xl mx-auto">
-        {/* Back button */}
-        <div className="h-5 w-28 bg-gray-200 rounded animate-pulse mb-6"></div>
-        
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          {/* Header con imagen y titulo */}
-          <div className="p-5 flex items-start gap-4 border-b border-gray-100">
-            <div className="w-16 h-16 bg-gray-200 rounded-xl animate-pulse flex-shrink-0"></div>
-            <div className="flex-1 min-w-0">
-              <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-2"></div>
-              <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-            <div className="h-7 w-24 bg-gray-200 rounded-full animate-pulse"></div>
-          </div>
-
-          {/* Timeline simple */}
-          <div className="px-5 py-4 bg-gray-50 border-b border-gray-100">
-            <div className="flex items-center justify-between gap-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-2 flex-1">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
-                  <div className="h-3 w-16 bg-gray-200 rounded animate-pulse hidden sm:block"></div>
-                  {i < 3 && <div className="flex-1 h-0.5 bg-gray-200 animate-pulse"></div>}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Info cards */}
-          <div className="p-5 space-y-4">
-            {/* Fechas */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <div className="h-4 w-16 bg-gray-200 rounded animate-pulse mb-3"></div>
-              <div className="flex justify-between">
-                <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
-              </div>
-            </div>
-
-            {/* Usuario */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <div className="h-4 w-20 bg-gray-200 rounded animate-pulse mb-3"></div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
-                <div className="flex-1">
-                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-1"></div>
-                  <div className="h-3 w-20 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-                <div className="w-9 h-9 bg-gray-200 rounded-lg animate-pulse"></div>
-              </div>
-            </div>
-
-            {/* Precio */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <div className="flex justify-between items-center">
-                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-7 w-20 bg-gray-200 rounded animate-pulse"></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Acciones */}
-          <div className="p-5 bg-gray-50 border-t border-gray-100">
-            <div className="h-12 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default function BookingDetailsPage() {
+export default function BookingDetailsPageEnhanced() {
   const params = useParams()
   const router = useRouter()
   const [booking, setBooking] = useState<BookingDetails | null>(null)
@@ -135,6 +74,7 @@ export default function BookingDetailsPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [toast, setToast] = useState<{ type: 'success' | 'error', message: string } | null>(null)
+  const [showMaterialModal, setShowMaterialModal] = useState(false)
 
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ type, message })
@@ -197,6 +137,16 @@ export default function BookingDetailsPage() {
           complete: 'Reserva completada'
         }
         showToast('success', actionMessages[action])
+        
+        // Si se completó, redirigir a mensajes con el otro usuario
+        if (action === 'complete') {
+          const otherUserId = userRole === 'provider' ? booking.borrower?.id : booking.owner?.id
+          if (otherUserId) {
+            router.push(`/messages/${otherUserId}`)
+            return
+          }
+        }
+        
         await fetchBooking()
       } else {
         const data = await res.json()
@@ -209,8 +159,48 @@ export default function BookingDetailsPage() {
     }
   }
 
+  const handleMaterialRequest = async (materials: MaterialItem[]) => {
+    if (!booking) return
+    
+    setActionLoading(true)
+    try {
+      const res = await fetch('/api/payments/materials/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: booking.id,
+          materials: materials.map(m => ({ name: m.name, price: m.price }))
+        })
+      })
+      
+      if (res.ok) {
+        showToast('success', 'Solicitud de materiales enviada')
+        await fetchBooking()
+      } else {
+        const data = await res.json()
+        showToast('error', data.error || 'Error al solicitar materiales')
+      }
+    } catch (err) {
+      showToast('error', 'Error de conexión')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleMaterialApprove = async () => {
+    if (!booking?.materialPayment) return
+    
+    // Redirect to payment flow
+    router.push(`/booking/${booking.id}/payment?type=material`)
+  }
+
+  const handleMaterialReject = async () => {
+    // TODO: Implement material request rejection
+    showToast('error', 'Función de rechazo aún no implementada')
+  }
+
   if (loading) {
-    return <BookingDetailsSkeleton />
+    return <LoadingSkeleton />
   }
 
   if (error || !booking) {
@@ -218,8 +208,8 @@ export default function BookingDetailsPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">{error || 'Reserva no encontrada'}</h2>
-          <Link href="/dashboard/bookings" className="text-blue-600 hover:underline">
+          <h2 className="text-xl font-semibold text-tolio-gray-900 mb-2">{error || 'Reserva no encontrada'}</h2>
+          <Link href="/dashboard/bookings" className="text-tolio-orange-500 hover:underline">
             Volver a mis reservas
           </Link>
         </div>
@@ -231,57 +221,16 @@ export default function BookingDetailsPage() {
   const isBorrower = currentUserId === booking.borrowerId
   const otherUser = isOwner ? booking.borrower : booking.owner
   const isService = booking.type === 'service'
+  const userRole = isOwner ? 'provider' : 'client'
   
   const startDate = new Date(booking.startDate)
   const endDate = new Date(booking.endDate)
   const days = Math.max(1, differenceInDays(endDate, startDate))
 
-  const statusConfig: Record<string, { color: string, bg: string, icon: React.ReactNode, label: string }> = {
-    PENDING: { 
-      color: 'text-amber-700', 
-      bg: 'bg-amber-100', 
-      icon: <Clock className="w-4 h-4" />, 
-      label: 'Pendiente' 
-    },
-    CONFIRMED: { 
-      color: 'text-blue-700', 
-      bg: 'bg-blue-100', 
-      icon: <CheckCircle className="w-4 h-4" />, 
-      label: 'Confirmada' 
-    },
-    COMPLETED: { 
-      color: 'text-green-700', 
-      bg: 'bg-green-100', 
-      icon: <CheckCircle className="w-4 h-4" />, 
-      label: 'Completada' 
-    },
-    CANCELLED: { 
-      color: 'text-red-700', 
-      bg: 'bg-red-100', 
-      icon: <XCircle className="w-4 h-4" />, 
-      label: 'Cancelada' 
-    }
-  }
-
-  const status = statusConfig[booking.status] || statusConfig.PENDING
-
-  // Timeline steps
-  const steps = [
-    { key: 'PENDING', label: 'Solicitada', icon: <Clock className="w-5 h-5" /> },
-    { key: 'CONFIRMED', label: 'Confirmada', icon: <CheckCircle className="w-5 h-5" /> },
-    { key: 'COMPLETED', label: 'Completada', icon: <CheckCircle className="w-5 h-5" /> },
-  ]
-
-  const getStepStatus = (stepKey: string) => {
-    const order = ['PENDING', 'CONFIRMED', 'COMPLETED']
-    const currentIndex = order.indexOf(booking.status === 'CANCELLED' ? 'PENDING' : booking.status)
-    const stepIndex = order.indexOf(stepKey)
-    
-    if (booking.status === 'CANCELLED') return 'cancelled'
-    if (stepIndex < currentIndex) return 'completed'
-    if (stepIndex === currentIndex) return 'current'
-    return 'upcoming'
-  }
+  // Material request logic
+  const hasMaterialPayment = booking.materialPayment !== null && booking.materialPayment !== undefined
+  const canRequestMaterials = isOwner && isService && booking.mayIncludeMaterials && !hasMaterialPayment && booking.status === 'CONFIRMED'
+  const showMaterialAlert = hasMaterialPayment && booking.materialPayment!.status === 'PENDING'
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -289,13 +238,13 @@ export default function BookingDetailsPage() {
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 animate-in slide-in-from-top-2 duration-300 ${
           toast.type === 'success' 
-            ? 'bg-green-50 border border-green-200 text-green-800' 
-            : 'bg-red-50 border border-red-200 text-red-800'
+            ? 'bg-status-green-bg border border-status-green text-status-green-text' 
+            : 'bg-status-red-bg border border-status-red text-status-red'
         }`}>
           {toast.type === 'success' ? (
-            <CheckCircle className="w-5 h-5 text-green-600" />
+            <CheckCircle className="w-5 h-5" />
           ) : (
-            <XCircle className="w-5 h-5 text-red-600" />
+            <XCircle className="w-5 h-5" />
           )}
           <span className="font-medium">{toast.message}</span>
           <button 
@@ -311,10 +260,10 @@ export default function BookingDetailsPage() {
         {/* Back button */}
         <Link 
           href="/dashboard/bookings" 
-          className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+          className="inline-flex items-center text-gray-600 hover:text-tolio-gray-900 mb-6 transition-colors"
         >
           <ChevronLeft className="w-5 h-5 mr-1" />
-          <span className="font-medium">Mis reservas</span>
+          <span className="font-medium">Volver a Reservas</span>
         </Link>
 
         {/* Main Card */}
@@ -331,14 +280,9 @@ export default function BookingDetailsPage() {
                     fill
                     className="object-cover"
                   />
-                  <div className="absolute top-1 left-1">
-                    <div className={`p-1 rounded ${isService ? 'bg-purple-600' : 'bg-blue-600'}`}>
-                      {isService ? <Briefcase className="w-3 h-3 text-white" /> : <Package className="w-3 h-3 text-white" />}
-                    </div>
-                  </div>
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">{booking.item.title}</h1>
+                  <h1 className="text-xl font-bold text-tolio-gray-900">{booking.item.title}</h1>
                   <p className="text-sm text-gray-500">
                     {isService ? 'Servicio' : 'Artículo'} • ID: {booking.id.slice(0, 8)}
                   </p>
@@ -350,29 +294,34 @@ export default function BookingDetailsPage() {
                   )}
                 </div>
               </div>
-              <div className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium ${status.bg} ${status.color}`}>
-                {status.icon}
-                {status.label}
-              </div>
             </div>
           </div>
 
-          {/* Enhanced Timeline */}
-          {booking.status !== 'CANCELLED' ? (
-            <div className="px-6 py-2">
-              <BookingTimeline
-                currentStatus={booking.status as 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'}
-                createdAt={new Date(booking.createdAt)}
-                confirmedAt={booking.status === 'CONFIRMED' || booking.status === 'COMPLETED' ? new Date(booking.updatedAt) : undefined}
-                completedAt={booking.status === 'COMPLETED' ? new Date(booking.updatedAt) : undefined}
+          {/* Timeline */}
+          <div className="px-6 py-6">
+            <BookingTimeline
+              status={booking.status as 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'}
+              createdAt={format(new Date(booking.createdAt), "d MMM, HH:mm", { locale: es })}
+              confirmedAt={booking.status === 'CONFIRMED' || booking.status === 'COMPLETED' ? format(new Date(booking.updatedAt), "d MMM, HH:mm", { locale: es }) : undefined}
+              completedAt={booking.status === 'COMPLETED' ? format(new Date(booking.updatedAt), "d MMM, HH:mm", { locale: es }) : undefined}
+            />
+          </div>
+
+          {/* Material Request Alert - PROMINENT */}
+          {showMaterialAlert && booking.materialPayment && (
+            <div className="px-6 pb-6">
+              <MaterialRequestAlert
+                userRole={userRole}
+                materials={booking.materialPayment.materials.map((m: any) => ({
+                  name: m.name,
+                  price: m.price
+                }))}
+                totalAmount={booking.materialPayment.totalAmount}
+                status={booking.materialPayment.status as 'PENDING' | 'APPROVED' | 'REJECTED'}
+                onApprove={handleMaterialApprove}
+                onReject={handleMaterialReject}
+                isLoading={actionLoading}
               />
-            </div>
-          ) : (
-            <div className="p-6 bg-red-50 border-b border-red-100">
-              <p className="text-center text-red-700 font-medium">
-                <XCircle className="w-4 h-4 inline mr-2" />
-                Esta reserva fue cancelada
-              </p>
             </div>
           )}
 
@@ -380,14 +329,14 @@ export default function BookingDetailsPage() {
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Dates */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                <Calendar className="w-4 h-4 inline mr-2" />
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center">
+                <Calendar className="w-4 h-4 mr-2" />
                 {isService ? 'Fecha' : 'Período'}
               </h3>
               <div className="bg-gray-50 rounded-xl p-4">
                 {isService ? (
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-tolio-gray-900">
                       {format(startDate, "d MMM yyyy", { locale: es })}
                     </p>
                     <p className="text-sm text-gray-500">Fecha programada</p>
@@ -395,18 +344,18 @@ export default function BookingDetailsPage() {
                 ) : (
                   <div className="flex items-center justify-between">
                     <div className="text-center">
-                      <p className="text-lg font-bold text-gray-900">
+                      <p className="text-lg font-bold text-tolio-gray-900">
                         {format(startDate, "d MMM", { locale: es })}
                       </p>
                       <p className="text-xs text-gray-500">Inicio</p>
                     </div>
                     <div className="flex-1 flex items-center justify-center px-4">
                       <div className="h-px flex-1 bg-gray-300"></div>
-                      <span className="px-3 text-sm font-semibold text-blue-600">{days} día{days > 1 ? 's' : ''}</span>
+                      <span className="px-3 text-sm font-semibold text-tolio-orange-500">{days} día{days > 1 ? 's' : ''}</span>
                       <div className="h-px flex-1 bg-gray-300"></div>
                     </div>
                     <div className="text-center">
-                      <p className="text-lg font-bold text-gray-900">
+                      <p className="text-lg font-bold text-tolio-gray-900">
                         {format(endDate, "d MMM", { locale: es })}
                       </p>
                       <p className="text-xs text-gray-500">Fin</p>
@@ -418,8 +367,8 @@ export default function BookingDetailsPage() {
 
             {/* Other User */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                <User className="w-4 h-4 inline mr-2" />
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center">
+                <User className="w-4 h-4 mr-2" />
                 {isOwner ? (isService ? 'Cliente' : 'Inquilino') : (isService ? 'Prestador' : 'Propietario')}
               </h3>
               <div className="bg-gray-50 rounded-xl p-4">
@@ -433,13 +382,13 @@ export default function BookingDetailsPage() {
                         className="object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold">
+                      <div className="w-full h-full bg-gradient-to-br from-tolio-orange-500 to-tolio-orange-600 flex items-center justify-center text-white font-bold">
                         {otherUser.firstName.charAt(0)}
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">
+                    <p className="font-semibold text-tolio-gray-900 truncate">
                       {otherUser.firstName} {otherUser.lastName}
                     </p>
                     <p className="text-sm text-gray-500">
@@ -456,27 +405,46 @@ export default function BookingDetailsPage() {
               </div>
             </div>
 
-            {/* Price */}
+            {/* Price Summary */}
             <div className="md:col-span-2">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                💰 Resumen de pago
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center">
+                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Resumen de pago
               </h3>
               <div className="bg-gray-50 rounded-xl p-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm text-gray-600">
-                      {isService ? 'Precio del servicio' : `$${booking.item.price} x ${days} día${days > 1 ? 's' : ''}`}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">
+                        {isService ? 'Precio del servicio' : `Precio por ${days} día${days > 1 ? 's' : ''}`}
+                      </p>
+                      <p className="text-xs text-gray-500">Pago al completar (incluye comisión)</p>
+                    </div>
+                    <p className="text-xl font-bold text-tolio-gray-900">
+                      ${booking.totalPrice ? booking.totalPrice.toLocaleString() : (booking.item.price * days).toLocaleString()}
                     </p>
                   </div>
-                  {(booking.totalPrice && booking.totalPrice > 0) || (booking.item.price > 0) ? (
-                    <p className="text-2xl font-bold text-gray-900">
-                      ${booking.totalPrice?.toLocaleString() || (booking.item.price * days).toLocaleString()}
-                    </p>
-                  ) : (
-                    <p className="text-xl font-semibold text-gray-700">
-                      Precio a convenir
-                    </p>
+                  {hasMaterialPayment && booking.materialPayment && (
+                    <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Materiales</p>
+                        <p className="text-xs text-tolio-orange-500 font-medium">
+                          {booking.materialPayment.status === 'PENDING' ? 'Pago pendiente' : 'Pago anticipado'} • Sin comisión
+                        </p>
+                      </div>
+                      <p className="text-xl font-bold text-tolio-orange-500">
+                        ${booking.materialPayment.totalAmount.toLocaleString()}
+                      </p>
+                    </div>
                   )}
+                  <div className="flex items-center justify-between pt-2">
+                    <p className="text-lg font-bold text-tolio-gray-900">Total estimado</p>
+                    <p className="text-3xl font-bold text-tolio-gray-900">
+                      ${(booking.totalPrice + (hasMaterialPayment ? booking.materialPayment!.totalAmount : 0)).toLocaleString()}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -493,7 +461,7 @@ export default function BookingDetailsPage() {
                   <button
                     onClick={() => handleAction('confirm')}
                     disabled={actionLoading}
-                    className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 py-3 px-4 bg-status-green hover:bg-status-green-text text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     <CheckCircle className="w-5 h-5" />
                     Confirmar
@@ -501,7 +469,7 @@ export default function BookingDetailsPage() {
                   <button
                     onClick={() => handleAction('reject')}
                     disabled={actionLoading}
-                    className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 py-3 px-4 bg-status-red hover:bg-red-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     <XCircle className="w-5 h-5" />
                     Rechazar
@@ -510,78 +478,58 @@ export default function BookingDetailsPage() {
               </div>
             )}
 
-            {booking.status === 'PENDING' && isBorrower && (
-              <div className="space-y-3">
-                <div className="text-center">
-                  <div className="inline-flex items-center gap-2 text-amber-700 bg-amber-50 px-4 py-2 rounded-lg">
-                    <Clock className="w-5 h-5" />
-                    <span className="font-medium">Esperando confirmación del {isService ? 'prestador' : 'propietario'}</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleAction('reject')}
-                  disabled={actionLoading}
-                  className="w-full py-3 px-4 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <XCircle className="w-5 h-5" />
-                  Cancelar solicitud
-                </button>
-              </div>
-            )}
-
             {booking.status === 'CONFIRMED' && (
               <div className="space-y-3">
-                <div className="text-center">
-                  <div className="inline-flex items-center gap-2 text-blue-700 bg-blue-50 px-4 py-2 rounded-lg mb-4">
-                    <CheckCircle className="w-5 h-5" />
-                    <span className="font-medium">Reserva confirmada - Listo para usar</span>
-                  </div>
-                </div>
                 {isOwner && (
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => handleAction('complete')}
-                      disabled={actionLoading}
-                      className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {actionLoading ? (
-                        <span className="animate-spin">⏳</span>
-                      ) : (
+                  <>
+                    {canRequestMaterials && (
+                      <button
+                        onClick={() => setShowMaterialModal(true)}
+                        className="w-full py-3 px-4 bg-tolio-orange-500 hover:bg-tolio-orange-600 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Wrench className="w-5 h-5" />
+                        Solicitar Materiales
+                      </button>
+                    )}
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handleAction('complete')}
+                        disabled={actionLoading}
+                        className="flex-1 py-3 px-4 bg-status-green hover:bg-status-green-text text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
                         <CheckCircle className="w-5 h-5" />
-                      )}
-                      Completar
-                    </button>
-                    <button
-                      onClick={() => handleAction('reject')}
-                      disabled={actionLoading}
-                      className="py-3 px-4 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      <XCircle className="w-5 h-5" />
-                      Cancelar
-                    </button>
-                  </div>
-                )}
-                {/* Botón de materiales para servicios */}
-                {isOwner && isService && booking.mayIncludeMaterials && !booking.materialsPaid && (
-                  <Link
-                    href={`/messages/${otherUser.id}`}
-                    className="w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Wrench className="w-5 h-5" />
-                    Solicitar pago de materiales
-                  </Link>
+                        Completar
+                      </button>
+                      <button
+                        onClick={() => handleAction('reject')}
+                        disabled={actionLoading}
+                        className="py-3 px-4 bg-status-red-bg hover:bg-red-200 text-status-red font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        <XCircle className="w-5 h-5" />
+                        Cancelar
+                      </button>
+                    </div>
+                  </>
                 )}
                 {isBorrower && (
-                  <p className="text-sm text-gray-500 text-center">
-                    Esperando a que el {isService ? 'prestador' : 'propietario'} complete la reserva
-                  </p>
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-2 text-status-green bg-status-green-bg px-4 py-2 rounded-lg mb-4">
+                      <CheckCircle className="w-5 h-5" />
+                      <span className="font-medium">Reserva confirmada - Lista para usar</span>
+                    </div>
+                    {showMaterialAlert && (
+                      <p className="text-sm text-gray-500">
+                        El proveedor ha solicitado pago de materiales. Por favor revisa la solicitud arriba.
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
 
             {booking.status === 'COMPLETED' && (
               <div className="text-center">
-                <div className="inline-flex items-center gap-2 text-green-700 bg-green-50 px-4 py-2 rounded-lg">
+                <div className="inline-flex items-center gap-2 text-status-green bg-status-green-bg px-4 py-2 rounded-lg">
                   <CheckCircle className="w-5 h-5" />
                   <span className="font-medium">Reserva completada exitosamente</span>
                 </div>
@@ -597,6 +545,45 @@ export default function BookingDetailsPage() {
                 <MessageCircle className="w-5 h-5" />
                 Enviar mensaje a {otherUser.firstName}
               </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Material Request Modal */}
+      <MaterialRequestModal
+        isOpen={showMaterialModal}
+        onClose={() => setShowMaterialModal(false)}
+        userRole={userRole}
+        existingMaterials={hasMaterialPayment && booking.materialPayment ? booking.materialPayment.materials.map((m: any) => ({ name: m.name, price: m.price })) : []}
+        existingTotal={hasMaterialPayment && booking.materialPayment ? booking.materialPayment.totalAmount : 0}
+        onSubmit={handleMaterialRequest}
+        onApprove={handleMaterialApprove}
+        onReject={handleMaterialReject}
+      />
+    </div>
+  )
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+      <div className="max-w-3xl mx-auto">
+        <div className="h-5 w-28 bg-gray-200 rounded animate-pulse mb-6"></div>
+        
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="p-5 flex items-start gap-4 border-b border-gray-100">
+            <div className="w-16 h-16 bg-gray-200 rounded-xl animate-pulse flex-shrink-0"></div>
+            <div className="flex-1 min-w-0">
+              <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-2"></div>
+              <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+
+          <div className="p-5 space-y-4">
+            <div className="bg-gray-50 rounded-xl p-4">
+              <div className="h-4 w-16 bg-gray-200 rounded animate-pulse mb-3"></div>
+              <div className="h-6 w-full bg-gray-200 rounded animate-pulse"></div>
             </div>
           </div>
         </div>

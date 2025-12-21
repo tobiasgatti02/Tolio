@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         ],
       },
       include: {
-        item: {
+        Item: {
           select: {
             title: true,
           },
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     const events = bookings.map((booking) => ({
       id: booking.id,
-      title: booking.item.title,
+      title: booking.Item.title,
       startDate: booking.startDate,
       endDate: booking.endDate,
       type: "item",
