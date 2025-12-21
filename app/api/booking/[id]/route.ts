@@ -150,6 +150,13 @@ export async function GET(
         ownerId: serviceBooking.providerId,
         borrowerId: serviceBooking.clientId,
         mayIncludeMaterials: serviceBooking.Service.mayIncludeMaterials,
+        materialPayment: serviceBooking.materialPayment ? {
+          id: serviceBooking.materialPayment.id,
+          materials: serviceBooking.materialPayment.materials as any,
+          totalAmount: serviceBooking.materialPayment.totalAmount,
+          status: serviceBooking.materialPayment.status,
+          requestedAt: serviceBooking.materialPayment.requestedAt.toISOString(),
+        } : null,
         materialsPaid: serviceBooking.materialPayment?.status === 'COMPLETED',
         servicePaid: serviceBooking.servicePaid,
         priceType: serviceBooking.Service.priceType,

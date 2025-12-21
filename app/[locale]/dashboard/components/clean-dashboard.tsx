@@ -365,50 +365,50 @@ export default function CleanDashboard({
 
           {/* Estadísticas principales */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-xl border border-gray-200">
+            <div className="bg-[#ffe6d5] border border-[#feccaa] p-6 rounded-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">{t('publishedItems')}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalItems || 0}</p>
+                  <p className="text-sm font-medium text-[#c2570c]">{t('publishedItems')}</p>
+                  <p className="text-4xl font-bold text-[#7c3d12]">{stats.totalItems || 0}</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Package className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-[#feccaa] rounded-lg flex items-center justify-center">
+                  <Package className="w-6 h-6 text-[#c2570c]" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-xl border border-gray-200">
+            <div className="bg-[#d1fae5] border border-[#a7f3d0] p-6 rounded-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">{t('activeBookings')}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.activeBookings || 0}</p>
+                  <p className="text-sm font-medium text-[#047857]">{t('activeBookings')}</p>
+                  <p className="text-4xl font-bold text-[#065f46]">{stats.activeBookings || 0}</p>
                 </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-[#a7f3d0] rounded-lg flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-[#047857]" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-xl border border-gray-200">
+            <div className="bg-[#feccaa] border border-[#fdac74] p-6 rounded-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">{t('totalEarnings')}</p>
-                  <p className="text-2xl font-bold text-gray-900">${(stats.totalEarnings || 0).toLocaleString()}</p>
+                  <p className="text-sm font-medium text-[#c2570c]">{t('totalEarnings')}</p>
+                  <p className="text-4xl font-bold text-[#7c3d12]">${(stats.totalEarnings || 0).toLocaleString()}</p>
                 </div>
-                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-emerald-600" />
+                <div className="w-12 h-12 bg-[#fdac74] rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-[#c2570c]" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-xl border border-gray-200">
+            <div className="bg-[#fff4e9] border border-[#ffe6d5] p-6 rounded-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">{t('score')}</p>
-                  <p className="text-2xl font-bold text-gray-900">{(stats.trustScore || 0).toFixed(1)}/5.0</p>
+                  <p className="text-sm font-medium text-[#c2570c]">{t('score')}</p>
+                  <p className="text-4xl font-bold text-[#7c3d12]">{(stats.trustScore || 0).toFixed(1)}/5.0</p>
                 </div>
-                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <Star className="w-6 h-6 text-yellow-600" />
+                <div className="w-12 h-12 bg-[#ffe6d5] rounded-lg flex items-center justify-center">
+                  <Star className="w-6 h-6 text-[#f97316]" />
                 </div>
               </div>
             </div>
@@ -426,7 +426,7 @@ export default function CleanDashboard({
                 </div>
                 <Link
                   href="/dashboard/bookings"
-                  className="text-orange-600 hover:text-orange-700 font-medium text-sm flex items-center gap-1 group"
+                  className="text-[#f97316] hover:text-[#ea670c] font-medium text-sm flex items-center gap-1 group"
                 >
                   Ver todas
                   <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -470,10 +470,10 @@ export default function CleanDashboard({
                       </p>
                     </div>
                                         <Badge className={`${
-                      booking.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
-                      booking.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                      booking.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
-                      booking.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                      booking.status === 'CONFIRMED' ? 'bg-[#d1fae5] text-[#065f46] hover:bg-[#a7f3d0]' :
+                      booking.status === 'PENDING' ? 'bg-[#fff4e9] text-[#7c3d12] hover:bg-[#feccaa]' :
+                      booking.status === 'COMPLETED' ? 'bg-[#dbeafe] text-[#1e3a8a] hover:bg-[#bfdbfe]' :
+                      booking.status === 'CANCELLED' ? 'bg-red-100 text-red-800 hover:bg-red-200' :
                       'bg-gray-100 text-gray-800'
                     }`}>
                       {booking.status === 'CONFIRMED' ? 'Confirmado' :
@@ -493,7 +493,7 @@ export default function CleanDashboard({
                 {!isBuyerContext && (
                   <Link
                     href="/items/nuevo"
-                    className="flex items-center space-x-3 p-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                    className="flex items-center space-x-3 p-3 bg-[#fff4e9] text-[#f97316] rounded-lg hover:bg-[#ffe6d5] transition-colors"
                   >
                     <Plus className="w-5 h-5" />
                     <span className="font-medium">Publicar nuevo artículo</span>
@@ -501,7 +501,7 @@ export default function CleanDashboard({
                 )}
                 <Link
                   href="/dashboard/bookings"
-                  className="flex items-center space-x-3 p-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
+                  className="flex items-center space-x-3 p-3 bg-[#d1fae5] text-[#047857] rounded-lg hover:bg-[#a7f3d0] transition-colors"
                 >
                   <Calendar className="w-5 h-5" />
                   <span className="font-medium">Revisar reservas</span>
@@ -552,8 +552,14 @@ export default function CleanDashboard({
           {/* User info */}
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#feccaa] flex-shrink-0">
+                {user?.image ? (
+                  <img src={user.image} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-[#f97316] to-[#ea670c] flex items-center justify-center text-white font-semibold">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-gray-900 truncate">{user?.name || 'Usuario'}</p>
@@ -600,7 +606,7 @@ export default function CleanDashboard({
                     href={item.path}
                     className={`flex-1 flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                       activeSection === item.id
-                        ? 'bg-blue-100 text-blue-700'
+                        ? 'bg-[#fff4e9] text-[#f97316]'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                     onClick={() => setSidebarOpen(false)}
@@ -608,7 +614,7 @@ export default function CleanDashboard({
                     <item.icon className="w-5 h-5" />
                     <span className="font-medium">{item.label}</span>
                     {item.count !== undefined && item.count > 0 && (
-                      <span className="ml-auto bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
+                      <span className="ml-auto bg-[#feccaa] text-[#7c3d12] text-xs font-medium px-2 py-1 rounded-full">
                         {item.count}
                       </span>
                     )}
@@ -651,7 +657,7 @@ export default function CleanDashboard({
                   setSidebarOpen(false)
                   showOnboarding()
                 }}
-                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-orange-600 hover:bg-orange-50 transition-colors"
+                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-[#f97316] hover:bg-[#fff4e9] transition-colors"
               >
                 <HelpCircle className="w-5 h-5" />
                 <span className="font-medium">Ver tutorial</span>
